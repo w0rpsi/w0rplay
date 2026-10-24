@@ -20,8 +20,9 @@ export function ScreenPage({ status, settings, cw, setup }: PageProps) {
     ? game.dir.toLowerCase().includes('american') || game.dir.toLowerCase().includes('amtruck')
     : false
 
-  const gameName =
-    game?.name || (isAts ? 'American Truck Simulator' : w.game)
+  const gameName = status?.gameConnected
+    ? (isAts ? 'American Truck Simulator' : (game?.name || 'Euro Truck Simulator 2'))
+    : (game?.name ? `${game.name} & ATS` : w.game)
 
   const adaptText = (text: string) => {
     if (isAts) {

@@ -41,7 +41,7 @@ export const words: CompanionWords = {
     subs: {
       starting: 'W0RPLAY is getting ready.',
       stopped: 'W0RPLAY’s engine stopped. The details are under About.',
-      noGame: 'Start Euro Truck Simulator 2, and W0RPLAY connects to it.',
+      noGame: 'Start Euro Truck Simulator 2 or American Truck Simulator, and W0RPLAY connects automatically.',
       notInCab: 'The game is connected. Sit in the cab with the electrics on, and W0RPLAY appears on the screen.',
       live: 'W0RPLAY is on your truck’s screen right now.',
       original: 'Your truck shows its own screen, with a W0RPLAY button to come back.',
@@ -52,7 +52,7 @@ export const words: CompanionWords = {
     engine: 'W0RPLAY engine',
     engineRunning: 'Running',
     engineStarting: 'Starting…',
-    game: 'Euro Truck Simulator 2',
+    game: 'ETS2 / ATS (Truck Simulator)',
     gameConnected: 'Connected',
     gameNotRunning: 'Not running',
     truckScreen: 'Truck screen',
@@ -65,7 +65,7 @@ export const words: CompanionWords = {
     banners: {
       live: { title: 'Connected', text: 'W0RPLAY is on your truck’s screen' },
       original: { title: 'Truck’s own screen', text: 'W0RPLAY is a tap away' },
-      noGame: { title: 'Waiting for the game', text: 'Start Euro Truck Simulator 2' },
+      noGame: { title: 'Waiting for the game', text: 'Start ETS2 or ATS' },
       notInCab: { title: 'Game connected', text: 'Get in your truck' },
     },
   },

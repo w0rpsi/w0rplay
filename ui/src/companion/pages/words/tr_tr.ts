@@ -41,7 +41,7 @@ export const words: CompanionWords = {
     subs: {
       starting: 'W0RPLAY hazırlanıyor.',
       stopped: 'W0RPLAY’in motoru durdu. Ayrıntılar Hakkında bölümünde.',
-      noGame: 'Euro Truck Simulator 2’yi başlat, W0RPLAY ona bağlanır.',
+      noGame: 'Euro Truck Simulator 2 veya American Truck Simulator’ı başlat, W0RPLAY otomatik bağlanır.',
       notInCab: 'Oyun bağlı. Elektrikler açıkken kabine otur, W0RPLAY ekranda belirir.',
       live: 'W0RPLAY şu anda kamyonunun ekranında.',
       original: 'Kamyonun kendi ekranını gösteriyor; geri dönmek için bir W0RPLAY düğmesi var.',
@@ -52,7 +52,7 @@ export const words: CompanionWords = {
     engine: 'W0RPLAY motoru',
     engineRunning: 'Çalışıyor',
     engineStarting: 'Başlatılıyor…',
-    game: 'Euro Truck Simulator 2',
+    game: 'ETS2 / ATS (Kamyon Simülatörü)',
     gameConnected: 'Bağlı',
     gameNotRunning: 'Çalışmıyor',
     truckScreen: 'Kamyon ekranı',
@@ -65,7 +65,7 @@ export const words: CompanionWords = {
     banners: {
       live: { title: 'Bağlandı', text: 'W0RPLAY kamyonunun ekranında' },
       original: { title: 'Kamyonun kendi ekranı', text: 'W0RPLAY bir dokunuş uzağında' },
-      noGame: { title: 'Oyun bekleniyor', text: 'Euro Truck Simulator 2’yi başlat' },
+      noGame: { title: 'Oyun bekleniyor', text: 'ETS2 veya ATS’yi başlat' },
       notInCab: { title: 'Oyun bağlandı', text: 'Kamyonuna bin' },
     },
   },

@@ -76,7 +76,23 @@ export function Setup(props: PageProps) {
         )
       }
     >
-      {game && (
+      {setup.found && setup.found.length > 0 ? (
+        <Group title="Kurulu Oyunlar (ETS2 & ATS)" place={4}>
+          {setup.found.map((g) => {
+            const isThisAts = g.dir.toLowerCase().includes('american') || g.dir.toLowerCase().includes('amtruck')
+            const gTitle = g.name || (isThisAts ? 'American Truck Simulator' : 'Euro Truck Simulator 2')
+            const isCurrent = g.dir === game?.dir
+            return (
+              <Row
+                key={g.dir}
+                title={gTitle}
+                detail={g.dir}
+                accessory={isCurrent ? <Tick done /> : undefined}
+              />
+            )
+          })}
+        </Group>
+      ) : game ? (
         <Group title={game.name || w.game} place={4}>
           <Row title={w.folder} detail={game.dir} />
           <Row
@@ -85,7 +101,7 @@ export function Setup(props: PageProps) {
             accessory={game.tested ? <Tick done /> : undefined}
           />
         </Group>
-      )}
+      ) : null}
       <Group title={w.installed} place={5}>
         <Row
           title={w.plugin}

@@ -479,7 +479,15 @@ function Sidebar({
       <footer className="cp-sidebar-footer">
         <div className="cp-sidebar-status" data-state={state} title={cw.state[state]}>
           <i className="cp-status-dot" />
-          <span className="cp-status-text">{cw.state[state]}</span>
+          <span className="cp-status-text">
+            {state === 'live'
+              ? 'ETS2 / ATS Bağlı'
+              : state === 'original'
+                ? 'Kabin Ekranı'
+                : state === 'notInCab'
+                  ? 'Kabinde Değil'
+                  : 'ETS2 / ATS Bekleniyor'}
+          </span>
         </div>
         <div className="cp-sidebar-fps" title="Sabit 30 FPS Optimizasyonu">
           30 FPS
