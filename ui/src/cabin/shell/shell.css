@@ -266,8 +266,12 @@ body,
   top: var(--edge);
   bottom: var(--edge);
   width: 118px;
-  /* Almost a pill, like CarPlay's sidebar: just short of half the width. */
+  /* Modern liquid glass pill */
   border-radius: 54px;
+  background: linear-gradient(180deg, rgba(20, 24, 36, 0.76) 0%, rgba(10, 12, 18, 0.88) 100%);
+  backdrop-filter: blur(40px) saturate(210%);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.55), inset 0 1.5px 0 rgba(255, 255, 255, 0.25);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -282,9 +286,10 @@ body,
 
 .time {
   font-size: 34px;
-  font-weight: 600;
-  letter-spacing: -0.01em;
+  font-weight: 700;
+  letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
 }
 
 .signal {
@@ -293,8 +298,10 @@ body,
   justify-content: center;
   gap: 7px;
   margin-top: 4px;
-  font-size: 24px;
+  font-size: 22px;
   font-weight: 600;
+  color: #38bdf8;
+  text-shadow: 0 0 10px rgba(56, 189, 248, 0.45);
 }
 
 .recent {
@@ -308,11 +315,16 @@ body,
 .recent button {
   display: block;
   border-radius: 20px;
-  transition: scale 160ms var(--motion-ease);
+  transition: transform 200ms cubic-bezier(0.2, 0.8, 0.2, 1), filter 200ms ease;
+}
+
+.shell .recent button:hover {
+  transform: scale(1.08);
+  filter: drop-shadow(0 6px 16px rgba(0, 0, 0, 0.5)) brightness(1.1);
 }
 
 .shell .recent button:active {
-  scale: 0.92;
+  transform: scale(0.92);
 }
 
 /* The copy of a sidebar icon its app grows out of (Sidebar.tsx), exactly over the icon. */
@@ -329,6 +341,7 @@ body,
   display: block;
   width: 74px;
   height: 74px;
+  border-radius: 20px;
   filter: var(--shadow-icon);
 }
 
@@ -337,20 +350,29 @@ body,
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: 8px;
 }
 
 .sidebar-button {
   display: grid;
   place-items: center;
-  width: 64px;
-  height: 64px;
+  width: 60px;
+  height: 60px;
   border-radius: 50%;
-  transition: scale 160ms var(--motion-ease);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  transition: transform 180ms var(--motion-ease), background 180ms ease, border-color 180ms ease;
+}
+
+.shell .sidebar-button:hover {
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.28);
+  transform: scale(1.08);
 }
 
 .shell .sidebar-button:active {
-  scale: 0.92;
+  transform: scale(0.92);
 }
 
 /* The Home button's two icons share its place; the one for where it goes shows. */

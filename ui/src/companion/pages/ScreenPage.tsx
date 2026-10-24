@@ -83,7 +83,7 @@ export function ScreenPage({ status, settings, cw, setup }: PageProps) {
         />
         <Row
           title={w.truckScreen}
-          value={status?.screenDrawing ? (fps > 0 ? w.screenLive.replace('{fps}', String(fps)) : '60 Hz (Aktif)') : w.screenNotInView}
+          value={status?.screenDrawing ? (fps > 0 ? w.screenLive.replace('{fps}', String(fps)) : '30 FPS (Aktif)') : w.screenNotInView}
           accessory={<Status tone={status?.screenDrawing ? 'good' : status?.gameConnected ? 'busy' : 'idle'} />}
         />
       </Group>

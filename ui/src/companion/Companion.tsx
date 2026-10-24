@@ -406,21 +406,26 @@ function SectionList({
             .join(', ') || cw.values.none,
     map: mapValue(status, mapProgress, cw, words),
     setup: setup.game?.version ?? '',
-    about: update ? cw.update.badge : version,
+    about: update ? cw.update.badge : (version || '1b267'),
   }
 
   let place = 2
   return (
     <nav ref={list} className="cp-list" aria-label="W0RPLAY">
       <header className="cp-brand ob-in" style={n(0)}>
-        <img src="/w0rplay.png" alt="W0RPLAY" />
-        <span>
-          <b>W0RPLAY</b>
+        <div className="cp-brand-logo">
+          <img src="/w0rplay.png" alt="W0RPLAY" />
+        </div>
+        <div className="cp-brand-meta">
+          <div className="cp-brand-title">
+            <b>W0RPLAY</b>
+            <span className="cp-version-tag">1b267</span>
+          </div>
           <span className="cp-state" data-state={state}>
             <i />
             {cw.state[state]}
           </span>
-        </span>
+        </div>
       </header>
       {lit && <i className="cp-lit" style={{ top: lit.top, height: lit.height }} />}
       {SECTIONS.map((group, g) => (

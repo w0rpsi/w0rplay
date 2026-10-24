@@ -79,22 +79,55 @@ button {
 .cp-brand {
   display: flex;
   align-items: center;
-  gap: 11px;
-  padding: 2px 12px 8px;
+  gap: 12px;
+  padding: 4px 12px 12px;
+}
+
+.cp-brand-logo {
+  position: relative;
+  flex-shrink: 0;
 }
 
 .cp-brand img {
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  box-shadow: 0 4px 14px rgb(0 0 0 / 0.5);
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid rgba(0, 229, 255, 0.45);
+  box-shadow: 0 0 16px rgba(0, 229, 255, 0.3), 0 4px 12px rgba(0, 0, 0, 0.6);
+}
+
+.cp-brand-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.cp-brand-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .cp-brand b {
   display: block;
-  font-size: 15.5px;
-  font-weight: 600;
+  font-size: 16px;
+  font-weight: 700;
   letter-spacing: -0.01em;
+  background: linear-gradient(90deg, #ffffff, #a5f3fc);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.cp-version-tag {
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 1px 7px;
+  border-radius: 99px;
+  background: rgba(0, 229, 255, 0.15);
+  border: 1px solid rgba(0, 229, 255, 0.35);
+  color: #38bdf8;
+  letter-spacing: 0.02em;
 }
 
 /* Where W0RPLAY is now: a dot, and a line. */
@@ -110,8 +143,8 @@ button {
 
 .cp-state i {
   flex-shrink: 0;
-  width: 6px;
-  height: 6px;
+  width: 7px;
+  height: 7px;
   border-radius: 99px;
   background: var(--text-faint);
   transition:
@@ -120,28 +153,31 @@ button {
 }
 
 .cp-state[data-state='live'] i {
-  background: var(--green);
-  box-shadow: 0 0 8px rgb(48 209 88 / 0.7);
+  background: #10b981;
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.85);
 }
 
 .cp-state[data-state='original'] i {
   background: var(--orange);
+  box-shadow: 0 0 8px rgba(255, 159, 10, 0.6);
 }
 
 .cp-state[data-state='stopped'] i {
   background: var(--red);
+  box-shadow: 0 0 8px rgba(255, 69, 58, 0.6);
 }
 
 .cp-state[data-state='starting'] i,
 .cp-state[data-state='notInCab'] i {
-  background: var(--blue);
+  background: #00e5ff;
+  box-shadow: 0 0 10px rgba(0, 229, 255, 0.8);
   animation: ob-pulse 1.1s ease-in-out infinite;
 }
 
 .cp-group {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 3px;
 }
 
 .cp-row {
@@ -151,8 +187,8 @@ button {
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  height: 40px;
-  padding: 0 12px;
+  height: 42px;
+  padding: 0 14px;
   border: 0;
   border-radius: 12px;
   background: transparent;
@@ -161,8 +197,9 @@ button {
   text-align: left;
   cursor: pointer;
   transition:
-    color 300ms ease,
-    transform 450ms var(--ease);
+    color 250ms ease,
+    background 250ms ease,
+    transform 350ms var(--ease);
 }
 
 .cp-row b {
@@ -182,13 +219,18 @@ button {
   transition: color 300ms ease;
 }
 
-.cp-row:hover,
-.cp-row[data-here] {
+.cp-row:hover {
+  background: rgba(255, 255, 255, 0.04);
   color: var(--text);
 }
 
+.cp-row[data-here] {
+  color: #ffffff;
+}
+
 .cp-row[data-here] span {
-  color: var(--text-dim);
+  color: #38bdf8;
+  font-weight: 500;
 }
 
 .cp-row:active {
@@ -202,8 +244,9 @@ button {
   right: 0;
   z-index: 0;
   border-radius: 12px;
-  background: var(--fill-strong);
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.08);
+  background: linear-gradient(90deg, rgba(0, 229, 255, 0.14) 0%, rgba(59, 130, 246, 0.1) 100%);
+  border: 1px solid rgba(0, 229, 255, 0.35);
+  box-shadow: 0 4px 18px rgba(0, 229, 255, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.18);
   transition:
     top 700ms var(--spring),
     height 700ms var(--spring);
@@ -217,7 +260,7 @@ button {
   bottom: 24px;
   left: 236px;
   z-index: 2;
-  width: 304px;
+  width: 340px;
 }
 
 .cp h1 {
