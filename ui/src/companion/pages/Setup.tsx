@@ -41,7 +41,34 @@ export function Setup(props: PageProps) {
             : banner(w.checking, true),
   )
 
+  const isMultiGame = !!(setup.found && setup.found.length > 1)
+
+  const reinstallAll = async (administrator: boolean) => {
+    const targets = setup.found && setup.found.length > 0 ? setup.found : (game ? [game] : [])
+    if (targets.length === 0) return
+    setInstalling(true)
+    setInstallError(null)
+    try {
+      let lastResult: InstallReport | null = null
+      for (const target of targets) {
+        lastResult = await installIntoGame(target.dir, administrator)
+      }
+      setReport(lastResult)
+      if (lastResult?.done) {
+        screen.reboot()
+        if (game) checkGame(game.dir).then(checked, () => {})
+      }
+    } catch (e) {
+      setInstallError(explain(words, e))
+    } finally {
+      setInstalling(false)
+    }
+  }
+
   const reinstall = async (administrator: boolean) => {
+    if (isMultiGame) {
+      return reinstallAll(administrator)
+    }
     if (!game) return
     setInstalling(true)
     setInstallError(null)
@@ -69,9 +96,13 @@ export function Setup(props: PageProps) {
       title={w.title}
       sub={w.sub}
       action={
-        game && (
+        (game || (setup.found && setup.found.length > 0)) && (
           <Button glass onClick={() => reinstall(asAdministrator)} busy={installing} disabled={running !== false}>
-            {asAdministrator ? words.install.asAdministrator : w.reinstall}
+            {asAdministrator
+              ? words.install.asAdministrator
+              : isMultiGame
+                ? 'Tüm Oyunlara Kur (ETS2 & ATS)'
+                : w.reinstall}
           </Button>
         )
       }
@@ -87,7 +118,26 @@ export function Setup(props: PageProps) {
                 key={g.dir}
                 title={gTitle}
                 detail={g.dir}
-                accessory={isCurrent ? <Tick done /> : undefined}
+                accessory={
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    {isCurrent && <Tick done />}
+                    <Button
+                      glass
+                      onClick={() => {
+                        setInstalling(true)
+                        installIntoGame(g.dir, asAdministrator)
+                          .then((r) => {
+                            setReport(r)
+                            if (r.done) screen.reboot()
+                          })
+                          .catch((e) => setInstallError(explain(words, e)))
+                          .finally(() => setInstalling(false))
+                      }}
+                    >
+                      Yükle
+                    </Button>
+                  </div>
+                }
               />
             )
           })}

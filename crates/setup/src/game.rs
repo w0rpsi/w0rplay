@@ -165,21 +165,26 @@ pub fn find() -> Vec<Game> {
 
 /// Whether the game is running (any install of it: ETS2 or ATS).
 pub fn running() -> bool {
+    running_process().is_some()
+}
+
+/// The executable name of the running game if active (e.g. "eurotrucks2.exe" or "amtrucks.exe").
+pub fn running_process() -> Option<&'static str> {
     use windows::Win32::Foundation::CloseHandle;
     use windows::Win32::System::Diagnostics::ToolHelp::{
         CreateToolhelp32Snapshot, PROCESSENTRY32W, Process32FirstW, Process32NextW, TH32CS_SNAPPROCESS,
     };
     // SAFETY: a snapshot of the PC's processes, closed below.
-    let Ok(snapshot) = (unsafe { CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0) }) else { return false };
+    let Ok(snapshot) = (unsafe { CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0) }) else { return None };
     let mut entry = PROCESSENTRY32W { dwSize: size_of::<PROCESSENTRY32W>() as u32, ..Default::default() };
-    let mut found = false;
+    let mut found = None;
     // SAFETY: the snapshot is open; `entry` is a local with its size set, as the call requires.
     let mut more = unsafe { Process32FirstW(snapshot, &mut entry) }.is_ok();
     while more {
         let length = entry.szExeFile.iter().position(|&c| c == 0).unwrap_or(entry.szExeFile.len());
         let proc_name = String::from_utf16_lossy(&entry.szExeFile[..length]);
-        if PROCESSES.iter().any(|p| proc_name.eq_ignore_ascii_case(p)) {
-            found = true;
+        if let Some(&p) = PROCESSES.iter().find(|p| proc_name.eq_ignore_ascii_case(p)) {
+            found = Some(p);
             break;
         }
         // SAFETY: as above: the open snapshot, and `entry` with its size set.
@@ -190,6 +195,19 @@ pub fn running() -> bool {
         let _ = CloseHandle(snapshot);
     }
     found
+}
+
+/// The game install currently running, if one is active.
+pub fn running_game() -> Option<Game> {
+    let proc = running_process()?;
+    let games = find();
+    games.into_iter().find(|g| {
+        if proc.eq_ignore_ascii_case("amtrucks.exe") {
+            g.name() == "American Truck Simulator"
+        } else {
+            g.name() == "Euro Truck Simulator 2"
+        }
+    })
 }
 
 /// The game's folder name in its Steam library, from its `appmanifest_<appid>.acf`.

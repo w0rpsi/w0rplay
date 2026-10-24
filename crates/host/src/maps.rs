@@ -248,7 +248,8 @@ fn watch(maps: &Path, set_up: &SetUpGame, sender: &Sender<MapUpdate>, played: &P
     let mut not_removed: HashSet<PathBuf> = HashSet::new();
     loop {
         let set_up_in = set_up.state().clone();
-        let game = set_up_in.dir.as_deref().and_then(Game::recognise);
+        let running_game = w0rplay_setup::game::running_game();
+        let game = running_game.or_else(|| set_up_in.dir.as_deref().and_then(Game::recognise));
         let documents = game.as_ref().and_then(|g| places::game_documents_for(g.name())).or_else(places::game_documents);
         let asked_now = set_up_in.asked_again != asked_again;
         if asked_now {
@@ -319,7 +320,8 @@ fn basis(game: &Game, documents: &Path, userdata: Option<&Path>) -> Basis {
                 (dir, at)
             })
             .collect(),
-        game_written: written(&game.dir.join("bin").join("win_x64").join("eurotrucks2.exe")),
+        game_written: written(&game.dir.join("bin").join("win_x64").join("amtrucks.exe"))
+            .or_else(|| written(&game.dir.join("bin").join("win_x64").join("eurotrucks2.exe"))),
         truckersmp: truckersmp::installation().map(|installation| {
             let packs = truckersmp::packs(&installation).into_iter().map(|pack| {
                 let at = written(&pack);

@@ -1,4 +1,4 @@
-import { useContext, useEffect, useRef, useState } from 'react'
+import { useCallback, useContext, useEffect, useRef, useState } from 'react'
 import { hvtMapMessage } from '../../cabin/maps/blockedMap'
 import {
   checkGame,
@@ -133,9 +133,19 @@ export function Onboarding({
   const [leaving, setLeaving] = useState(false)
   const [finishing, setFinishing] = useState(false)
   const [game, setGame] = useState<GameInfo | null>(initial.game ?? initial.found[0] ?? null)
+  const [selectedGames, setSelectedGames] = useState<GameInfo[]>(() =>
+    initial.found && initial.found.length > 0 ? initial.found : (initial.game ? [initial.game] : [])
+  )
   const [check, setCheck] = useState<GameCheck | null>(null)
   // What installing did, kept while the player moves between steps (until they choose another game).
   const [installed, setInstalled] = useState<InstallReport | null>(null)
+
+  const onChecked = useCallback((result: GameCheck) => {
+    setCheck(result)
+    if (result.plugin === 'current' && !installed) {
+      setInstalled({ plugin: { state: 'installed' }, modError: null, done: true })
+    }
+  }, [installed])
   const demo = useDemo()
   const [powered, setPowered] = useState(false)
   const [banner, setBanner] = useState<Banner | null>(null)
@@ -261,8 +271,16 @@ export function Onboarding({
               <ChooseGame
                 found={initial.found}
                 game={game}
+                selectedGames={selectedGames}
                 choose={(chosen) => {
+                  setSelectedGames([chosen])
                   setGame(chosen)
+                  setCheck(null)
+                  setInstalled(null)
+                }}
+                chooseAll={() => {
+                  setSelectedGames(initial.found)
+                  setGame(initial.found[0] ?? game)
                   setCheck(null)
                   setInstalled(null)
                 }}
@@ -273,19 +291,22 @@ export function Onboarding({
             {step === 'check' && game && (
               <CheckGame
                 game={game}
+                selectedGames={selectedGames}
                 check={check}
-                checked={(result) => {
-                  setCheck(result)
-                  if (result.plugin === 'current' && !installed) {
-                    setInstalled({ plugin: { state: 'installed' }, modError: null, done: true })
-                  }
-                }}
+                checked={onChecked}
                 next={next}
                 back={back}
               />
             )}
             {step === 'install' && game && (
-              <Install game={game} report={installed} reported={setInstalled} next={next} back={back} />
+              <Install
+                game={game}
+                selectedGames={selectedGames}
+                report={installed}
+                reported={setInstalled}
+                next={next}
+                back={back}
+              />
             )}
             {step === 'map' && <MapStep status={status} next={next} back={back} />}
             {step === 'controls' && <Controls settings={settings} next={next} back={back} />}
@@ -339,13 +360,17 @@ function Welcome({ next }: { next(): void }) {
 function ChooseGame({
   found,
   game,
+  selectedGames,
   choose,
+  chooseAll,
   next,
   back,
 }: {
   found: GameInfo[]
   game: GameInfo | null
+  selectedGames: GameInfo[]
   choose(game: GameInfo): void
+  chooseAll(): void
   next(): void
   back?: () => void
 }) {
@@ -356,18 +381,23 @@ function ChooseGame({
   const running = useGameRunning()
   const words = useWords()
   const w = words.game
-  const gameTitle = game
-    ? game.name ||
-      (game.dir.toLowerCase().includes('american') || game.dir.toLowerCase().includes('amtruck')
-        ? 'American Truck Simulator'
-        : 'Euro Truck Simulator 2')
-    : ''
+  const isAll = games.length > 1 && selectedGames.length === games.length
+  const gameTitle = isAll
+    ? 'ETS2 & ATS (Kamyon Simülatörleri)'
+    : game
+      ? game.name ||
+        (game.dir.toLowerCase().includes('american') || game.dir.toLowerCase().includes('amtruck')
+          ? 'American Truck Simulator'
+          : 'Euro Truck Simulator 2')
+      : ''
   useScreenAt(
     'dashboard',
     GLOW.dashboard,
-    game
-      ? { title: gameTitle, detail: gameSummary(words, game) }
-      : { title: w.titleMissing, detail: w.bannerMissing },
+    isAll
+      ? { title: 'ETS2 & ATS', detail: 'Her iki simülatör için W0RPLAY hazırlandı' }
+      : game
+        ? { title: gameTitle, detail: gameSummary(words, game) }
+        : { title: w.titleMissing, detail: w.bannerMissing },
   )
 
   const pick = async () => {
@@ -386,15 +416,29 @@ function ChooseGame({
     <Panel
       place="side"
       title={games.length ? w.title : w.titleMissing}
-      sub={games.length ? (games.length > 1 ? w.foundMany : w.found) : w.missing}
+      sub={
+        games.length
+          ? games.length > 1
+            ? 'W0RPLAY’i dilediğin simülatöre veya her ikisine de eş zamanlı kurabilirsin.'
+            : w.found
+          : w.missing
+      }
       back={back}
       action={
-        <Button onClick={next} disabled={!game || running !== false}>
+        <Button onClick={next} disabled={(!game && selectedGames.length === 0) || running !== false}>
           {words.continue}
         </Button>
       }
     >
       <Group place={4}>
+        {games.length > 1 && (
+          <Row
+            title="Tüm Oyunlara Kur (ETS2 & ATS)"
+            detail="W0RPLAY her iki simülatöre de eş zamanlı yüklenir"
+            accessory={isAll ? <Tick done /> : undefined}
+            onClick={chooseAll}
+          />
+        )}
         {games.map((known) => {
           const gameTitle =
             known.name ||
@@ -402,12 +446,13 @@ function ChooseGame({
               ? 'American Truck Simulator'
               : 'Euro Truck Simulator 2')
           const library = known.dir.replace(/[\\/]steamapps[\\/]common[\\/][^\\/]+[\\/]?$/i, '')
+          const isSelected = !isAll && selectedGames.some((s) => s.dir === known.dir)
           return (
             <Row
               key={known.dir}
               title={gameTitle}
               detail={`${library} · ${gameSummary(words, known)}`}
-              accessory={known.dir === game?.dir ? <Tick key={known.dir} /> : undefined}
+              accessory={isSelected ? <Tick key={known.dir} done /> : undefined}
               onClick={() => choose(known)}
             />
           )
@@ -426,12 +471,14 @@ function ChooseGame({
 
 function CheckGame({
   game,
+  selectedGames,
   check,
   checked,
   next,
   back,
 }: {
   game: GameInfo
+  selectedGames?: GameInfo[]
   check: GameCheck | null
   checked(check: GameCheck): void
   next(): void
@@ -441,48 +488,76 @@ function CheckGame({
   const words = useWords()
   const w = words.check
   const [error, setError] = useState<string | null>(null)
+  const [slowWarning, setSlowWarning] = useState(false)
+  const checkedRef = useRef(checked)
+  checkedRef.current = checked
+  const wordsRef = useRef(words)
+  wordsRef.current = words
+
   useEffect(() => {
     if (check) return
     let active = true
-    // Long enough to see the scan pass at least once.
-    const shown = new Promise((resolve) => window.setTimeout(resolve, 2200))
+    const shown = new Promise((resolve) => window.setTimeout(resolve, 1500))
+    const slowTimer = window.setTimeout(() => {
+      if (active) setSlowWarning(true)
+    }, 6000)
+
     Promise.all([checkGame(game.dir), shown])
-      .then(([result]) => active && checked(result))
-      .catch((e: unknown) => active && setError(explain(words, e)))
+      .then(([result]) => {
+        if (active) {
+          checkedRef.current(result)
+        }
+      })
+      .catch((e: unknown) => {
+        if (active) {
+          console.error('checkGame failed:', e)
+          setError(explain(wordsRef.current, e))
+        }
+      })
     return () => {
       active = false
+      window.clearTimeout(slowTimer)
     }
-  }, [game.dir, check, checked, words])
+  }, [game.dir]) // eslint-disable-line react-hooks/exhaustive-deps
+
   useEffect(() => {
     screen.scan(!check && !error)
     return () => screen.scan(false)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [check, error])
+
+  const isMulti = (selectedGames?.length ?? 1) > 1
+
   useScreenAt(
     'home',
     check ? GLOW.home : GLOW.scan,
     check
       ? {
-          title: check.modProblem ? w.notYet : w.checked,
+          title: check.modProblem ? w.notYet : (isMulti ? 'ETS2 & ATS Kontrol Edildi' : w.checked),
           detail: `${count(words, w.profileCount, check.profiles.length)} · ${count(words, words.summary.dlcs, check.dlcs)}`,
         }
-      : { title: w.checking, busy: true },
+      : { title: isMulti ? 'Oyunlar kontrol ediliyor…' : w.checking, busy: true },
   )
 
   if (!check) {
     return (
       <Panel
         place="side"
-        title={w.looking}
-        sub={w.lookingSub}
+        title={isMulti ? 'Oyunların kontrol ediliyor…' : w.looking}
+        sub={isMulti ? 'ETS2 ve ATS sürümlerine, DLC’lerine ve modlarına bakılıyor.' : w.lookingSub}
         back={back}
         action={
-          <Button onClick={next} busy={!error}>
+          <Button onClick={next} busy={!error && !slowWarning}>
             {words.continue}
           </Button>
         }
       >
         {error && <Note tone="bad">{error}</Note>}
+        {slowWarning && !error && (
+          <Note>
+            <b>Kontrol biraz uzun sürdü.</b> Mod klasörün büyük olabilir. Dilersen yine de "Devam" butonuna basarak kuruluma geçebilirsin.
+          </Note>
+        )}
       </Panel>
     )
   }
@@ -490,7 +565,7 @@ function CheckGame({
   return (
     <Panel
       place="side"
-      title={check.modProblem ? w.titleNotYet : w.title}
+      title={check.modProblem ? w.titleNotYet : (isMulti ? 'Oyunlar Hazır (ETS2 & ATS)' : w.title)}
       back={back}
       action={
         <Button onClick={next} disabled={!!check.modProblem}>
@@ -505,8 +580,8 @@ function CheckGame({
       )}
       <Group place={2}>
         <Row
-          title={w.version}
-          value={check.game.version ?? w.unknown}
+          title={isMulti ? 'Simülatör Sürümleri' : w.version}
+          value={isMulti ? 'ETS2 & ATS' : (check.game.version ?? w.unknown)}
           accessory={check.game.tested ? <Tick done /> : <Status tone="idle" />}
         />
         <Row title={w.dlcs} value={new Intl.NumberFormat(words.locale).format(check.dlcs)} />
@@ -556,13 +631,14 @@ function CheckGame({
 
 function Install({
   game,
+  selectedGames,
   report,
   reported,
   next,
   back,
 }: {
   game: GameInfo
-  /** What installing did, if it was done (on this visit or an earlier one). */
+  selectedGames?: GameInfo[]
   report: InstallReport | null
   reported(report: InstallReport): void
   next(): void
@@ -577,16 +653,24 @@ function Install({
   const [celebrated, setCelebrated] = useState(report?.done ?? false)
   const running = useGameRunning()
 
+  const targets = selectedGames && selectedGames.length > 0 ? selectedGames : [game]
+  const isMulti = targets.length > 1
+
   const install = async (administrator: boolean) => {
     setInstalling(true)
     setError(null)
     try {
-      const result = await installIntoGame(game.dir, administrator)
-      reported(result)
-      if (result.done) {
-        // W0RPLAY in the game: the screen boots it again.
-        screen.reboot()
-        window.setTimeout(() => setCelebrated(true), BOOT_MS + 450)
+      let finalResult: InstallReport | null = null
+      for (const target of targets) {
+        finalResult = await installIntoGame(target.dir, administrator)
+      }
+      if (finalResult) {
+        reported(finalResult)
+        if (finalResult.done) {
+          // W0RPLAY in the game: the screen boots it again.
+          screen.reboot()
+          window.setTimeout(() => setCelebrated(true), BOOT_MS + 450)
+        }
       }
     } catch (e) {
       setError(explain(words, e))
@@ -601,7 +685,7 @@ function Install({
     'home',
     done ? GLOW.boot : GLOW.home,
     installing
-      ? banner({ ...w.banners.installing, text: w.plugin }, true)
+      ? banner({ ...w.banners.installing, text: isMulti ? 'ETS2 & ATS Eklentileri Kuruluyor' : w.plugin }, true)
       : done
         ? celebrated
           ? banner(w.banners.done)
@@ -612,7 +696,7 @@ function Install({
             ? banner(w.banners.inUse)
             : report && !done
               ? banner(w.banners.failed)
-              : banner({ ...w.banners.ready, text: w.pluginDetail }),
+              : banner({ ...w.banners.ready, text: isMulti ? 'ETS2 ve ATS için kurulum hazır' : w.pluginDetail }),
   )
 
   // Waiting on the player (Windows' permission, the game closed) isn't a failure.
@@ -628,8 +712,8 @@ function Install({
   return (
     <Panel
       place="side"
-      title={done ? w.titleDone : w.title}
-      sub={w.sub}
+      title={done ? (isMulti ? 'ETS2 & ATS Kuruldu' : w.titleDone) : (isMulti ? 'Simülatörlere Kuruluyor' : w.title)}
+      sub={isMulti ? 'W0RPLAY eklentisi seçilen tüm simülatörlerin plugins klasörüne kopyalanır.' : w.sub}
       // While W0RPLAY boots again on the screen, the player waits for it: the next step opens an app there.
       back={installing || (done && !celebrated) ? undefined : back}
       action={
@@ -639,17 +723,38 @@ function Install({
           </Button>
         ) : (
           <Button onClick={() => install(asAdministrator)} busy={installing} disabled={running !== false}>
-            {asAdministrator ? w.asAdministrator : report || error ? w.tryAgain : w.install}
+            {asAdministrator
+              ? w.asAdministrator
+              : report || error
+                ? w.tryAgain
+                : isMulti
+                  ? 'Tüm Oyunlara Kur (ETS2 & ATS)'
+                  : w.install}
           </Button>
         )
       }
     >
-      <Group place={4}>
-        <Row
-          title={w.plugin}
-          detail={w.pluginDetail}
-          accessory={pluginTone === 'good' ? <Tick done /> : <Status tone={pluginTone} />}
-        />
+      <Group title={isMulti ? 'Hedef Oyunlar (ETS2 & ATS)' : undefined} place={4}>
+        {isMulti ? (
+          targets.map((t) => {
+            const isThisAts = t.dir.toLowerCase().includes('american') || t.dir.toLowerCase().includes('amtruck')
+            const gTitle = t.name || (isThisAts ? 'American Truck Simulator' : 'Euro Truck Simulator 2')
+            return (
+              <Row
+                key={t.dir}
+                title={gTitle}
+                detail={t.dir}
+                accessory={pluginTone === 'good' ? <Tick done /> : <Status tone={pluginTone} />}
+              />
+            )
+          })
+        ) : (
+          <Row
+            title={w.plugin}
+            detail={w.pluginDetail}
+            accessory={pluginTone === 'good' ? <Tick done /> : <Status tone={pluginTone} />}
+          />
+        )}
       </Group>
       {running && !done && (
         <Note>
