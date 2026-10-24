@@ -27,7 +27,7 @@
 <br>
 
 <p align="center">
-  <img alt="W0RPLAY Kokpitte Canlı TV" src="docs/images/ingame-tv.png" width="100%" style="border-radius: 8px;">
+  <img alt="W0RPLAY Yeni Nesil CarPlay Ana Ekranı" src="docs/images/carplay-home.png" width="100%" style="border-radius: 12px; box-shadow: 0 12px 36px rgba(0,0,0,0.5);">
 </p>
 
 W0RPLAY, Euro Truck Simulator 2 ve American Truck Simulator çekicilerinizin kendi dijital konsol ekranına akıllı telefon tarzı bir CarPlay arayüzü entegre eder. Oyununuzun gerçek yollarından üretilen harita rotası, Spotify, YouTube Music, YouTube ve canlı ulusal televizyon kanalları (ATV, TRT 1, TV8 vb.) tam kabin içinde yer alır. `Sol Alt` tuşuna basılı tutarak farenizle ekranı doğrudan kabin içinden kontrol edebilirsiniz.
@@ -39,9 +39,21 @@ W0RPLAY, Euro Truck Simulator 2 ve American Truck Simulator çekicilerinizin ken
 <table>
   <tr>
     <td width="50%" valign="top">
+      <img alt="W0RPLAY CarPlay Ana Ekranı" src="docs/images/carplay-home.png" width="100%">
+      <h4 align="center">CarPlay Ana Ekranı (Liquid Glass)</h4>
+      3D squircle ikonlar, modern yüzen cam kapsüller ve akıcı dock çubuğu.
+    </td>
+    <td width="50%" valign="top">
       <img alt="W0RPLAY Kokpitte Canlı TV" src="docs/images/ingame-tv.png" width="100%">
-      <h4 align="center">Kabin İçi Canlı TV & CarPlay</h4>
+      <h4 align="center">Kabin İçi Canlı TV & Multimedya</h4>
       Çekicinizin konsolunda sinema modu ve canlı TV yayını deneyimi.
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <img alt="W0RPLAY Bölünmüş Dashboard Ekranı" src="docs/images/carplay-dashboard.png" width="100%">
+      <h4 align="center">Bölünmüş Dashboard & Navigasyon</h4>
+      Harita, rota kılavuzu ve medya oynatıcı tek ekranda.
     </td>
     <td width="50%" valign="top">
       <img alt="W0RPLAY Companion Uygulaması" src="docs/images/companion.png" width="100%">
