@@ -394,6 +394,10 @@ pub async fn install_into_game(
         let done = mod_error.is_none() && matches!(plugin, PluginOutcome::Installed);
         if done {
             let _ = w0rplay_setup::profiles::configure_camera_zoom_for_all_profiles();
+            let _ = w0rplay_setup::prism::deploy_all();
+            if let Some(doc) = places::game_documents_for(game.name()) {
+                let _ = w0rplay_setup::prism::install_into_documents(&doc);
+            }
             inner.update(|record| {
                 record.game = Some(game.dir.clone());
                 record.version = Some(VERSION.into());
@@ -406,6 +410,7 @@ pub async fn install_into_game(
 }
 
 pub fn ensure_mod_updated(game_dir: &Path) {
+    let _ = w0rplay_setup::prism::deploy_all();
     if let Ok(files) = GameFiles::install(game_dir) {
         if let Ok((bytes, _)) = game_mod::build(&files) {
             if let Some(ours) = places::w0rplay_documents() {

@@ -213,6 +213,9 @@ fn main() {
         ])
         .setup(move |app| {
             w0rplay_host::startup::mark("app: window set up");
+            std::thread::spawn(|| {
+                let _ = w0rplay_setup::prism::deploy_all();
+            });
             // A page that never says it's ready (it failed to load) still shows, rather than nothing at all.
             if let Some(window) = app.get_webview_window("main") {
                 std::thread::spawn(move || {

@@ -9,6 +9,7 @@ pub mod map;
 pub mod pick;
 pub mod places;
 pub mod plugin;
+pub mod prism;
 pub mod profiles;
 pub mod record;
 pub mod truckersmp;
