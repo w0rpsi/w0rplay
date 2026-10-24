@@ -256,6 +256,7 @@ impl OffscreenWebView {
             if !browsers.contains(&browser) {
                 browsers.push(browser);
             }
+            crate::boost_pid_and_descendants(browser);
         }
         // A car screen, not a browser: no context menu, zooming, link previews in the corner or swipe-to-go-back.
         // SAFETY: the WebView's settings object, alive while the WebView is; plain values only.
@@ -648,9 +649,11 @@ fn create_environment(user_data: &Path) -> Result<ICoreWebView2Environment, Erro
     // Chromium throttles or stops rendering for hidden or occluded windows; ours is never shown.
     let mut arguments = "--disable-features=CalculateNativeWinOcclusion,IntensiveWakeUpThrottling,ThrottleDisplayNoneAndVisibilityHiddenCrossOriginIframes \
                          --disable-background-timer-throttling --disable-renderer-backgrounding --disable-backgrounding-occluded-windows \
-                         --autoplay-policy=no-user-gesture-required \
+                         --disable-frame-rate-limit --disable-gpu-vsync --autoplay-policy=no-user-gesture-required \
                          --enable-gpu-rasterization --enable-zero-copy --ignore-gpu-blocklist \
-                         --enable-accelerated-video-decode --enable-begin-frame-scheduling"
+                         --enable-accelerated-video-decode --enable-begin-frame-scheduling \
+                         --disable-background-media-suspend --disable-low-end-device-mode \
+                         --force-high-performance-gpu --enable-features=SharedArrayBuffer"
         .to_string();
     // The GPU it draws on (graphics.rs).
     if let Some(gpu) = GPU_ARGUMENT.lock().unwrap_or_else(|e| e.into_inner()).as_deref() {

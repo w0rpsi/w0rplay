@@ -205,76 +205,72 @@ function RouteScreen({ route }: { route: Route }) {
 
 /**
  * Rock-solid render heartbeat for the in-cabin infotainment screen.
- * Maintains a guaranteed, smooth 30 FPS baseline at all times (so the truck screen
- * never freezes or drops to 0-3 FPS while driving), and boosts to 60 FPS during
- * active user interaction (drag, clicks).
+ * Forces Chromium's offscreen compositor to commit frames at 60 FPS without dropping
+ * into background idle or occlusion throttling.
  */
 function useRenderHeartbeat(enabled: boolean) {
   useEffect(() => {
     if (!enabled || !isInHost()) return
-    let animId: number
+
+    // 1x1 fully opaque pixel canvas at top-left corner
     const canvas = document.createElement('canvas')
-    canvas.width = 2
-    canvas.height = 2
+    canvas.width = 1
+    canvas.height = 1
     canvas.style.position = 'fixed'
-    canvas.style.bottom = '0'
-    canvas.style.right = '0'
-    canvas.style.width = '2px'
-    canvas.style.height = '2px'
-    canvas.style.opacity = '0.04'
+    canvas.style.top = '0'
+    canvas.style.left = '0'
+    canvas.style.width = '1px'
+    canvas.style.height = '1px'
+    canvas.style.opacity = '1'
     canvas.style.pointerEvents = 'none'
-    canvas.style.zIndex = '999999'
+    canvas.style.zIndex = '2147483647'
     document.body.appendChild(canvas)
-    const ctx = canvas.getContext('2d', { alpha: true })
+    const ctx = canvas.getContext('2d', { alpha: false })
 
-    let highFpsUntil = 0
-    let lastTick = 0
     let flip = false
-
-    const boost = (ms = 1500) => {
-      highFpsUntil = Math.max(highFpsUntil, performance.now() + ms)
-    }
-
-    // Boost to 60 FPS whenever there is pointer activity, clicks, or keypresses
-    const onActivity = () => boost(1500)
-    window.addEventListener('pointermove', onActivity, { passive: true })
-    window.addEventListener('pointerdown', onActivity, { passive: true })
-    window.addEventListener('keydown', onActivity, { passive: true })
-
     const renderPixel = () => {
       if (ctx) {
         flip = !flip
-        ctx.fillStyle = flip ? 'rgba(0,0,0,0.04)' : 'rgba(255,255,255,0.04)'
-        ctx.fillRect(0, 0, 2, 2)
+        ctx.fillStyle = flip ? '#000000' : '#010101'
+        ctx.fillRect(0, 0, 1, 1)
       }
     }
 
-    const tick = (now: number) => {
-      // 60 FPS (16.6ms) during interaction, rock-solid 30 FPS (33.3ms) minimum always
-      const targetInterval = now < highFpsUntil ? 16 : 33
-      if (now - lastTick >= targetInterval) {
-        lastTick = now
+    // Web Worker interval is never throttled by Chromium's background occlusion
+    let worker: Worker | null = null
+    try {
+      const workerBlob = new Blob([
+        `let t=null;self.onmessage=function(e){if(e.data==='s'){if(!t)t=setInterval(function(){self.postMessage(0);},16);}else if(e.data==='x'){if(t)clearInterval(t);t=null;}};`,
+      ], { type: 'application/javascript' })
+      worker = new Worker(URL.createObjectURL(workerBlob))
+      worker.onmessage = () => {
         renderPixel()
       }
+      worker.postMessage('s')
+    } catch {
+      // Fallback if worker blob is restricted
+    }
+
+    let animId = 0
+    const tick = () => {
+      renderPixel()
       animId = requestAnimationFrame(tick)
     }
     animId = requestAnimationFrame(tick)
 
-    // Fallback interval ensures compositor never stalls even if headless Chromium throttles rAF
-    const fallbackInterval = setInterval(() => {
-      const now = performance.now()
-      if (now - lastTick >= 33) {
-        lastTick = now
-        renderPixel()
-      }
-    }, 33)
+    const fallbackInterval = setInterval(renderPixel, 16)
 
     return () => {
       cancelAnimationFrame(animId)
       clearInterval(fallbackInterval)
-      window.removeEventListener('pointermove', onActivity)
-      window.removeEventListener('pointerdown', onActivity)
-      window.removeEventListener('keydown', onActivity)
+      if (worker) {
+        try {
+          worker.postMessage('x')
+          worker.terminate()
+        } catch {
+          // ignore
+        }
+      }
       canvas.remove()
     }
   }, [enabled])

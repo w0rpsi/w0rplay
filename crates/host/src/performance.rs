@@ -174,6 +174,7 @@ impl Meter {
         let handler = GetProcessExtendedInfosCompletedHandler::create(Box::new(move |error, infos| {
             if let (Ok(()), Some(infos)) = (error, infos) {
                 for (pid, part) in parts_of(&infos, profile, &cab_host) {
+                    crate::boost_pid(pid);
                     parts.borrow_mut().insert(pid, part);
                 }
             }

@@ -217,8 +217,122 @@ struct Pipeline {
     capture: Capture,
 }
 
+#[link(name = "winmm")]
+unsafe extern "system" {
+    fn timeBeginPeriod(uPeriod: u32) -> u32;
+    fn timeEndPeriod(uPeriod: u32) -> u32;
+}
+
+pub struct TimerResolutionGuard;
+
+impl TimerResolutionGuard {
+    pub fn new() -> Self {
+        unsafe {
+            let _ = timeBeginPeriod(1);
+        }
+        Self
+    }
+}
+
+impl Drop for TimerResolutionGuard {
+    fn drop(&mut self) {
+        unsafe {
+            let _ = timeEndPeriod(1);
+        }
+    }
+}
+
+/// Optimizes process priority and disables Windows EcoQoS/power throttling.
+pub fn configure_process_performance() {
+    unsafe {
+        use windows::Win32::System::Threading::{
+            GetCurrentProcess, GetCurrentThread, SetPriorityClass, SetThreadPriority,
+            HIGH_PRIORITY_CLASS, THREAD_PRIORITY_HIGHEST,
+            PROCESS_POWER_THROTTLING_CURRENT_VERSION, PROCESS_POWER_THROTTLING_EXECUTION_SPEED,
+            PROCESS_POWER_THROTTLING_IGNORE_TIMER_RESOLUTION, PROCESS_POWER_THROTTLING_STATE,
+            ProcessPowerThrottling, SetProcessInformation,
+        };
+
+        let _ = SetPriorityClass(GetCurrentProcess(), HIGH_PRIORITY_CLASS);
+        let _ = SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_HIGHEST);
+
+        let throttling = PROCESS_POWER_THROTTLING_STATE {
+            Version: PROCESS_POWER_THROTTLING_CURRENT_VERSION,
+            ControlMask: PROCESS_POWER_THROTTLING_EXECUTION_SPEED | PROCESS_POWER_THROTTLING_IGNORE_TIMER_RESOLUTION,
+            StateMask: 0,
+        };
+        let _ = SetProcessInformation(
+            GetCurrentProcess(),
+            ProcessPowerThrottling,
+            &throttling as *const _ as *const _,
+            std::mem::size_of::<PROCESS_POWER_THROTTLING_STATE>() as u32,
+        );
+    }
+}
+
+/// Boosts a process's priority class to HIGH and disables Windows EcoQoS.
+pub fn boost_pid(pid: u32) {
+    if pid == 0 {
+        return;
+    }
+    use windows::Win32::Foundation::CloseHandle;
+    use windows::Win32::System::Threading::{
+        OpenProcess, SetPriorityClass, HIGH_PRIORITY_CLASS, PROCESS_SET_INFORMATION,
+        PROCESS_POWER_THROTTLING_CURRENT_VERSION, PROCESS_POWER_THROTTLING_EXECUTION_SPEED,
+        PROCESS_POWER_THROTTLING_IGNORE_TIMER_RESOLUTION, PROCESS_POWER_THROTTLING_STATE,
+        ProcessPowerThrottling, SetProcessInformation,
+    };
+    unsafe {
+        if let Ok(handle) = OpenProcess(PROCESS_SET_INFORMATION, false, pid) {
+            let _ = SetPriorityClass(handle, HIGH_PRIORITY_CLASS);
+            let throttling = PROCESS_POWER_THROTTLING_STATE {
+                Version: PROCESS_POWER_THROTTLING_CURRENT_VERSION,
+                ControlMask: PROCESS_POWER_THROTTLING_EXECUTION_SPEED | PROCESS_POWER_THROTTLING_IGNORE_TIMER_RESOLUTION,
+                StateMask: 0,
+            };
+            let _ = SetProcessInformation(
+                handle,
+                ProcessPowerThrottling,
+                &throttling as *const _ as *const _,
+                std::mem::size_of::<PROCESS_POWER_THROTTLING_STATE>() as u32,
+            );
+            let _ = CloseHandle(handle);
+        }
+    }
+}
+
+/// Boosts a process and all its child/descendant processes (e.g. WebView2 GPU and renderer processes).
+pub fn boost_pid_and_descendants(root_pid: u32) {
+    boost_pid(root_pid);
+    use windows::Win32::Foundation::CloseHandle;
+    use windows::Win32::System::Diagnostics::ToolHelp::{
+        CreateToolhelp32Snapshot, Process32FirstW, Process32NextW, PROCESSENTRY32W, TH32CS_SNAPPROCESS,
+    };
+    unsafe {
+        let Ok(snapshot) = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0) else { return };
+        let mut entry = PROCESSENTRY32W {
+            dwSize: std::mem::size_of::<PROCESSENTRY32W>() as u32,
+            ..Default::default()
+        };
+        if Process32FirstW(snapshot, &mut entry).is_ok() {
+            loop {
+                if entry.th32ParentProcessID == root_pid {
+                    boost_pid(entry.th32ProcessID);
+                    boost_pid_and_descendants(entry.th32ProcessID);
+                }
+                if Process32NextW(snapshot, &mut entry).is_err() {
+                    break;
+                }
+            }
+        }
+        let _ = CloseHandle(snapshot);
+    }
+}
+
 /// Runs until `stop` is set. Blocks the calling thread, which becomes the WebView2 UI thread.
 pub fn run(mut config: Config, stop: Arc<AtomicBool>) -> Result<(), Error> {
+    configure_process_performance();
+    let _timer_guard = TimerResolutionGuard::new();
     startup::mark("host: started");
     // SAFETY: COM on this thread, once, before anything on it uses COM (WebView2 needs a single-threaded
     // apartment).
@@ -1414,6 +1528,10 @@ pub fn run(mut config: Config, stop: Arc<AtomicBool>) -> Result<(), Error> {
                 }
                 let _ = webview.post_json(&screen_message(layout));
             }
+        }
+
+        if let Some(pipeline) = &pipeline {
+            pipeline.capture.flush();
         }
 
         std::thread::sleep(Duration::from_millis(1));
