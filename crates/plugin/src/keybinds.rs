@@ -42,10 +42,18 @@ pub fn on_frame() {
     }
 }
 
-/// Whether a binding counts now: with W0RPLAY on the screen, and either the screen in use (one with the
-/// interaction key) or the player not typing into W0RPLAY (one without it).
+/// Whether a binding counts now: the game running with W0RPLAY host alive, and either the interaction
+/// key (Alt) held for bindings that need it, or the player not typing into W0RPLAY for ones without it.
 fn counts(with_interaction_key: bool) -> bool {
-    bridge::screen_on() && if with_interaction_key { input::interaction_active() } else { !typing::typing() }
+    bridge::host_alive() && if with_interaction_key { alt_held() } else { !typing::typing() }
+}
+
+fn alt_held() -> bool {
+    input::interaction_active() || unsafe {
+        windows::Win32::UI::Input::KeyboardAndMouse::GetAsyncKeyState(
+            windows::Win32::UI::Input::KeyboardAndMouse::VK_MENU.0 as i32,
+        ) as u16 & 0x8000 != 0
+    }
 }
 
 /// Whether the game is kept from `key` (a virtual-key code; the generic Shift, Ctrl and Alt stand for both

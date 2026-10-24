@@ -34,14 +34,6 @@
   align-items: center;
   gap: 18px;
   min-height: 0;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.2);
-  transition: transform 200ms ease, box-shadow 200ms ease;
-}
-
-.widget:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 16px 42px rgba(0, 0, 0, 0.52), inset 0 1px 0 rgba(255, 255, 255, 0.25);
 }
 
 /* A widget that comes and goes (turn-by-turn, the destination): in a slot that grows into the column as it

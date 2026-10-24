@@ -61,9 +61,8 @@ impl FrameSource {
             let local = self.local.as_ref()?;
             let sequence = host.frame_seq.load(Ordering::Acquire);
             if sequence != self.last_sequence {
-                // Zero timeout: never stall the game's render thread. `AcquireSync` reports a timeout as a
-                // success code, so compare the raw HRESULT.
-                let acquired = (Interface::vtable(mutex).AcquireSync)(mutex.as_raw(), FRAME_KEY, 0);
+                // 2ms timeout: give GPU fence time to resolve so frames aren't dropped under GPU load.
+                let acquired = (Interface::vtable(mutex).AcquireSync)(mutex.as_raw(), FRAME_KEY, 2);
                 if acquired.0 == 0 {
                     context.CopyResource(local, shared);
                     let _ = mutex.ReleaseSync(FRAME_KEY);

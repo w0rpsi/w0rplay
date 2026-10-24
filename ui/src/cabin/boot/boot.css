@@ -120,28 +120,6 @@
   animation: wordmark-reveal 700ms var(--motion-ease) 500ms both;
 }
 
-.boot-intro-wordmark .w0-slashed-zero {
-  position: relative;
-  display: inline-block;
-  font-family: 'Consolas', 'Monaco', monospace;
-  color: #00f0ff;
-  -webkit-text-fill-color: #00f0ff;
-  text-shadow: 0 0 16px rgba(0, 240, 255, 0.8);
-}
-
-.boot-intro-wordmark .w0-slashed-zero::after {
-  content: '';
-  position: absolute;
-  top: 48%;
-  left: 50%;
-  width: 105%;
-  height: 5px;
-  background: #00f0ff;
-  box-shadow: 0 0 10px #00f0ff;
-  transform: translate(-50%, -50%) rotate(-45deg);
-  border-radius: 2px;
-}
-
 .boot-intro-subtitle {
   display: block;
   font-size: 11px;

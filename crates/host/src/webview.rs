@@ -646,11 +646,11 @@ fn process_failure(kind: COREWEBVIEW2_PROCESS_FAILED_KIND) -> String {
 fn create_environment(user_data: &Path) -> Result<ICoreWebView2Environment, Error> {
     let options = CoreWebView2EnvironmentOptions::default();
     // Chromium throttles or stops rendering for hidden or occluded windows; ours is never shown.
-    let mut arguments = "--disable-features=CalculateNativeWinOcclusion,IntensiveWakeUpThrottling --disable-background-timer-throttling \
-                         --disable-renderer-backgrounding --disable-backgrounding-occluded-windows \
+    let mut arguments = "--disable-features=CalculateNativeWinOcclusion,IntensiveWakeUpThrottling,ThrottleDisplayNoneAndVisibilityHiddenCrossOriginIframes \
+                         --disable-background-timer-throttling --disable-renderer-backgrounding --disable-backgrounding-occluded-windows \
                          --autoplay-policy=no-user-gesture-required \
                          --enable-gpu-rasterization --enable-zero-copy --ignore-gpu-blocklist \
-                         --enable-accelerated-video-decode"
+                         --enable-accelerated-video-decode --enable-begin-frame-scheduling"
         .to_string();
     // The GPU it draws on (graphics.rs).
     if let Some(gpu) = GPU_ARGUMENT.lock().unwrap_or_else(|e| e.into_inner()).as_deref() {

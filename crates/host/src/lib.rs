@@ -249,6 +249,12 @@ pub fn run(mut config: Config, stop: Arc<AtomicBool>) -> Result<(), Error> {
             webview.navigate(&format!("https://w0rplay.cabin/{page}"))?;
         }
     }
+    // Prevent GPU & CPU starvation when game runs in foreground fullscreen.
+    #[cfg(windows)]
+    unsafe {
+        use windows::Win32::System::Threading::{GetCurrentProcess, SetPriorityClass, ABOVE_NORMAL_PRIORITY_CLASS};
+        let _ = SetPriorityClass(GetCurrentProcess(), ABOVE_NORMAL_PRIORITY_CLASS);
+    }
     startup::mark("host: cabin page requested");
     // What W0RPLAY costs while the game runs, in the log each minute (performance.rs).
     let mut meter = performance::Meter::new(match &config.content {
