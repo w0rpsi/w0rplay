@@ -1,0 +1,200 @@
+//! The trucks W0RPLAY is made for, as players know them, and whether a game has each: a truck's screen is
+//! drawn by the GPS script its interior names (`gps_path`), and W0RPLAY draws on the screens whose scripts
+//! its mod patches (`w0rplay_shared::screen_layouts`).
+//!
+//! From the game's own definitions (1.61): most trucks' interiors name the stock `/ui/gps.sii` (`generic`,
+//! the Scania S and R with their 7" screen among them); the DAF 2021 (XF, XG, XG+) names
+//! `daf_2021_gps.sii`; the Scania S and R's Smart Dash interior (`interior/computers_2025.sui`)
+//! `scania_2025_gps.sii`; the Renault T's 2024 interior `renault_t_2024_gps.sii`; the Iveco S-Way's
+//! `iveco_sway_ic10_gps.sii` (its UK interiors' `iveco_sway_ic10_gps_mph.sii`).
+
+use w0rplay_mapdata::files::GameFiles;
+
+use crate::profiles::Profile;
+
+/// How a game has a truck.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Source {
+    /// The game's own (or a DLC's): its definition, `def/vehicle/truck/<id>/data.sii`.
+    Game(&'static str),
+    /// A mod's, found by these words (all of them, in its name or file name): installed (in the game's `mod`
+    /// folder or the Workshop), active in a profile or not.
+    Mod(&'static [&'static str]),
+}
+
+/// A truck W0RPLAY is made for.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Truck {
+    pub id: &'static str,
+    /// As players know it (in English).
+    pub name: &'static str,
+    pub source: Source,
+    /// The screen layout W0RPLAY draws on in it (`w0rplay_shared::screen_layouts`), `None`: not yet.
+    pub layout: Option<&'static str>,
+}
+
+pub const TRUCKS: &[Truck] = &[
+    Truck { id: "daf-xf-2021", name: "DAF XF 2021", source: Source::Game("daf.2021"), layout: Some("daf-2021") },
+    Truck { id: "daf-xg-2021", name: "DAF XG & XG+ 2021", source: Source::Game("daf.2021"), layout: Some("daf-2021") },
+    Truck {
+        id: "jasper-daf-2021",
+        name: "Jasper’s DAF 2021",
+        source: Source::Mod(&["jasper", "daf"]),
+        layout: Some("daf-2021"),
+    },
+    Truck {
+        id: "scania-7",
+        name: "Scania S and R - 7\" screen",
+        source: Source::Game("scania.s_2016"),
+        layout: Some("generic"),
+    },
+    Truck {
+        id: "scania-smart-dash",
+        name: "Scania S and R - Smart Dash",
+        source: Source::Game("scania.s_2016"),
+        layout: Some("scania-2025"),
+    },
+    Truck { id: "iveco-sway", name: "Iveco S-Way", source: Source::Game("iveco.sway"), layout: Some("iveco-sway") },
+    Truck {
+        id: "renault-t-2024",
+        name: "Renault T (2024)",
+        source: Source::Game("renault.t"),
+        layout: Some("renault-t-2024"),
+    },
+    Truck {
+        id: "volvo-fh-2021",
+        name: "Volvo FH (2021)",
+        source: Source::Game("volvo.fh_2021"),
+        layout: Some("volvo-fh"),
+    },
+    Truck {
+        id: "volvo-fh-2024",
+        name: "Volvo FH (2024)",
+        source: Source::Game("volvo.fh_2024"),
+        layout: Some("volvo-fh"),
+    },
+    // American Truck Simulator trucks
+    Truck { id: "kw-w900", name: "Kenworth W900", source: Source::Game("kenworth.w900"), layout: Some("generic") },
+    Truck { id: "kw-t680", name: "Kenworth T680", source: Source::Game("kenworth.t680"), layout: Some("generic") },
+    Truck { id: "kw-t680-2022", name: "Kenworth T680 (2022)", source: Source::Game("kenworth.t680_2022"), layout: Some("kenworth-t680-22") },
+    Truck { id: "pb-579", name: "Peterbilt 579", source: Source::Game("peterbilt.579"), layout: Some("generic") },
+    Truck { id: "pb-579-2022", name: "Peterbilt 579 (2022)", source: Source::Game("peterbilt.579_2022"), layout: Some("generic") },
+    Truck { id: "pb-389", name: "Peterbilt 389", source: Source::Game("peterbilt.389"), layout: Some("generic") },
+    Truck { id: "fl-cascadia", name: "Freightliner Cascadia", source: Source::Game("freightliner.cascadia"), layout: Some("cascadia-2019") },
+    Truck { id: "fl-cascadia-2024", name: "Freightliner Cascadia (2024)", source: Source::Game("freightliner.cascadia2024"), layout: Some("cascadia-2024") },
+    Truck { id: "ws-49x", name: "Western Star 49X", source: Source::Game("westernstar.49x"), layout: Some("generic") },
+    Truck { id: "ws-57x", name: "Western Star 57X", source: Source::Game("westernstar.57x"), layout: Some("westernstar-57x") },
+    Truck { id: "ws-5700xe", name: "Western Star 5700XE", source: Source::Game("westernstar.5700xe"), layout: Some("westernstar-5700") },
+    Truck { id: "intl-lonestar", name: "International LoneStar", source: Source::Game("international.lonestar"), layout: Some("generic") },
+    Truck { id: "intl-lt", name: "International LT", source: Source::Game("international.lt"), layout: Some("generic") },
+    Truck { id: "intl-9900i", name: "International 9900i", source: Source::Game("international.9900i"), layout: Some("generic") },
+    Truck { id: "mack-anthem", name: "Mack Anthem", source: Source::Game("mack.anthem"), layout: Some("generic") },
+    Truck { id: "mack-pinnacle", name: "Mack Pinnacle", source: Source::Game("mack.pinnacle"), layout: Some("generic") },
+    Truck { id: "volvo-vnl", name: "Volvo VNL", source: Source::Game("volvo.vnl"), layout: Some("generic") },
+    Truck { id: "volvo-vnl-2018", name: "Volvo VNL (2018)", source: Source::Game("volvo.vnl2018"), layout: Some("volvo-vnl-2018") },
+    Truck { id: "volvo-vnl-2025", name: "Volvo VNL (2025)", source: Source::Game("volvo.vnl2025"), layout: Some("volvo-vnl-2025") },
+];
+
+/// Whether a player can have W0RPLAY in a truck.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Fit {
+    /// It's in their game, and W0RPLAY draws on its screen.
+    Ready,
+    /// It isn't in their game (a DLC they don't have, a mod they don't play with).
+    NotInGame,
+    /// It's in their game, but W0RPLAY doesn't draw on its screen yet.
+    NotYet,
+}
+
+/// Each truck W0RPLAY is made for, in `files` (the game), with the layouts its mod patched there
+/// (`patched`); a mod's truck by the player's profiles' mods and the mods installed (`installed`:
+/// `profiles::installed`), active or not.
+pub fn fit(files: &GameFiles, patched: &[&str], profiles: &[Profile], installed: &[String]) -> Vec<(Truck, Fit)> {
+    TRUCKS
+        .iter()
+        .map(|truck| {
+            let in_game = match truck.source {
+                Source::Game(id) => files.read(&format!("def/vehicle/truck/{id}/data.sii")).ok().flatten().is_some(),
+                Source::Mod(words) => {
+                    let has = |named: &str| {
+                        let named = named.to_lowercase();
+                        words.iter().all(|word| named.contains(word))
+                    };
+                    profiles.iter().flat_map(|profile| &profile.mods).any(|m| has(&format!("{} {}", m.package, m.name)))
+                        || installed.iter().any(|named| has(named))
+                }
+            };
+            let fit = match truck.layout {
+                _ if !in_game => Fit::NotInGame,
+                Some(layout) if patched.contains(&layout) => Fit::Ready,
+                // Its screen's script isn't in this game (or W0RPLAY doesn't draw on it yet).
+                _ => Fit::NotYet,
+            };
+            (*truck, fit)
+        })
+        .collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::profiles::{MapContent, Mod};
+    use w0rplay_mapdata::files::Mount;
+
+    fn game_with(trucks: &[&str]) -> (GameFiles, std::path::PathBuf) {
+        let root = std::env::temp_dir().join(format!("w0rplay-trucks-{}-{}", std::process::id(), trucks.len()));
+        let _ = std::fs::remove_dir_all(&root);
+        for id in trucks {
+            let dir = root.join("def/vehicle/truck").join(id);
+            std::fs::create_dir_all(&dir).unwrap();
+            std::fs::write(dir.join("data.sii"), "SiiNunit\n{\n}\n").unwrap();
+        }
+        (GameFiles::new(vec![Mount::Folder(root.clone())]), root)
+    }
+
+    fn profile_with(mods: &[(&str, &str)]) -> Profile {
+        let mut profile = Profile::new_player();
+        profile.mods = mods
+            .iter()
+            .map(|(package, name)| Mod {
+                package: (*package).into(),
+                name: (*name).into(),
+                files: None,
+                categories: vec![],
+                author: None,
+                map: MapContent::default(),
+                problem: None,
+            })
+            .collect();
+        profile
+    }
+
+    #[test]
+    fn tells_which_trucks_a_player_can_have_w0rplay_in() {
+        let (files, root) = game_with(&["daf.2021", "scania.s_2016", "iveco.sway"]);
+        let profiles = [profile_with(&[("Jaspers_DAF_2021_v1.2", "DAF 2021 Jasper")])];
+        let fits = fit(&files, &["generic", "daf-2021"], &profiles, &[]);
+        let of = |name: &str| fits.iter().find(|(truck, _)| truck.name.starts_with(name)).unwrap().1;
+        assert_eq!(of("DAF XF"), Fit::Ready);
+        assert_eq!(of("Jasper"), Fit::Ready);
+        assert_eq!(of("Scania S and R - 7"), Fit::Ready);
+        // Its script isn't in this game.
+        assert_eq!(of("Scania S and R - Smart Dash"), Fit::NotYet);
+        // Its scripts weren't patched (the DLC's not in this game's files).
+        assert_eq!(of("Iveco"), Fit::NotYet);
+        let with_sway = fit(&files, &["iveco-sway"], &profiles, &[]);
+        assert_eq!(with_sway.iter().find(|(truck, _)| truck.name.starts_with("Iveco")).unwrap().1, Fit::Ready);
+        // Not in the game.
+        assert_eq!(of("Renault"), Fit::NotInGame);
+        let jasper = |installed: &[String]| {
+            fit(&files, &["daf-2021"], &[], installed).iter().find(|(t, _)| t.name.starts_with("Jasper")).unwrap().1
+        };
+        // Neither installed nor in a profile.
+        assert_eq!(jasper(&[]), Fit::NotInGame);
+        // Installed in the mod folder (its file's name), active in no profile: it's in the game all the same.
+        assert_eq!(jasper(&["Jaspers_DAF_2021_v1.2".into()]), Fit::Ready);
+        // A Workshop item, by its manifest's name.
+        assert_eq!(jasper(&["DAF 2021 by Jasper".into()]), Fit::Ready);
+        let _ = std::fs::remove_dir_all(&root);
+    }
+}

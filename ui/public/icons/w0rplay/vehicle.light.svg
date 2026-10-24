@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="face" x1="0" y1="48" x2="0" y2="975" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#3a88e9"/><stop offset="1" stop-color="#1652b4"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="16"/></filter>
+  </defs>
+  <rect x="64" y="64" width="896" height="896" rx="200" fill="url(#face)"/>
+  <!-- Subtle inner rim -->
+  <rect x="68" y="68" width="888" height="888" rx="196" fill="none" stroke="#ffffff" stroke-width="6" opacity="0.25"/>
+  <!-- Truck Silhouette / Dashboard Glyph -->
+  <g filter="url(#shadow)" opacity="0.3" transform="translate(0, 16)">
+    <!-- Shadow copy -->
+    <path d="M280 620 L280 440 Q280 380 340 380 L620 380 L700 480 L760 500 Q780 508 780 540 L780 620 Z" fill="#000"/>
+  </g>
+  <g fill="#ffffff">
+    <!-- Truck Cabin & Chassis -->
+    <path d="M260 620 L260 380 Q260 320 320 320 L580 320 Q620 320 650 360 L730 460 L780 475 Q810 485 810 520 L810 650 Q810 670 790 670 L750 670 Q750 620 700 620 Q650 620 650 670 L430 670 Q430 620 380 620 Q330 620 330 670 L280 670 Q260 670 260 650 Z" />
+    <!-- Wheels -->
+    <circle cx="380" cy="670" r="60" fill="#222b38" stroke="#ffffff" stroke-width="24"/>
+    <circle cx="700" cy="670" r="60" fill="#222b38" stroke="#ffffff" stroke-width="24"/>
+    <!-- Window -->
+    <path d="M570 360 L360 360 Q340 360 340 380 L340 480 L570 480 Z" fill="#78b7ff" opacity="0.9"/>
+    <path d="M600 365 L675 460 Q685 475 675 480 L600 480 Z" fill="#78b7ff" opacity="0.9"/>
+    <!-- Headlight -->
+    <rect x="760" y="550" width="40" height="30" rx="8" fill="#ffe600"/>
+  </g>
+</svg>

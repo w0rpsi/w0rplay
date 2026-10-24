@@ -1,0 +1,367 @@
+/* Vehicle App: Live Truck Telemetry & Status for W0RPLAY */
+
+.vehicle-app {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 8px 12px 12px 12px;
+  overflow-y: auto;
+  color: var(--text);
+  user-select: none;
+}
+
+/* Header */
+.veh-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  background: var(--card-bg, rgba(28, 28, 32, 0.92));
+  border: 1px solid var(--card-border, rgba(255, 255, 255, 0.1));
+  border-radius: 18px;
+}
+
+.veh-truck-info {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.veh-truck-icon {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  color: #30d158;
+}
+
+.veh-truck-titles {
+  display: flex;
+  flex-direction: column;
+}
+
+.veh-truck-brand {
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--text-dim);
+}
+
+.veh-truck-model {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+}
+
+.veh-status-pills {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.veh-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.veh-pill.active-engine {
+  background: rgba(48, 209, 88, 0.18);
+  border-color: rgba(48, 209, 88, 0.4);
+  color: #30d158;
+}
+
+.veh-pill.inactive-engine {
+  background: rgba(255, 69, 58, 0.15);
+  border-color: rgba(255, 69, 58, 0.3);
+  color: #ff453a;
+}
+
+.veh-pill.active-brake {
+  background: rgba(255, 159, 10, 0.2);
+  border-color: rgba(255, 159, 10, 0.45);
+  color: #ff9f0a;
+}
+
+.veh-pill.blinker {
+  background: rgba(48, 209, 88, 0.2);
+  border-color: rgba(48, 209, 88, 0.5);
+  color: #30d158;
+  animation: vehBlink 800ms infinite ease-in-out;
+}
+
+@keyframes vehBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.25; }
+}
+
+/* Main Grid */
+.veh-grid {
+  display: grid;
+  grid-template-columns: 1.15fr 1fr;
+  gap: 16px;
+  flex: 1;
+}
+
+.veh-col {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.veh-card {
+  background: var(--card-bg, rgba(28, 28, 32, 0.92));
+  border: 1px solid var(--card-border, rgba(255, 255, 255, 0.1));
+  border-radius: 22px;
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.veh-card-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--text-dim);
+  margin-bottom: 12px;
+}
+
+/* Speed & Gear Hero */
+.veh-speed-hero {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.veh-speed-num {
+  font-size: 76px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -2px;
+  font-variant-numeric: tabular-nums;
+}
+
+.veh-speed-unit {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-dim);
+}
+
+.veh-speed-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 14px;
+}
+
+.veh-gear-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 54px;
+  height: 48px;
+  padding: 0 14px;
+  border-radius: 14px;
+  background: #007aff;
+  color: #fff;
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  box-shadow: 0 4px 14px rgba(0, 122, 255, 0.35);
+}
+
+.veh-gear-badge.reverse {
+  background: #ff3b30;
+  box-shadow: 0 4px 14px rgba(255, 59, 48, 0.35);
+}
+
+.veh-gear-badge.neutral {
+  background: #8e8e93;
+  box-shadow: none;
+}
+
+/* Speed Limit Sign */
+.veh-speed-limit {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 4px solid #ff3b30;
+  background: #ffffff;
+  color: #000000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 900;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
+}
+
+/* RPM Bar */
+.veh-rpm-container {
+  margin-top: 18px;
+}
+
+.veh-rpm-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-dim);
+  margin-bottom: 6px;
+}
+
+.veh-rpm-track {
+  width: 100%;
+  height: 12px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  overflow: hidden;
+  position: relative;
+}
+
+.veh-rpm-fill {
+  height: 100%;
+  border-radius: 6px;
+  transition: width 100ms ease-out, background-color 150ms ease-out;
+}
+
+.veh-rpm-ticks {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: var(--text-dim);
+  margin-top: 4px;
+  opacity: 0.7;
+}
+
+/* Fuel Card */
+.veh-fuel-main {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.veh-fuel-litres {
+  font-size: 38px;
+  font-weight: 700;
+  letter-spacing: -1px;
+}
+
+.veh-fuel-unit {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-dim);
+}
+
+.veh-meter-track {
+  width: 100%;
+  height: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 5px;
+  overflow: hidden;
+  margin-bottom: 14px;
+}
+
+.veh-meter-fill {
+  height: 100%;
+  border-radius: 5px;
+  transition: width 300ms ease;
+}
+
+.veh-fuel-range {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.veh-fuel-range svg {
+  color: #ff9f0a;
+}
+
+/* Cruise & Lights Card */
+.veh-assists-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.veh-assist-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 14px;
+}
+
+.veh-assist-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.veh-assist-val {
+  font-size: 18px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.veh-assist-val.active-cruise {
+  color: #30d158;
+}
+
+.veh-lights-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.veh-light-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-dim);
+  transition: all 150ms ease;
+}
+
+.veh-light-icon.active-low {
+  background: rgba(48, 209, 88, 0.2);
+  color: #30d158;
+}
+
+.veh-light-icon.active-high {
+  background: rgba(0, 122, 255, 0.25);
+  color: #0a84ff;
+}

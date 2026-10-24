@@ -1,0 +1,17 @@
+[package]
+name = "w0rplay-shared"
+description = "Bridge between the W0RPLAY game plugin and the W0RPLAY app: shared memory layout and names"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[features]
+serde = ["dep:serde"]
+
+[dependencies]
+serde = { version = "1", features = ["derive"], optional = true }
+windows = { version = "0.62", features = ["Win32_Foundation", "Win32_System_Memory", "Win32_Security"] }
+
+[lints]
+workspace = true

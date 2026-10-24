@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="faceDark" x1="0" y1="48" x2="0" y2="975" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#242c38"/><stop offset="1" stop-color="#12171e"/>
+    </linearGradient>
+  </defs>
+  <rect x="64" y="64" width="896" height="896" rx="200" fill="url(#faceDark)"/>
+  <rect x="68" y="68" width="888" height="888" rx="196" fill="none" stroke="#3a4b60" stroke-width="6" opacity="0.4"/>
+  <g fill="#4facfe">
+    <!-- Truck Cabin & Chassis -->
+    <path d="M260 620 L260 380 Q260 320 320 320 L580 320 Q620 320 650 360 L730 460 L780 475 Q810 485 810 520 L810 650 Q810 670 790 670 L750 670 Q750 620 700 620 Q650 620 650 670 L430 670 Q430 620 380 620 Q330 620 330 670 L280 670 Q260 670 260 650 Z" />
+    <!-- Wheels -->
+    <circle cx="380" cy="670" r="60" fill="#12171e" stroke="#4facfe" stroke-width="24"/>
+    <circle cx="700" cy="670" r="60" fill="#12171e" stroke="#4facfe" stroke-width="24"/>
+    <!-- Window -->
+    <path d="M570 360 L360 360 Q340 360 340 380 L340 480 L570 480 Z" fill="#00f2fe" opacity="0.6"/>
+    <path d="M600 365 L675 460 Q685 475 675 480 L600 480 Z" fill="#00f2fe" opacity="0.6"/>
+    <!-- Headlight -->
+    <rect x="760" y="550" width="40" height="30" rx="8" fill="#ffd200"/>
+  </g>
+</svg>

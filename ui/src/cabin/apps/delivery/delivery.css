@@ -1,0 +1,312 @@
+/* Delivery App: Active Job & Cargo Overview for W0RPLAY */
+
+.delivery-app {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 8px 12px 12px 12px;
+  overflow-y: auto;
+  color: var(--text);
+  user-select: none;
+}
+
+/* Header */
+.del-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  background: var(--card-bg, rgba(28, 28, 32, 0.92));
+  border: 1px solid var(--card-border, rgba(255, 255, 255, 0.1));
+  border-radius: 18px;
+}
+
+.del-title-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.del-app-icon {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 149, 0, 0.15);
+  border-radius: 12px;
+  color: #ff9f0a;
+}
+
+.del-app-name {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+}
+
+.del-badges {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.del-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+.del-badge.special {
+  background: linear-gradient(135deg, rgba(255, 159, 10, 0.3), rgba(255, 69, 58, 0.3));
+  border: 1px solid rgba(255, 159, 10, 0.6);
+  color: #ffb340;
+}
+
+.del-badge.in-transit {
+  background: rgba(48, 209, 88, 0.18);
+  border: 1px solid rgba(48, 209, 88, 0.4);
+  color: #30d158;
+}
+
+.del-badge.to-pickup {
+  background: rgba(255, 159, 10, 0.18);
+  border: 1px solid rgba(255, 159, 10, 0.4);
+  color: #ff9f0a;
+}
+
+.del-badge.idle {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-dim);
+}
+
+/* Main Grid */
+.del-grid {
+  display: grid;
+  grid-template-columns: 1.25fr 1fr;
+  gap: 16px;
+  flex: 1;
+}
+
+.del-card {
+  background: var(--card-bg, rgba(28, 28, 32, 0.92));
+  border: 1px solid var(--card-border, rgba(255, 255, 255, 0.1));
+  border-radius: 22px;
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+.del-card-title {
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--text-dim);
+  margin-bottom: 14px;
+}
+
+/* Cargo Hero */
+.del-cargo-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  margin-bottom: 16px;
+}
+
+.del-cargo-main {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.del-cargo-name {
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+}
+
+.del-cargo-meta {
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.del-cargo-mass-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  background: rgba(255, 255, 255, 0.08);
+  padding: 8px 14px;
+  border-radius: 14px;
+}
+
+.del-mass-val {
+  font-size: 22px;
+  font-weight: 800;
+  color: #0a84ff;
+}
+
+.del-mass-lbl {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+/* Route Timeline */
+.del-route-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  position: relative;
+  margin-top: 4px;
+}
+
+.del-route-stop {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.del-stop-indicator {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  margin-top: 4px;
+  flex-shrink: 0;
+}
+
+.del-stop-indicator.origin {
+  background: #30d158;
+  box-shadow: 0 0 10px rgba(48, 209, 88, 0.6);
+}
+
+.del-stop-indicator.dest {
+  background: #ff453a;
+  box-shadow: 0 0 10px rgba(255, 69, 58, 0.6);
+}
+
+.del-stop-details {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.del-stop-city {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.del-stop-company {
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.del-route-connector {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-left: 6px;
+  padding: 4px 0 4px 18px;
+  border-left: 2px dashed rgba(255, 255, 255, 0.2);
+}
+
+.del-distance-pill {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-dim);
+}
+
+/* Financials & Deadline Column */
+.del-col-right {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.del-payout-amount {
+  font-size: 42px;
+  font-weight: 800;
+  letter-spacing: -1.5px;
+  color: #30d158;
+  margin-bottom: 4px;
+}
+
+.del-info-box {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 14px;
+  margin-top: 8px;
+}
+
+.del-info-icon {
+  color: #ff9f0a;
+}
+
+.del-info-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.del-info-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.del-info-val {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+/* Empty State */
+.del-empty-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 14px;
+  padding: 60px 24px;
+  background: var(--card-bg, rgba(28, 28, 32, 0.92));
+  border: 1px solid var(--card-border, rgba(255, 255, 255, 0.1));
+  border-radius: 24px;
+  flex: 1;
+}
+
+.del-empty-icon {
+  width: 72px;
+  height: 72px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-dim);
+}
+
+.del-empty-title {
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.del-empty-desc {
+  font-size: 15px;
+  color: var(--text-dim);
+  max-width: 380px;
+  line-height: 1.4;
+}

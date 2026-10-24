@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="camFace" x1="0" y1="48" x2="0" y2="975" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#34c759"/><stop offset="1" stop-color="#1b8535"/>
+    </linearGradient>
+    <linearGradient id="lens" x1="0" y1="320" x2="0" y2="720" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#2c3e50"/><stop offset="1" stop-color="#0f171e"/>
+    </linearGradient>
+  </defs>
+  <rect x="64" y="64" width="896" height="896" rx="200" fill="url(#camFace)"/>
+  <rect x="68" y="68" width="888" height="888" rx="196" fill="none" stroke="#ffffff" stroke-width="6" opacity="0.25"/>
+  <!-- Camera Body -->
+  <path d="M360 300 L420 240 L604 240 L664 300 L764 300 Q824 300 824 360 L824 700 Q824 760 764 760 L260 760 Q200 760 200 700 L200 360 Q200 300 260 300 Z" fill="#ffffff"/>
+  <!-- Camera Lens Outer & Inner -->
+  <circle cx="512" cy="530" r="180" fill="url(#lens)"/>
+  <circle cx="512" cy="530" r="130" fill="#1e272e" stroke="#34c759" stroke-width="12"/>
+  <circle cx="470" cy="490" r="36" fill="#ffffff" opacity="0.35"/>
+  <!-- Flash Dot -->
+  <circle cx="730" cy="370" r="24" fill="#34c759"/>
+</svg>

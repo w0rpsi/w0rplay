@@ -1,0 +1,27 @@
+[package]
+name = "w0rplay-app"
+description = "W0RPLAY companion app: runs the in-cabin UI host and the desktop window"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[[bin]]
+name = "w0rplay"
+path = "src/main.rs"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+# Tauri's generated context holds the plugins' config as JSON.
+serde_json = "1"
+tauri = { version = "2", features = [] }
+tauri-plugin-updater = "2"
+w0rplay-host = { path = "../crates/host" }
+w0rplay-mapdata = { path = "../crates/mapdata" }
+w0rplay-setup = { path = "../crates/setup" }
+
+[lints]
+workspace = true

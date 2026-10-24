@@ -1,0 +1,35 @@
+# In-cabin screen layouts: the game's GPS UI scripts the W0RPLAY mod patches (a truck interior names one
+# as its `gps_path`). Read by crates/shared (the plugin tells the app which one the game is drawing, and
+# crates/setup's mod builder patches each).
+#
+# Each layout gets its own screen texture, SCREEN_WIDTH x (SCREEN_HEIGHT + its index in this list), so the
+# plugin can tell them apart by size alone. Keep "generic" first: it is the most common and so gets the exact
+# frame size.
+#
+# id              GPS script(s): a layout's scripts draw the same screen (one for km/h, one for mph), so they
+#                 share its texture
+# Most trucks and interiors.
+generic           ui/gps.sii
+# DAF XF/XG 2021 (DLC).
+daf-2021          ui/dashboard/daf_2021_gps.sii
+# Scania S/R with a Smart Dash interior (through interior/computers_2025.sui).
+scania-2025       ui/dashboard/scania_2025_gps.sii
+# Renault T 2024.
+renault-t-2024    ui/dashboard/renault_t_2024_gps.sii
+# Iveco S-Way (DLC): its interiors' (interior/computers.sui), and its UK interiors' in mph (computers_uk.sui).
+iveco-sway        ui/dashboard/iveco_sway_ic10_gps.sii ui/dashboard/iveco_sway_ic10_gps_mph.sii
+# Scania S/R with a Smart Dash Advanced interior (12.9"): the game gives it the 10.1"'s script, so the mod
+# makes it a copy of its own and has its interiors include that (crates/setup game_mod.rs, `OWN_SCREENS`).
+scania-2025-advanced ui/dashboard/w0rplay_scania_2025_advanced_gps.sii
+# Volvo FH 2021 and 2024 (DLCs; the real FH has CarPlay with its INFOHIGH package: owner 2026-10-20): every
+# interior's (interior/computers.sui), and the UK interiors' in mph (computers_uk.sui). One screen in both, the
+# whole 1024 x 512 surface shown at 1.75:1 (their models' screen pieces).
+volvo-fh          ui/dashboard/volvo_fh_2021_gps.sii ui/dashboard/volvo_fh_2021_mph_gps.sii ui/dashboard/volvo_fh_2024_gps.sii ui/dashboard/volvo_fh_2024_mph_gps.sii
+# ATS trucks:
+volvo-vnl-2025    ui/dashboard/volvo_vnl2025_gps.sii
+volvo-vnl-2018    ui/dashboard/volvo_vnl2018_gps.sii
+cascadia-2019     ui/dashboard/freightliner_cascadia_icc5_gps.sii
+cascadia-2024     ui/dashboard/freightliner_cascadia_2024_gps.sii
+westernstar-57x   ui/dashboard/westernstar_57x_gps.sii
+westernstar-5700  ui/dashboard/westernstar_5700xe_gps.sii
+kenworth-t680-22  ui/dashboard/kenworth_t680_2022_gps.sii
