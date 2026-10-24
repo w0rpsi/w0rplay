@@ -1,8 +1,8 @@
-import { type CSSProperties, useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { type SignedIn, useAskOnce, useSignedIn } from './accounts'
-import { appVersion, call, PREVIEW_TUTORIAL } from './bridge'
+import { type CSSProperties, useEffect, useRef, useState } from 'react'
+import { useAskOnce, useSignedIn } from './accounts'
+import { call, PREVIEW_TUTORIAL } from './bridge'
 import { Onboarding } from './onboarding/Onboarding'
-import { languageOf, percent, type Words, wordsFor } from './onboarding/words'
+import { languageOf, wordsFor } from './onboarding/words'
 import { About } from './pages/About'
 import { useHeldKey } from './pages/heldKey'
 import { Lesson, TouchLayer } from './pages/Lesson'
@@ -10,7 +10,7 @@ import { Launch, TourCard } from './pages/Tour'
 import { Accounts } from './pages/Accounts'
 import { Controls } from './pages/Controls'
 import { Customize } from './pages/Customize'
-import { type MapProgress, useMapProgress } from './mapProgress'
+import { useMapProgress } from './mapProgress'
 import { MapPage } from './pages/MapPage'
 import { screenState } from './pages/page'
 import { ScreenPage } from './pages/ScreenPage'
@@ -18,7 +18,7 @@ import { Setup } from './pages/Setup'
 import { UninstallSheet } from './pages/UninstallSheet'
 import { FinishUpdate, UpdateSheet } from './pages/UpdateSheet'
 import { type CompanionWords, companionWords, type SectionId } from './pages/words'
-import { RoomText, n, WordsContext } from './room/room'
+import { RoomText, WordsContext } from './room/room'
 import './room/room.css'
 import { GLOW, type Screen, ScreenContext } from './room/screen'
 import { type Banner, GlassCursor, type Pose, TruckScreen } from './room/TruckScreen'
@@ -131,6 +131,7 @@ function Room({
   const [arrivedPose, setArrivedPose] = useState(false)
   const pose: Pose = arrivedPose ? POSE[phase] : 'dive'
   const interactionKey = settings.settings?.interaction.key ?? DEFAULT_KEY
+  const keyName = useKeyName(interactionKey, words)
   const held = useHeldKey(interactionKey, settings.settings?.interaction.mode ?? 'hold', phase === 'lesson')
   const demo = useDemo()
   const [powered, setPowered] = useState(false)
@@ -311,17 +312,18 @@ function Room({
               />
             )}
             {roomShown && (
-              <SectionList
+              <TopNavBar
                 section={section}
                 open={open}
                 cw={cw}
-                words={words}
                 status={status}
-                signedIn={signedIn}
-                settings={settings}
-                setup={setup}
                 update={update}
-                mapProgress={mapProgress}
+              />
+            )}
+            {roomShown && (
+              <ScreenDeck
+                screen={screen}
+                interactionKey={keyName}
               />
             )}
             {roomShown && section === 'screen' && <ScreenPage {...page} />}
@@ -348,134 +350,215 @@ function Room({
   )
 }
 
+const SECTION_ICONS: Record<SectionId, string> = {
+  screen: '📱',
+  controls: '🎮',
+  customize: '🎨',
+  accounts: '🎵',
+  map: '🗺️',
+  setup: '⚙️',
+  about: 'ℹ️',
+}
+
+const SHORT_STATE: Record<string, string> = {
+  live: 'Aktif',
+  original: 'Hazır',
+  notInCab: 'Bekliyor',
+  noGame: 'Oyun Yok',
+  starting: 'Başlıyor',
+  stopped: 'Kapalı',
+}
+
+const TAB_LABELS: Record<SectionId, string> = {
+  screen: 'Ekran',
+  controls: 'Kontroller',
+  customize: 'Özelleştir',
+  accounts: 'Hesaplar',
+  map: 'Harita',
+  setup: 'Kurulum',
+  about: 'Hakkında',
+}
+
+export function W0rplayLogo() {
+  return (
+    <span className="cp-brand-name">
+      W<span className="w0-slashed-zero">0</span>RPLAY
+    </span>
+  )
+}
+
 /**
- * The sections, at the left: W0RPLAY's name and where it is now, then each section with what it is now
- * (W0RPLAY on or off, the key, who's signed in, the map, the game's version, W0RPLAY's own or an update), in
- * groups. The one that's open is lit by a capsule of glass that glides from section to section.
+ * The top navigation bar: W0RPLAY's logo with the slashed zero, version badge, horizontal tabs for
+ * all sections, and the live status & 30 FPS indicator on the right.
  */
-function SectionList({
+function TopNavBar({
   section,
   open,
   cw,
-  words,
   status,
-  signedIn,
-  settings,
-  setup,
   update,
-  mapProgress,
 }: {
   section: SectionId
   open(section: SectionId): void
   cw: CompanionWords
-  words: Words
   status: HostStatus | null
-  signedIn: SignedIn
-  settings: SettingsState
-  setup: SetupState
   update: Offer | null
-  mapProgress: MapProgress
 }) {
-  const list = useRef<HTMLElement>(null)
-  const [lit, setLit] = useState<{ top: number; height: number } | null>(null)
-  const version = useVersion()
   const state = screenState(status)
-  const keyName = useKeyName(settings.settings?.interaction.key ?? DEFAULT_KEY, words)
 
-  useLayoutEffect(() => {
-    const row = list.current?.querySelector<HTMLElement>(`[data-section="${section}"]`)
-    if (row) setLit({ top: row.offsetTop, height: row.offsetHeight })
-  }, [section])
-
-  const value: Record<SectionId, string> = {
-    screen:
-      state === 'live'
-        ? cw.values.on
-        : state === 'original'
-          ? cw.values.off
-          : state === 'notInCab'
-            ? cw.values.waiting
-            : '',
-    controls: keyName,
-    customize: '',
-    accounts:
-      signedIn.youtube === null && signedIn.spotify === null && signedIn.appleMusic === null
-        ? ''
-        : [signedIn.youtube && 'YouTube', signedIn.spotify && 'Spotify', signedIn.appleMusic && 'Apple Music']
-            .filter(Boolean)
-            .join(', ') || cw.values.none,
-    map: mapValue(status, mapProgress, cw, words),
-    setup: setup.game?.version ?? '',
-    about: update ? cw.update.badge : (version || '1b267'),
-  }
-
-  let place = 2
   return (
-    <nav ref={list} className="cp-list" aria-label="W0RPLAY">
-      <header className="cp-brand ob-in" style={n(0)}>
-        <div className="cp-brand-logo">
-          <img src="/w0rplay.png" alt="W0RPLAY" />
+    <header className="cp-topbar" aria-label="W0RPLAY Navigation">
+      <div className="cp-topbar-brand">
+        <div className="cp-topbar-logo-box">
+          <img src="/w0rplay.png" alt="W0RPLAY" className="cp-topbar-logo" />
         </div>
-        <div className="cp-brand-meta">
-          <div className="cp-brand-title">
-            <b>W0RPLAY</b>
-            <span className="cp-version-tag">1b267</span>
-          </div>
-          <span className="cp-state" data-state={state}>
-            <i />
-            {cw.state[state]}
-          </span>
+        <div className="cp-topbar-brand-text">
+          <W0rplayLogo />
+          <span className="cp-topbar-serial">1b267</span>
         </div>
-      </header>
-      {lit && <i className="cp-lit" style={{ top: lit.top, height: lit.height }} />}
-      {SECTIONS.map((group, g) => (
-        <div key={g} className="cp-group">
-          {group.map((id) => (
+      </div>
+
+      <nav className="cp-topbar-nav" aria-label="Bölümler">
+        {TOUR.map((id) => {
+          const isActive = id === section
+          const raw = cw.sections[id] || TAB_LABELS[id]
+          const label = raw === 'Kamyon Ekranı' ? 'Ekran' : raw
+          return (
             <button
               key={id}
               type="button"
-              className="cp-row ob-in"
-              style={n(place++)}
+              className="cp-topbar-tab"
               data-section={id}
-              data-here={id === section || undefined}
+              data-active={isActive || undefined}
               onClick={() => open(id)}
+              title={cw.sections[id]}
             >
-              <b>{cw.sections[id]}</b>
-              <span>{value[id]}</span>
+              <span className="cp-tab-icon">{SECTION_ICONS[id]}</span>
+              <span className="cp-tab-name">{label}</span>
+              {id === 'about' && update && <span className="cp-tab-dot" />}
             </button>
-          ))}
+          )
+        })}
+      </nav>
+
+      <div className="cp-topbar-aside">
+        <div className="cp-topbar-status" data-state={state} title={cw.state[state]}>
+          <i className="cp-status-dot" />
+          <span className="cp-status-label">{SHORT_STATE[state] || cw.state[state]}</span>
         </div>
-      ))}
-    </nav>
+        <div className="cp-fps-pill" title="Sabit 30 FPS Optimizasyonu">
+          30 FPS
+        </div>
+      </div>
+    </header>
   )
 }
 
-function mapValue(status: HostStatus | null, progress: MapProgress, cw: CompanionWords, words: Words): string {
-  const map = status?.map
-  switch (map?.state) {
-    case 'ready':
-    case 'building':
-      // The maps being made (one after another): how far, the Map page's bar's number.
-      return progress.building ? percent(words, progress.shown) : cw.values.ready
-    case 'waitingForGame':
-    case 'waitingForMemory':
-      return cw.values.waiting
-    case 'failed':
-    case 'notAllowed':
-      return cw.values.failed
-    default:
-      return ''
+/**
+ * Screen Control Deck: positioned in the left column directly underneath the straight upright
+ * tablet preview, allowing instant testing of home, maps, music, tv, and screen reboot.
+ */
+function ScreenDeck({
+  screen,
+  interactionKey,
+}: {
+  screen: Screen
+  interactionKey: string
+}) {
+  const [activeApp, setActiveApp] = useState<'home' | 'maps' | 'music' | 'tv'>('home')
+
+  const handleGo = (to: 'home' | 'maps' | 'music' | 'tv') => {
+    setActiveApp(to)
+    screen.go(to)
   }
+
+  return (
+    <aside className="cp-screen-deck ob-in">
+      <div className="cp-deck-header">
+        <div className="cp-deck-title">
+          <span className="cp-deck-pulse" />
+          <b>Ekran Kumandası</b>
+        </div>
+        <span className="cp-deck-badge">Canlı Önizleme</span>
+      </div>
+
+      <div className="cp-deck-grid">
+        <button
+          type="button"
+          className="cp-deck-btn"
+          data-active={activeApp === 'home' || undefined}
+          onClick={() => handleGo('home')}
+          title="Ana Sayfa"
+        >
+          <span className="cp-deck-btn-icon">🏠</span>
+          <div className="cp-deck-btn-text">
+            <b>Ana Sayfa</b>
+            <small>Uygulama Menüsü</small>
+          </div>
+        </button>
+
+        <button
+          type="button"
+          className="cp-deck-btn"
+          data-active={activeApp === 'maps' || undefined}
+          onClick={() => handleGo('maps')}
+          title="Canlı Harita"
+        >
+          <span className="cp-deck-btn-icon">🗺️</span>
+          <div className="cp-deck-btn-text">
+            <b>Harita</b>
+            <small>Canlı Navigasyon</small>
+          </div>
+        </button>
+
+        <button
+          type="button"
+          className="cp-deck-btn"
+          data-active={activeApp === 'music' || undefined}
+          onClick={() => handleGo('music')}
+          title="Müzik Çalar"
+        >
+          <span className="cp-deck-btn-icon">🎵</span>
+          <div className="cp-deck-btn-text">
+            <b>Müzik</b>
+            <small>Spotify & Apple</small>
+          </div>
+        </button>
+
+        <button
+          type="button"
+          className="cp-deck-btn"
+          data-active={activeApp === 'tv' || undefined}
+          onClick={() => handleGo('tv')}
+          title="Canlı TV & Radyo"
+        >
+          <span className="cp-deck-btn-icon">📺</span>
+          <div className="cp-deck-btn-text">
+            <b>Canlı TV</b>
+            <small>Haber & Müzik</small>
+          </div>
+        </button>
+      </div>
+
+      <div className="cp-deck-footer">
+        <button
+          type="button"
+          className="cp-deck-reboot-btn"
+          onClick={() => screen.reboot()}
+          title="Ekranı ve simülasyonu yeniden başlat"
+        >
+          <span className="cp-deck-reboot-icon">🔄</span>
+          <span>Yeniden Başlat</span>
+        </button>
+        <div className="cp-deck-shortcut" title="Araç içinde ekranı açıp kapatan tuş">
+          <span className="cp-shortcut-label">Kabin Tuşu:</span>
+          <kbd className="cp-shortcut-key">{interactionKey}</kbd>
+        </div>
+      </div>
+    </aside>
+  )
 }
 
-/** W0RPLAY's version, once the app has said. */
-function useVersion(): string {
-  const [version, setVersion] = useState('')
-  useEffect(() => {
-    appVersion().then(setVersion, () => setVersion(''))
-  }, [])
-  return version
-}
 
 /** The window starts hidden (so it never shows blank while this page loads): it shows once `ready`, after the
  * page has painted. */

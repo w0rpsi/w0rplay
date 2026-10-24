@@ -104,7 +104,7 @@ function W0RPlayIntro() {
         </span>
         <div className="boot-intro-text-group">
           <span ref={wordmark} className="boot-intro-wordmark">
-            W0RPLAY
+            W<span className="w0-slashed-zero">0</span>RPLAY
           </span>
           <span className="boot-intro-subtitle">CABIN INFOTAINMENT SYSTEM</span>
         </div>

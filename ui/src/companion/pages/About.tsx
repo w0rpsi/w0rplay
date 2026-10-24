@@ -56,12 +56,19 @@ export function About({ status, setup, cw, update, showUpdate }: PageProps) {
       }
     >
       <Group place={4}>
-        <Row title="W0rplay by W0rpsi" value={version} />
+        <Row
+          title={
+            <span>
+              W<span className="w0-slashed-zero">0</span>RPLAY (w0rpsi)
+            </span>
+          }
+          value={version || '1b267'}
+        />
         <Row
           title="GitHub"
-          value="github.com/w0rpsi"
+          value="github.com/w0rpsi/w0rplay"
           link
-          onClick={() => openUrl('https://github.com/w0rpsi')}
+          onClick={() => openUrl('https://github.com/w0rpsi/w0rplay')}
         />
         {update ? (
           <Row
