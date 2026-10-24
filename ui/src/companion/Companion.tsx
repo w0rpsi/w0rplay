@@ -1,6 +1,6 @@
 import { type CSSProperties, type ReactNode, useEffect, useRef, useState } from 'react'
 import { useAskOnce, useSignedIn } from './accounts'
-import { call, PREVIEW_TUTORIAL } from './bridge'
+import { call, CURRENT_SERIAL_VERSION, PREVIEW_TUTORIAL } from './bridge'
 import { Onboarding } from './onboarding/Onboarding'
 import { languageOf, wordsFor } from './onboarding/words'
 import { About } from './pages/About'
@@ -447,7 +447,7 @@ function Sidebar({
         <div className="cp-sidebar-brand-meta">
           <div className="cp-sidebar-brand-title">
             <b>W<span className="w0-slash">0</span>RPLAY</b>
-            <span className="cp-sidebar-serial">1b267</span>
+            <span className="cp-sidebar-serial">{CURRENT_SERIAL_VERSION}</span>
           </div>
           <span className="cp-sidebar-brand-sub">In-Cab Infotainment</span>
         </div>

@@ -4218,7 +4218,7 @@ dependencies = [
 
 [[package]]
 name = "w0rplay-app"
-version = "2.0.1"
+version = "2.1.0"
 dependencies = [
  "serde",
  "serde_json",
@@ -4232,7 +4232,7 @@ dependencies = [
 
 [[package]]
 name = "w0rplay-host"
-version = "2.0.1"
+version = "2.1.0"
 dependencies = [
  "base64 0.22.1",
  "image",
@@ -4251,7 +4251,7 @@ dependencies = [
 
 [[package]]
 name = "w0rplay-mapdata"
-version = "2.0.1"
+version = "2.1.0"
 dependencies = [
  "aes",
  "cbc",
@@ -4261,7 +4261,7 @@ dependencies = [
 
 [[package]]
 name = "w0rplay-plugin"
-version = "2.0.1"
+version = "2.1.0"
 dependencies = [
  "minhook",
  "w0rplay-shared",
@@ -4270,7 +4270,7 @@ dependencies = [
 
 [[package]]
 name = "w0rplay-setup"
-version = "2.0.1"
+version = "2.1.0"
 dependencies = [
  "flate2",
  "serde",
@@ -4283,7 +4283,7 @@ dependencies = [
 
 [[package]]
 name = "w0rplay-shared"
-version = "2.0.1"
+version = "2.1.0"
 dependencies = [
  "serde",
  "windows",

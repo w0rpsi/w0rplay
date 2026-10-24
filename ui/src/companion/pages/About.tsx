@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { appVersion, openUrl } from '../bridge'
+import { appVersion, CURRENT_SERIAL_VERSION, openUrl } from '../bridge'
 import { Button, Group, Panel, Row } from '../room/parts'
 import { banner } from '../room/room'
 import { GLOW, useScreenAt } from '../room/screen'
@@ -62,7 +62,7 @@ export function About({ status, setup, cw, update, showUpdate }: PageProps) {
               W<span className="w0-slash">0</span>RPLAY (w0rpsi)
             </span>
           }
-          value={version || '1b267'}
+          value={version || CURRENT_SERIAL_VERSION}
         />
         <Row
           title="GitHub"

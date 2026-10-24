@@ -37,7 +37,7 @@ export function on<T>(event: string, handler: (payload: T) => void): () => void 
   }
 }
 
-export const CURRENT_SERIAL_VERSION = '1b267'
+export const CURRENT_SERIAL_VERSION = '1b268'
 
 /** W0RPLAY's serial version. */
 export function appVersion(): Promise<string> {

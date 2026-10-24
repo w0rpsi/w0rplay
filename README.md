@@ -8,7 +8,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/w0rpsi/w0rplay/releases/latest"><img alt="Download W0RPLAY" src="https://img.shields.io/badge/İndir-1b267-409c42?style=for-the-badge&logo=github"></a>
+  <a href="https://github.com/w0rpsi/w0rplay/releases/latest"><img alt="Download W0RPLAY" src="https://img.shields.io/badge/İndir-1b268-409c42?style=for-the-badge&logo=github"></a>
   <img alt="Windows 10 and 11" src="https://img.shields.io/badge/Windows-10%20%7C%2011-2b2b2b?style=for-the-badge">
   <img alt="ETS2 & ATS" src="https://img.shields.io/badge/ETS2%20%26%20ATS-1.61%2B-blue?style=for-the-badge">
   <a href="LICENSE"><img alt="Licence: GPL-3.0-or-later" src="https://img.shields.io/badge/Lisans-GPL--3.0-2b2b2b?style=for-the-badge"></a>
@@ -93,7 +93,7 @@ W0RPLAY, masaüstünüzde bağımsız ve hafif bir arayüz motoru çalıştırı
 
 ## Kurulum
 
-1. [En Son Sürümü İndirin](https://github.com/w0rpsi/w0rplay/releases/latest) (`W0RPLAY-1b267.zip`).
+1. [En Son Sürümü İndirin](https://github.com/w0rpsi/w0rplay/releases/latest) (`W0RPLAY-1b268.zip`).
 2. Arşiv içerisindeki **`w0rplay.dll`** dosyasını oyununuzun eklenti klasörüne kopyalayın:
    * **ETS2 için:** `Euro Truck Simulator 2/bin/win_x64/plugins/w0rplay.dll`
    * **ATS için:** `American Truck Simulator/bin/win_x64/plugins/w0rplay.dll`
@@ -122,7 +122,7 @@ Gerçek hayatta CarPlay / dijital multimedya ekranı bulunan çekiciler destekle
 
 ## Güncellemeler
 
-W0RPLAY, seri numaralı sürüm takibi kullanır (örn: `1b267`). Uygulamayı başlattığınızda GitHub API üzerinden en güncel sürüm taranır; yeni bir sürüm çıktığında masaüstü panelinde indirme bildirimi görüntülenir.
+W0RPLAY, seri numaralı sürüm takibi kullanır (örn: `1b268`). Uygulamayı başlattığınızda GitHub API üzerinden en güncel sürüm taranır; yeni bir sürüm çıktığında masaüstü panelinde indirme bildirimi görüntülenir.
 
 ---
 
