@@ -16,7 +16,7 @@
 </p>
 
 <p align="center">
-  <a href="#öellikler">Özellikler</a> ·
+  <a href="#özellikler">Özellikler</a> ·
   <a href="#ekran-görüntüleri">Ekran Görüntüleri</a> ·
   <a href="#kurulum">Kurulum</a> ·
   <a href="#desteklenen-çekiciler">Desteklenen Çekiciler</a> ·
