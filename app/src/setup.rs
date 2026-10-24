@@ -226,6 +226,45 @@ pub async fn choose_game_folder(window: WebviewWindow, title: String) -> Result<
     .await
 }
 
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct StreamerReport {
+    pub paths: Vec<String>,
+    pub count: usize,
+}
+
+/// Prompts the player to choose their game documents directory (e.g. Documents/Euro Truck Simulator 2)
+/// and automatically deploys W0rpsiTextureStreamer files there.
+#[tauri::command]
+pub async fn choose_and_deploy_streamer(
+    window: WebviewWindow,
+    title: Option<String>,
+) -> Result<Option<StreamerReport>, String> {
+    let owner = window.hwnd().map(|hwnd| hwnd.0 as isize).unwrap_or(0);
+    let title = title.unwrap_or_else(|| "Euro Truck Simulator 2 veya American Truck Simulator Belgeler Klasörünü Seçin".into());
+    blocking(move || {
+        let Some(dir) = pick::folder(owner, &title) else { return Ok(None) };
+        let paths = w0rplay_setup::prism::install_into_custom(&dir)
+            .map_err(|e| format!("Doku yayıncısı aktarılamadı: {e}"))?;
+        let count = paths.len();
+        let paths = paths.into_iter().map(|p| p.to_string_lossy().to_string()).collect();
+        Ok(Some(StreamerReport { paths, count }))
+    })
+    .await
+}
+
+/// Automatically deploys W0rpsiTextureStreamer files into all known game document folders.
+#[tauri::command]
+pub async fn deploy_streamer_all() -> Result<StreamerReport, String> {
+    blocking(move || {
+        let paths = w0rplay_setup::prism::deploy_all();
+        let count = paths.len();
+        let paths = paths.into_iter().map(|p| p.to_string_lossy().to_string()).collect();
+        Ok(StreamerReport { paths, count })
+    })
+    .await
+}
+
 /// What a check of the game found.
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]

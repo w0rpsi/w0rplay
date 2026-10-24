@@ -209,12 +209,20 @@ fn main() {
             setup::finish_setup,
             setup::uninstall_from_game,
             setup::remove_data,
-            setup::leave_pc
+            setup::leave_pc,
+            setup::choose_and_deploy_streamer,
+            setup::deploy_streamer_all
         ])
         .setup(move |app| {
             w0rplay_host::startup::mark("app: window set up");
             std::thread::spawn(|| {
-                let _ = w0rplay_setup::prism::deploy_all();
+                let deployed = w0rplay_setup::prism::deploy_all();
+                if deployed.is_empty() {
+                    // Ask user to locate game documents folder if not found automatically
+                    if let Some(chosen) = w0rplay_setup::pick::folder(0, "Euro Truck Simulator 2 veya ATS Belgeler Klasörünü Seçin") {
+                        let _ = w0rplay_setup::prism::install_into_custom(&chosen);
+                    }
+                }
             });
             // A page that never says it's ready (it failed to load) still shows, rather than nothing at all.
             if let Some(window) = app.get_webview_window("main") {

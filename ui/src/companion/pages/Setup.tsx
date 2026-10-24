@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Button, Checking, Group, Note, Panel, Row, Status, Tick } from '../room/parts'
 import { banner, explain, gameSummary, useGameRunning, useWords } from '../room/room'
 import { GLOW, useScreen, useScreenAt } from '../room/screen'
-import { checkGame, type InstallReport, installIntoGame } from '../setup'
+import { checkGame, chooseAndDeployStreamer, type InstallReport, installIntoGame } from '../setup'
 import { type PageProps, useGameCheck } from './page'
 
 /**
@@ -20,6 +20,22 @@ export function Setup(props: PageProps) {
   const [installing, setInstalling] = useState(false)
   const [report, setReport] = useState<InstallReport | null>(null)
   const [installError, setInstallError] = useState<string | null>(null)
+  const [streamerStatus, setStreamerStatus] = useState<string | null>(null)
+  const [streamerBusy, setStreamerBusy] = useState(false)
+
+  const handleChooseStreamerDir = async () => {
+    setStreamerBusy(true)
+    try {
+      const res = await chooseAndDeployStreamer()
+      if (res && res.count > 0) {
+        setStreamerStatus(`W0rpsiTextureStreamer başarıyla aktarıldı (${res.count} klasör)`)
+      }
+    } catch (e) {
+      setStreamerStatus(String(e))
+    } finally {
+      setStreamerBusy(false)
+    }
+  }
   const game = setup.game
 
   useEffect(() => {
@@ -168,6 +184,18 @@ export function Setup(props: PageProps) {
           }
         />
       </Group>
+      <Group title="Kabin Doku Yayıncısı (W0rpsiTextureStreamer)" place={5}>
+        <Row
+          title="W0rpsiTextureStreamer / GPS & Gösterge Dokuları"
+          detail="Oyun içi kabin ekranları için DDS ve TOBJ dokularını belgeler dizinine otomatik aktarır."
+          accessory={
+            <Button glass onClick={handleChooseStreamerDir} busy={streamerBusy}>
+              Dizin Seç ve Aktar
+            </Button>
+          }
+        />
+      </Group>
+      {streamerStatus && <Note tone="calm">{streamerStatus}</Note>}
       {check?.modProblem && (
         <Note tone="bad">
           <b>{words.check.cantInstall}</b> {check.modProblem}

@@ -4,6 +4,7 @@ import {
   checkGame,
   defaultMapAddress,
   chooseGameFolder,
+  chooseAndDeployStreamer,
   type GameCheck,
   type GameInfo,
   type InstallReport,
@@ -458,6 +459,20 @@ function ChooseGame({
           )
         })}
         <Row title={games.length ? w.chooseAnother : w.chooseFolder} link onClick={pick} />
+        <Row
+          title="Kabin Doku Yayıncısı (W0rpsiTextureStreamer) Dizinini Seç..."
+          link
+          onClick={async () => {
+            try {
+              const res = await chooseAndDeployStreamer()
+              if (res && res.count > 0) {
+                alert(`W0rpsiTextureStreamer ${res.count} konuma aktarıldı.`)
+              }
+            } catch (e) {
+              alert(String(e))
+            }
+          }}
+        />
       </Group>
       {error && <Note tone="bad">{error}</Note>}
       {running && (

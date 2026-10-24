@@ -97,6 +97,17 @@ export const installIntoGame = (dir: string, administrator: boolean) =>
   call<InstallReport>('install_into_game', { dir, administrator })
 export const finishSetup = () => call<void>('finish_setup')
 
+export interface StreamerReport {
+  paths: string[]
+  count: number
+}
+
+export const chooseAndDeployStreamer = (title?: string) =>
+  call<StreamerReport | null>('choose_and_deploy_streamer', { title })
+
+export const deployStreamerAll = () =>
+  call<StreamerReport>('deploy_streamer_all')
+
 /** Where the companion serves the player's maps (app/src/main.rs, `w0rplay-maps`). */
 const MAPS = 'http://w0rplay-maps.localhost'
 
