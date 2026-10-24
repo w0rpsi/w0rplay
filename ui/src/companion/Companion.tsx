@@ -1,4 +1,4 @@
-import { type CSSProperties, useEffect, useRef, useState } from 'react'
+import { type CSSProperties, type ReactNode, useEffect, useRef, useState } from 'react'
 import { useAskOnce, useSignedIn } from './accounts'
 import { call, PREVIEW_TUTORIAL } from './bridge'
 import { Onboarding } from './onboarding/Onboarding'
@@ -28,7 +28,6 @@ import { defaultMapAddress, type GameCheck, type SetupState, setupState } from '
 import { FILES_BASE, useCustomizations } from './customize'
 import { type Offer, useUpdateOffer } from './update'
 import { type HostStatus, useHostStatus } from './useHostStatus'
-import { useKeyName } from './keys'
 import { DEFAULT_KEY, type SettingsState, useSettings } from './useSettings'
 
 /**
@@ -131,7 +130,6 @@ function Room({
   const [arrivedPose, setArrivedPose] = useState(false)
   const pose: Pose = arrivedPose ? POSE[phase] : 'dive'
   const interactionKey = settings.settings?.interaction.key ?? DEFAULT_KEY
-  const keyName = useKeyName(interactionKey, words)
   const held = useHeldKey(interactionKey, settings.settings?.interaction.mode ?? 'hold', phase === 'lesson')
   const demo = useDemo()
   const [powered, setPowered] = useState(false)
@@ -312,18 +310,12 @@ function Room({
               />
             )}
             {roomShown && (
-              <TopNavBar
+              <Sidebar
                 section={section}
                 open={open}
                 cw={cw}
                 status={status}
                 update={update}
-              />
-            )}
-            {roomShown && (
-              <ScreenDeck
-                screen={screen}
-                interactionKey={keyName}
               />
             )}
             {roomShown && section === 'screen' && <ScreenPage {...page} />}
@@ -350,48 +342,90 @@ function Room({
   )
 }
 
-const SECTION_ICONS: Record<SectionId, string> = {
-  screen: '📱',
-  controls: '🎮',
-  customize: '🎨',
-  accounts: '🎵',
-  map: '🗺️',
-  setup: '⚙️',
-  about: 'ℹ️',
-}
-
-const SHORT_STATE: Record<string, string> = {
-  live: 'Aktif',
-  original: 'Hazır',
-  notInCab: 'Bekliyor',
-  noGame: 'Oyun Yok',
-  starting: 'Başlıyor',
-  stopped: 'Kapalı',
-}
-
-const TAB_LABELS: Record<SectionId, string> = {
-  screen: 'Ekran',
-  controls: 'Kontroller',
-  customize: 'Özelleştir',
-  accounts: 'Hesaplar',
-  map: 'Harita',
-  setup: 'Kurulum',
-  about: 'Hakkında',
-}
-
-export function W0rplayLogo() {
+function ScreenIcon() {
   return (
-    <span className="cp-brand-name">
-      W<span className="w0-slashed-zero">0</span>RPLAY
-    </span>
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <rect width="20" height="14" x="2" y="3" rx="2" />
+      <line x1="8" x2="16" y1="21" y2="21" />
+      <line x1="12" x2="12" y1="17" y2="21" />
+    </svg>
   )
 }
 
-/**
- * The top navigation bar: W0RPLAY's logo with the slashed zero, version badge, horizontal tabs for
- * all sections, and the live status & 30 FPS indicator on the right.
- */
-function TopNavBar({
+function ControlsIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="6" x2="10" y1="12" y2="12" />
+      <line x1="8" x2="8" y1="10" y2="14" />
+      <line x1="15" x2="15.01" y1="13" y2="13" />
+      <line x1="18" x2="18.01" y1="11" y2="11" />
+      <rect width="20" height="12" x="2" y="6" rx="6" />
+    </svg>
+  )
+}
+
+function CustomizeIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="13.5" cy="6.5" r=".5" fill="currentColor" />
+      <circle cx="17.5" cy="10.5" r=".5" fill="currentColor" />
+      <circle cx="8.5" cy="7.5" r=".5" fill="currentColor" />
+      <circle cx="6.5" cy="12.5" r=".5" fill="currentColor" />
+      <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.563-2.512 5.563-5.562C22 6.5 17.5 2 12 2z" />
+    </svg>
+  )
+}
+
+function AccountsIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M9 18V5l12-2v13" />
+      <circle cx="6" cy="18" r="3" />
+      <circle cx="18" cy="16" r="3" />
+    </svg>
+  )
+}
+
+function MapIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21" />
+      <line x1="9" x2="9" y1="3" y2="18" />
+      <line x1="15" x2="15" y1="6" y2="21" />
+    </svg>
+  )
+}
+
+function SetupIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  )
+}
+
+function AboutIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="10" />
+      <line x1="12" x2="12" y1="16" y2="12" />
+      <line x1="12" x2="12.01" y1="8" y2="8" />
+    </svg>
+  )
+}
+
+const SIDEBAR_ICONS: Record<SectionId, () => ReactNode> = {
+  screen: ScreenIcon,
+  controls: ControlsIcon,
+  customize: CustomizeIcon,
+  accounts: AccountsIcon,
+  map: MapIcon,
+  setup: SetupIcon,
+  about: AboutIcon,
+}
+
+function Sidebar({
   section,
   open,
   cw,
@@ -407,154 +441,50 @@ function TopNavBar({
   const state = screenState(status)
 
   return (
-    <header className="cp-topbar" aria-label="W0RPLAY Navigation">
-      <div className="cp-topbar-brand">
-        <div className="cp-topbar-logo-box">
-          <img src="/w0rplay.png" alt="W0RPLAY" className="cp-topbar-logo" />
+    <aside className="cp-sidebar" aria-label="W0RPLAY">
+      <header className="cp-sidebar-brand">
+        <img src="/w0rplay.png" alt="W0RPLAY" className="cp-sidebar-logo" />
+        <div className="cp-sidebar-brand-meta">
+          <div className="cp-sidebar-brand-title">
+            <b>W<span className="w0-slash">0</span>RPLAY</b>
+            <span className="cp-sidebar-serial">1b267</span>
+          </div>
+          <span className="cp-sidebar-brand-sub">In-Cab Infotainment</span>
         </div>
-        <div className="cp-topbar-brand-text">
-          <W0rplayLogo />
-          <span className="cp-topbar-serial">1b267</span>
-        </div>
-      </div>
+      </header>
 
-      <nav className="cp-topbar-nav" aria-label="Bölümler">
+      <nav className="cp-sidebar-nav" aria-label="Bölümler">
         {TOUR.map((id) => {
           const isActive = id === section
-          const raw = cw.sections[id] || TAB_LABELS[id]
-          const label = raw === 'Kamyon Ekranı' ? 'Ekran' : raw
+          const Icon = SIDEBAR_ICONS[id]
           return (
             <button
               key={id}
               type="button"
-              className="cp-topbar-tab"
-              data-section={id}
+              className="cp-sidebar-row"
               data-active={isActive || undefined}
+              data-section={id}
               onClick={() => open(id)}
-              title={cw.sections[id]}
             >
-              <span className="cp-tab-icon">{SECTION_ICONS[id]}</span>
-              <span className="cp-tab-name">{label}</span>
-              {id === 'about' && update && <span className="cp-tab-dot" />}
+              <span className="cp-row-icon">
+                <Icon />
+              </span>
+              <span className="cp-row-label">{cw.sections[id]}</span>
+              {id === 'about' && update && <span className="cp-row-dot" />}
             </button>
           )
         })}
       </nav>
 
-      <div className="cp-topbar-aside">
-        <div className="cp-topbar-status" data-state={state} title={cw.state[state]}>
+      <footer className="cp-sidebar-footer">
+        <div className="cp-sidebar-status" data-state={state} title={cw.state[state]}>
           <i className="cp-status-dot" />
-          <span className="cp-status-label">{SHORT_STATE[state] || cw.state[state]}</span>
+          <span className="cp-status-text">{cw.state[state]}</span>
         </div>
-        <div className="cp-fps-pill" title="Sabit 30 FPS Optimizasyonu">
+        <div className="cp-sidebar-fps" title="Sabit 30 FPS Optimizasyonu">
           30 FPS
         </div>
-      </div>
-    </header>
-  )
-}
-
-/**
- * Screen Control Deck: positioned in the left column directly underneath the straight upright
- * tablet preview, allowing instant testing of home, maps, music, tv, and screen reboot.
- */
-function ScreenDeck({
-  screen,
-  interactionKey,
-}: {
-  screen: Screen
-  interactionKey: string
-}) {
-  const [activeApp, setActiveApp] = useState<'home' | 'maps' | 'music' | 'tv'>('home')
-
-  const handleGo = (to: 'home' | 'maps' | 'music' | 'tv') => {
-    setActiveApp(to)
-    screen.go(to)
-  }
-
-  return (
-    <aside className="cp-screen-deck ob-in">
-      <div className="cp-deck-header">
-        <div className="cp-deck-title">
-          <span className="cp-deck-pulse" />
-          <b>Ekran Kumandası</b>
-        </div>
-        <span className="cp-deck-badge">Canlı Önizleme</span>
-      </div>
-
-      <div className="cp-deck-grid">
-        <button
-          type="button"
-          className="cp-deck-btn"
-          data-active={activeApp === 'home' || undefined}
-          onClick={() => handleGo('home')}
-          title="Ana Sayfa"
-        >
-          <span className="cp-deck-btn-icon">🏠</span>
-          <div className="cp-deck-btn-text">
-            <b>Ana Sayfa</b>
-            <small>Uygulama Menüsü</small>
-          </div>
-        </button>
-
-        <button
-          type="button"
-          className="cp-deck-btn"
-          data-active={activeApp === 'maps' || undefined}
-          onClick={() => handleGo('maps')}
-          title="Canlı Harita"
-        >
-          <span className="cp-deck-btn-icon">🗺️</span>
-          <div className="cp-deck-btn-text">
-            <b>Harita</b>
-            <small>Canlı Navigasyon</small>
-          </div>
-        </button>
-
-        <button
-          type="button"
-          className="cp-deck-btn"
-          data-active={activeApp === 'music' || undefined}
-          onClick={() => handleGo('music')}
-          title="Müzik Çalar"
-        >
-          <span className="cp-deck-btn-icon">🎵</span>
-          <div className="cp-deck-btn-text">
-            <b>Müzik</b>
-            <small>Spotify & Apple</small>
-          </div>
-        </button>
-
-        <button
-          type="button"
-          className="cp-deck-btn"
-          data-active={activeApp === 'tv' || undefined}
-          onClick={() => handleGo('tv')}
-          title="Canlı TV & Radyo"
-        >
-          <span className="cp-deck-btn-icon">📺</span>
-          <div className="cp-deck-btn-text">
-            <b>Canlı TV</b>
-            <small>Haber & Müzik</small>
-          </div>
-        </button>
-      </div>
-
-      <div className="cp-deck-footer">
-        <button
-          type="button"
-          className="cp-deck-reboot-btn"
-          onClick={() => screen.reboot()}
-          title="Ekranı ve simülasyonu yeniden başlat"
-        >
-          <span className="cp-deck-reboot-icon">🔄</span>
-          <span>Yeniden Başlat</span>
-        </button>
-        <div className="cp-deck-shortcut" title="Araç içinde ekranı açıp kapatan tuş">
-          <span className="cp-shortcut-label">Kabin Tuşu:</span>
-          <kbd className="cp-shortcut-key">{interactionKey}</kbd>
-        </div>
-      </div>
+      </footer>
     </aside>
   )
 }

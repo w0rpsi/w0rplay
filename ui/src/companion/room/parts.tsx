@@ -55,7 +55,7 @@ export function Panel({
             {word.letters.map((letter, l) => (
               <span
                 key={l}
-                className={letter === '0' ? 'w0-slashed-zero' : undefined}
+                className={letter === '0' ? 'w0-slash' : undefined}
                 style={n(word.start + l)}
               >
                 {letter}

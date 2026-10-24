@@ -59,7 +59,7 @@ export function About({ status, setup, cw, update, showUpdate }: PageProps) {
         <Row
           title={
             <span>
-              W<span className="w0-slashed-zero">0</span>RPLAY (w0rpsi)
+              W<span className="w0-slash">0</span>RPLAY (w0rpsi)
             </span>
           }
           value={version || '1b267'}
