@@ -31,24 +31,7 @@ export function keybinds(players: readonly MusicPlayer[]): {
   return {
     press(action) {
       const player = current()
-      if (!player) {
-        // Fallback for TVApp or any media playing on the page
-        const media = document.querySelector('video') || document.querySelector('audio')
-        if (media) {
-          if (action === 'playPause') {
-            if (media.paused) {
-              media.play().catch(() => {})
-            } else {
-              media.pause()
-            }
-            return null
-          }
-          const next = stepped(media.volume, action === 'volumeUp' ? 1 : -1)
-          media.volume = next
-          return { volume: next }
-        }
-        return null
-      }
+      if (!player) return null
       if (action === 'playPause') {
         // A fade with the game stops where it is; the volume the player chose comes back with it.
         const left = levelOf(player.name) !== undefined

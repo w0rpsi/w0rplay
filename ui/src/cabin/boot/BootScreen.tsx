@@ -73,7 +73,9 @@ function BrandSplash() {
 
 /**
  * The W mark scales in at the centre, then glides left while "W0RPLAY" is revealed out of it to the
- * right, ending as a centred pair.
+ * right, ending as a centred pair. The mark's starting offset is half the width the text adds, measured
+ * before the first paint (and again once the web font has loaded), so the mark starts exactly at the
+ * centre whatever the font renders.
  */
 function W0RPlayIntro() {
   const wordmark = useRef<HTMLSpanElement>(null)
@@ -96,19 +98,13 @@ function W0RPlayIntro() {
   }, [])
 
   return (
-    <div className="boot-intro-container">
-      <div className="boot-ambient-glow" />
-      <div className="boot-intro" style={{ '--mark-shift': `${shift}px` } as CSSProperties}>
-        <span className="boot-intro-mark">
-          <img src="/w0rplay.png" alt="W0RPLAY" />
-        </span>
-        <div className="boot-intro-text-group">
-          <span ref={wordmark} className="boot-intro-wordmark">
-            W0RPLAY
-          </span>
-          <span className="boot-intro-subtitle">CABIN INFOTAINMENT SYSTEM</span>
-        </div>
-      </div>
+    <div className="boot-intro" style={{ '--mark-shift': `${shift}px` } as CSSProperties}>
+      <span className="boot-intro-mark">
+        <img src="/w0rplay.png" alt="" />
+      </span>
+      <span ref={wordmark} className="boot-intro-wordmark">
+        W0RPLAY
+      </span>
     </div>
   )
 }

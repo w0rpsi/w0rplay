@@ -110,7 +110,7 @@ export function Shell({ children, overlay, entering = false }: ShellProps) {
         tabIndex={truckScreen ? 0 : -1}
         onClick={() => useCabin.getState().setTruckScreen(false)}
       >
-        <img src="/w0rplay.png" alt="W0RPLAY" />
+        <img src="/w0rplay.png" alt="" />
       </button>
       {overlay}
       {/* Over everything, the cursor included: the image's outermost pixels, which the game repeats into

@@ -59,29 +59,10 @@
      1200–2200   hold
      2200–2600   the pair fades out; the CarPlay screen fades in after                                  */
 
-.boot-intro-container {
-  position: relative;
-  display: grid;
-  place-items: center;
-}
-
-.boot-ambient-glow {
-  position: absolute;
-  width: 480px;
-  height: 480px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(14, 165, 233, 0.22) 0%, rgba(99, 102, 241, 0.1) 45%, transparent 70%);
-  filter: blur(48px);
-  pointer-events: none;
-  animation: glow-pulse 2400ms ease-in-out infinite alternate;
-}
-
 .boot-intro {
-  position: relative;
-  z-index: 2;
   display: flex;
   align-items: center;
-  column-gap: 32px;
+  column-gap: 30px;
   animation: intro-out 400ms var(--motion-ease) 2200ms both;
 }
 
@@ -95,51 +76,18 @@
 
 .boot-intro-mark img {
   display: block;
-  width: 126px;
-  height: 126px;
-  border-radius: 28px;
-  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.7), 0 0 35px rgba(14, 165, 233, 0.35);
+  width: 132px;
+  height: 132px;
+  border-radius: 30px;
   animation: mark-in 500ms var(--motion-ease) both;
 }
 
-.boot-intro-text-group {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
-
 .boot-intro-wordmark {
-  font-size: 82px;
-  font-weight: 800;
+  font-size: 84px;
+  font-weight: 700;
   letter-spacing: -0.01em;
-  background: linear-gradient(135deg, #ffffff 15%, #bae6fd 60%, #e0f2fe 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  filter: drop-shadow(0 4px 18px rgba(14, 165, 233, 0.3));
   /* Sits behind the mark's starting position and wipes in from its left edge. */
   animation: wordmark-reveal 700ms var(--motion-ease) 500ms both;
-}
-
-.boot-intro-subtitle {
-  display: block;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.34em;
-  color: rgba(255, 255, 255, 0.6);
-  text-transform: uppercase;
-  margin-top: 2px;
-  animation: subtitle-reveal 600ms var(--motion-ease) 1000ms both;
-}
-
-@keyframes glow-pulse {
-  from {
-    transform: scale(0.9);
-    opacity: 0.6;
-  }
-  to {
-    transform: scale(1.15);
-    opacity: 1;
-  }
 }
 
 @keyframes mark-in {
@@ -168,17 +116,6 @@
     clip-path: inset(0 0 0 0);
     transform: translateX(0);
     opacity: 1;
-  }
-}
-
-@keyframes subtitle-reveal {
-  from {
-    opacity: 0;
-    transform: translateY(6px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
   }
 }
 

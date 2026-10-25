@@ -119,7 +119,7 @@ export const useCabin = create<CabinState>()(
       dashboardWidgets: ALL_WIDGETS,
       albumArt: true,
       textSize: DEFAULT_TEXT_SIZE,
-      oemMode: 'off',
+      oemMode: 'auto',
       equalizer: FLAT,
       equalizerCustom: false,
       power: INITIAL_POWER,
@@ -166,11 +166,7 @@ export const useCabin = create<CabinState>()(
       version: 1,
       storage: createJSONStorage(() => localStorage),
       partialize: (state): Persisted => ({
-        navigation: {
-          ...state.navigation,
-          // Always persist base route so restarting W0RPLAY never wakes up inside an active player or app
-          route: { kind: state.navigation.base },
-        },
+        navigation: state.navigation,
         appearanceMode: state.appearanceMode,
         wallpaperId: state.wallpaperId,
         dashboardWidgets: state.dashboardWidgets,
@@ -187,13 +183,12 @@ function sanitize(stored: Partial<Persisted> | undefined): Partial<Persisted> {
   if (!stored) return {}
   const result: Partial<Persisted> = {}
   if (stored.navigation && isRoute(stored.navigation.route) && Array.isArray(stored.navigation.recents)) {
-    const { recents, base } = stored.navigation
-    const safeBase = base === 'home' || base === 'dashboard' ? base : 'dashboard'
+    const { route, recents, base } = stored.navigation
     result.navigation = {
-      // Always boot to dashboard or home on startup; never auto-resume media or apps in the background
-      route: { kind: safeBase },
+      route,
       recents: recents.filter(isReleasedApp),
-      base: safeBase,
+      // Saved before W0RPLAY remembered it: the screen shown, or the Dashboard (where it starts).
+      base: base === 'home' || base === 'dashboard' ? base : route.kind === 'home' ? 'home' : 'dashboard',
     }
   }
   if (stored.appearanceMode === 'auto' || stored.appearanceMode === 'dark' || stored.appearanceMode === 'light') {

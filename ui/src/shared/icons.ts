@@ -17,10 +17,6 @@ export type AppIconRole =
   | 'weather'
   | 'youtube'
   | 'youtubeMusic'
-  | 'vehicle'
-  | 'delivery'
-  | 'camera'
-  | 'tv'
 
 /** Each role's files' name. */
 const FILES: Record<AppIconRole, string> = {
@@ -34,10 +30,6 @@ const FILES: Record<AppIconRole, string> = {
   weather: 'weather',
   youtube: 'youtube',
   youtubeMusic: 'youtube-music',
-  vehicle: 'vehicle',
-  delivery: 'delivery',
-  camera: 'camera',
-  tv: 'tv',
 }
 
 /** W0RPLAY's own icon for `role`, for a light or a dark screen. */

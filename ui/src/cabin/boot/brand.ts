@@ -1,19 +1,5 @@
-/** The game's own truck brand ids in ETS2 and ATS (def/vehicle/truck in the base game and its DLCs). */
-export const GAME_BRANDS = [
-  'daf',
-  'iveco',
-  'man',
-  'mercedes',
-  'renault',
-  'scania',
-  'volvo',
-  'kenworth',
-  'peterbilt',
-  'freightliner',
-  'westernstar',
-  'international',
-  'mack',
-] as const
+/** The game's own truck brand ids (def/vehicle/truck in the base game and its DLCs). */
+export const GAME_BRANDS = ['daf', 'iveco', 'man', 'mercedes', 'renault', 'scania', 'volvo'] as const
 
 /**
  * The brand ids to look for a truck's logo under, in order: its own (`brandId`, the game's or a mod's),

@@ -44,7 +44,7 @@ interface YouTubeStore {
   captions: string | null
   /** The picture's quality for every video: `auto` (YouTube's own choice), or the most it's to be. */
   quality: string
-  /** The playback speed, on every video until changed (not kept past w0rplay: YouTube's app's way). */
+  /** The playback speed, on every video until changed (not kept past W0RPLAY: YouTube's app's way). */
   rate: number
   /** The newest first. */
   searches: string[]

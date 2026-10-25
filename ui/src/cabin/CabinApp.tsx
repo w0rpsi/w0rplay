@@ -18,12 +18,14 @@ import { Shell } from './shell/Shell'
 import { showVolume } from './shell/volumeShown'
 import { type Route, routeKey } from './state/navigation'
 import { nextPhaseAt, type PowerPhase } from './state/power'
-import { connectHost, go, useCabin, useLive } from './state/store'
+import { connectHost, useCabin, useLive } from './state/store'
 import { languageOf } from './state/strings'
 import { followTimeZone } from './state/timeZone'
 
-// Plain browser previews have no truck to power the screen; they show it as if the electrics were on.
-// `?power` simulates the real sequence there too (drive it with `useCabin.getState().powerEvent`).
+/**
+ * Plain browser previews have no truck to power the screen; they show it as if the electrics were on.
+ * `?power` simulates the real sequence there too (drive it with `useCabin.getState().powerEvent`).
+ */
 const FOLLOW_POWER = isInHost() || new URLSearchParams(location.search).has('power')
 
 /** The in-cabin screen: the shell around the screen for the current route, after the boot sequence. */
@@ -31,16 +33,6 @@ export function CabinApp() {
   const route = useCabin((state) => state.navigation.route)
   const phase = useCabin((state) => state.power.phase)
   useEffect(() => connectHost(), [])
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search)
-    if (params.get('screen') === 'home') {
-      go({ type: 'showHome' })
-    }
-    const lang = params.get('lang')
-    if (lang) {
-      useLive.setState({ gameLanguage: lang })
-    }
-  }, [])
   // YouTube, Spotify, Apple Music and YouTube Music pause with the game (its menu, tabbing out) and play on after.
   useEffect(() => pauseYouTubeWithGame(), [])
   useEffect(() => pauseSpotifyWithGame(), [])
@@ -198,5 +190,3 @@ function RouteScreen({ route }: { route: Route }) {
       return <AppScreen app={route.app} />
   }
 }
-
-

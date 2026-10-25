@@ -267,8 +267,8 @@ pub struct ScreenSettings {
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum TruckStrip {
-    Auto,
     #[default]
+    Auto,
     Off,
 }
 

@@ -1,6 +1,6 @@
-import { type LiveState, useLive } from '../state/store'
+import { type LiveState, useCabin, useLive } from '../state/store'
 import { fadeOutAndPause, playAndFadeIn } from './fade'
-import { withGame } from './youtube/withGame'
+import { poweredOff, withGame } from './youtube/withGame'
 
 /**
  * A music app with the game (YouTube, Spotify, Apple Music, YouTube Music; the rule: youtube/withGame.ts):
@@ -32,27 +32,21 @@ function isAway(live: LiveState): boolean {
   return ((live.telemetry?.paused ?? false) && !live.menuGone) || !live.gameFocused
 }
 
-/** Pauses `player` with the game menu/alt-tab or when vehicle stops/engine turns off. Returns the function that stops it. */
+/** The truck's electrics are off (as seen: not before the first telemetry says so). */
+function isOff(): boolean {
+  const { power } = useCabin.getState()
+  return power.observed && power.phase === 'off'
+}
+
+/** Pauses `player` with the game, and stops it as the truck's electrics go off, from now on. Returns the
+ * function that stops it. */
 export function pauseMusicWithGame(player: MusicPlayer): () => void {
   let paused = false
   const game = useLive.subscribe((live, before) => {
-    // When the truck engine is stopped or electrics are turned off, pause the music immediately
-    const isEngineOff = live.telemetry ? !live.telemetry.engineEnabled : false
-    const wasEngineOff = before.telemetry ? !before.telemetry.engineEnabled : false
-    const isElectricOff = live.telemetry ? !live.telemetry.electricEnabled : false
-    const wasElectricOff = before.telemetry ? !before.telemetry.electricEnabled : false
-
-    if ((isEngineOff && !wasEngineOff) || (isElectricOff && !wasElectricOff)) {
-      if (player.playingHere()) {
-        fadeOutAndPause(player)
-        paused = false
-      }
-    }
-
     const away = isAway(live)
     const wasAway = isAway(before)
     if (away === wasAway) return
-    const action = withGame(away, wasAway, player.playingHere(), paused, true)
+    const action = withGame(away, wasAway, player.playingHere(), paused, !isOff())
     if (action === 'pause') {
       fadeOutAndPause(player)
       paused = true
@@ -61,7 +55,19 @@ export function pauseMusicWithGame(player: MusicPlayer): () => void {
     }
     if (!away) paused = false
   })
+  const power = useCabin.subscribe((cabin, before) => {
+    if (!poweredOff(before.power.phase === 'off', cabin.power.phase === 'off')) return
+    // Whatever it's doing, at once (no fade: owner 2026-10-21), and not played on after.
+    if (player.playingHere()) player.pauseHere()
+    paused = false
+  })
+  // Nothing plays while they're off: music that starts playing here then is paused as it starts.
+  const dark = player.subscribe((started) => {
+    if (isOff() && started) player.pauseHere()
+  })
   return () => {
     game()
+    power()
+    dark()
   }
 }

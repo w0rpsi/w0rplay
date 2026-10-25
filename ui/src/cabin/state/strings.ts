@@ -460,62 +460,6 @@ export interface Strings {
     back: string
   }
   /** Apps. */
-  vehicleApp: {
-    title: string
-    fuel: string
-    range: string
-    cruise: string
-    speed: string
-    rpm: string
-    gear: string
-    parkBrake: string
-    lights: string
-    engine: string
-    running: string
-    off: string
-    released: string
-    engaged: string
-    lowBeam: string
-    highBeam: string
-    speedLimit: string
-  }
-  deliveryApp: {
-    title: string
-    activeJob: string
-    noJob: string
-    noJobDetail: string
-    cargo: string
-    weight: string
-    origin: string
-    destination: string
-    distance: string
-    deadline: string
-    payout: string
-    specialTransport: string
-    inTransit: string
-    toPickup: string
-  }
-  backupCamera: {
-    caution: string
-    close: string
-    rearSensors: string
-  }
-  tvApp: {
-    title: string
-    channels: string
-    live: string
-    cinemaMode: string
-    customStream: string
-    enterUrl: string
-    play: string
-    pause: string
-    mute: string
-    unmute: string
-    fullscreen: string
-    exitFullscreen: string
-    sleeperMirror: string
-    allChannels: string
-  }
   apps: Record<AppId, string>
   notBuiltYet: string
 }
@@ -990,67 +934,8 @@ export const STRINGS: Record<Language, Strings> = {
       resetEqualizer: 'Reset',
       back: 'Back',
     },
-    vehicleApp: {
-      title: 'Vehicle',
-      fuel: 'Fuel',
-      range: 'Estimated Range',
-      cruise: 'Cruise Control',
-      speed: 'Speed',
-      rpm: 'RPM',
-      gear: 'Gear',
-      parkBrake: 'Parking Brake',
-      lights: 'Headlights',
-      engine: 'Engine',
-      running: 'Running',
-      off: 'Off',
-      released: 'Released',
-      engaged: 'Engaged',
-      lowBeam: 'Low Beam',
-      highBeam: 'High Beam',
-      speedLimit: 'Speed Limit',
-    },
-    deliveryApp: {
-      title: 'Delivery',
-      activeJob: 'Active Delivery',
-      noJob: 'No Active Delivery',
-      noJobDetail: 'You are currently driving free or at your headquarters.',
-      cargo: 'Cargo',
-      weight: 'Weight',
-      origin: 'Departure',
-      destination: 'Destination',
-      distance: 'Total Distance',
-      deadline: 'Delivery Deadline',
-      payout: 'Expected Earnings',
-      specialTransport: 'Special Transport',
-      inTransit: 'Cargo in Transit',
-      toPickup: 'On Way to Pickup',
-    },
-    backupCamera: {
-      caution: 'CHECK SURROUNDINGS FOR SAFETY',
-      close: 'Close',
-      rearSensors: 'Rear Parking Sensors',
-    },
-    tvApp: {
-      title: 'TV & Live Stream',
-      channels: 'Channels',
-      live: 'LIVE',
-      cinemaMode: 'Cinema Mode',
-      customStream: 'Custom Stream / URL',
-      enterUrl: 'Enter stream or YouTube live URL...',
-      play: 'Play',
-      pause: 'Pause',
-      mute: 'Mute',
-      unmute: 'Unmute',
-      fullscreen: 'Fullscreen',
-      exitFullscreen: 'Exit Fullscreen',
-      sleeperMirror: 'Sleeper TV Active',
-      allChannels: 'All Channels',
-    },
     apps: {
       maps: 'Maps',
-      vehicle: 'Vehicle',
-      delivery: 'Delivery',
-      tv: 'Live TV',
       music: 'Music',
       spotify: 'Spotify',
       youtube: 'YouTube',
@@ -1534,67 +1419,8 @@ export const STRINGS: Record<Language, Strings> = {
       resetEqualizer: 'Sıfırla',
       back: 'Geri',
     },
-    vehicleApp: {
-      title: 'Araç',
-      fuel: 'Yakıt',
-      range: 'Tahmini Menzil',
-      cruise: 'Hız Sabitleyici',
-      speed: 'Hız',
-      rpm: 'Devir',
-      gear: 'Vites',
-      parkBrake: 'Park Freni',
-      lights: 'Farlar',
-      engine: 'Motor',
-      running: 'Çalışıyor',
-      off: 'Kapalı',
-      released: 'İndirildi',
-      engaged: 'Çekili',
-      lowBeam: 'Kısa Farlar',
-      highBeam: 'Uzun Farlar',
-      speedLimit: 'Hız Sınırı',
-    },
-    deliveryApp: {
-      title: 'Yük & Sefer',
-      activeJob: 'Aktif Sefer',
-      noJob: 'Aktif Sefer Yok',
-      noJobDetail: 'Şu anda boşta serbest sürüştesiniz.',
-      cargo: 'Yük',
-      weight: 'Ağırlık',
-      origin: 'Çıkış Noktası',
-      destination: 'Varış Noktası',
-      distance: 'Toplam Mesafe',
-      deadline: 'Teslimat Süresi',
-      payout: 'Tahmini Gelir',
-      specialTransport: 'Özel Taşımacılık',
-      inTransit: 'Yük Taşınıyor',
-      toPickup: 'Yük Alınmaya Gidiliyor',
-    },
-    backupCamera: {
-      caution: 'DİKKAT: ÇEVRENİZİ KONTROL EDİN',
-      close: 'Kapat',
-      rearSensors: 'Arka Park Sensörleri',
-    },
-    tvApp: {
-      title: 'TV & Canlı Yayın',
-      channels: 'Kanallar',
-      live: 'CANLI',
-      cinemaMode: 'Sinema Modu',
-      customStream: 'Özel Yayın / URL',
-      enterUrl: 'Yayın veya YouTube canlı URL girin...',
-      play: 'Oynat',
-      pause: 'Duraklat',
-      mute: 'Sessiz',
-      unmute: 'Sesi Aç',
-      fullscreen: 'Tam Ekran',
-      exitFullscreen: 'Tam Ekrandan Çık',
-      sleeperMirror: 'Yatak TV Aktif',
-      allChannels: 'Tüm Kanallar',
-    },
     apps: {
       maps: 'Haritalar',
-      vehicle: 'Araç',
-      delivery: 'Yük & Sefer',
-      tv: 'TV & Canlı Yayın',
       music: 'Müzik',
       spotify: 'Spotify',
       youtube: 'YouTube',
