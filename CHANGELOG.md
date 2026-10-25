@@ -3,6 +3,13 @@
 What changed in each release of W0RPLAY. The newest release's notes are what the app shows when it offers the
 update.
 
+## 2.1.0 (2026-10-25)
+- Windows 11 off-screen throttling: Fixed an issue where the in-cabin display locked to 3 FPS. The off-screen host window was moved out of Windows minimized coordinates (-32000) so Chromium's compositor stays active at full framerate.
+- Frame pacing & stutter fix: Capped in-cabin screen capture to 30 FPS. This reduces DirectX texture copy bandwidth and eliminates GPU queue stalls during in-game head rotation and heavy rendering passes.
+- Memory management: Added a 128 MB V8 heap limit to Chromium to prevent RAM accumulation over long driving sessions.
+- American Truck Simulator support: Added screen layouts and automatic mod generation for Volvo VNL (2018/2025), Freightliner Cascadia (2024/ICC5), Kenworth T680 (2022), and Western Star (5700XE/57X).
+- Added live TV app and in-game Alt+1 / Alt+2 / Alt+3 media hotkeys.
+
 ## 2.0.1 (2026-10-23)
 - W0RPLAY works on other versions of the game, not only the current Steam one: it now finds what it needs in
   the game itself, whatever its version. The VR version and older versions such as 1.60 included, and it should
