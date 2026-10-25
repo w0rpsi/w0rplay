@@ -32,18 +32,16 @@ use windows::Win32::System::LibraryLoader::GetModuleHandleW;
 use windows::Win32::System::WinRT::{
     CreateDispatcherQueueController, DQTAT_COM_STA, DQTYPE_THREAD_CURRENT, DispatcherQueueOptions,
 };
-use windows::Win32::UI::WindowsAndMessaging::{
-    CreateWindowExW, DestroyWindow, ShowWindow, SW_SHOWNA, WS_EX_NOACTIVATE, WS_EX_TOOLWINDOW,
-    WS_POPUP, WS_VISIBLE,
-};
+use windows::Win32::UI::Input::KeyboardAndMouse::EnableWindow;
+use windows::Win32::UI::WindowsAndMessaging::{CreateWindowExW, DestroyWindow, WINDOW_EX_STYLE, WS_OVERLAPPEDWINDOW};
 use windows::core::{HSTRING, Interface, PCWSTR, PWSTR, w};
 use windows_numerics::Vector2;
 
 pub type Error = Box<dyn std::error::Error>;
 
-/// Where the WebViews' hidden host windows are (both coordinates): beyond any monitor's, but NOT negative
-/// (Windows parks minimized windows at -32000, which causes Chromium to trigger WasHidden() and freeze).
-const OFF_THE_DESKTOP: i32 = 20000;
+/// Where the WebViews' hidden host windows are (both coordinates): beyond any monitor's (Windows parks
+/// minimized windows there too).
+const OFF_THE_DESKTOP: i32 = -32000;
 
 /// The browser argument naming the GPU every WebView2 of this process draws on (graphics.rs), set before
 /// the first is made: one browser shared by several WebViews takes one set of arguments.
@@ -200,10 +198,10 @@ impl OffscreenWebView {
         // SAFETY: a window of the system's own `STATIC` class, its strings static; no parent or menu.
         let host = unsafe {
             CreateWindowExW(
-                WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE,
+                WINDOW_EX_STYLE(0),
                 w!("STATIC"),
                 w!("w0rplay-offscreen-host"),
-                WS_POPUP | WS_VISIBLE,
+                WS_OVERLAPPEDWINDOW,
                 OFF_THE_DESKTOP,
                 OFF_THE_DESKTOP,
                 width as i32,
@@ -214,8 +212,12 @@ impl OffscreenWebView {
                 None,
             )?
         };
+        // The page takes input only from W0RPLAY (`send_mouse`). Disabled, the window and the WebView's own
+        // windows inside it get none of the real mouse: otherwise, once a click makes the WebView capture the
+        // mouse, the player's real clicks and the real cursor (wherever the game parked it) reach the page too.
+        // SAFETY: `host` was just created on this thread.
         unsafe {
-            let _ = ShowWindow(host, SW_SHOWNA);
+            let _ = EnableWindow(host, false);
         }
 
         let environment = create_environment(user_data)?;
@@ -254,7 +256,6 @@ impl OffscreenWebView {
             if !browsers.contains(&browser) {
                 browsers.push(browser);
             }
-            crate::boost_pid_and_descendants(browser);
         }
         // A car screen, not a browser: no context menu, zooming, link previews in the corner or swipe-to-go-back.
         // SAFETY: the WebView's settings object, alive while the WebView is; plain values only.
@@ -645,14 +646,11 @@ fn process_failure(kind: COREWEBVIEW2_PROCESS_FAILED_KIND) -> String {
 fn create_environment(user_data: &Path) -> Result<ICoreWebView2Environment, Error> {
     let options = CoreWebView2EnvironmentOptions::default();
     // Chromium throttles or stops rendering for hidden or occluded windows; ours is never shown.
-    let mut arguments = "--disable-features=CalculateNativeWinOcclusion,IntensiveWakeUpThrottling,ThrottleDisplayNoneAndVisibilityHiddenCrossOriginIframes \
-                         --disable-background-timer-throttling --disable-renderer-backgrounding --disable-backgrounding-occluded-windows \
-                         --disable-frame-rate-limit --disable-gpu-vsync --autoplay-policy=no-user-gesture-required \
+    let mut arguments = "--disable-features=CalculateNativeWinOcclusion,IntensiveWakeUpThrottling --disable-background-timer-throttling \
+                         --disable-renderer-backgrounding --disable-backgrounding-occluded-windows \
+                         --autoplay-policy=no-user-gesture-required \
                          --enable-gpu-rasterization --enable-zero-copy --ignore-gpu-blocklist \
-                         --enable-accelerated-video-decode \
-                         --disable-background-media-suspend --disable-low-end-device-mode \
-                         --run-all-compositor-stages-before-draw --disable-gpu-watchdog \
-                         --force-high-performance-gpu --enable-features=SharedArrayBuffer"
+                         --enable-accelerated-video-decode"
         .to_string();
     // The GPU it draws on (graphics.rs).
     if let Some(gpu) = GPU_ARGUMENT.lock().unwrap_or_else(|e| e.into_inner()).as_deref() {

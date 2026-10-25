@@ -30,7 +30,7 @@ use crate::gpu::{Gpu, Lock, SharedFrame};
 pub const MAX_FPS: u32 = 60;
 const FRAME_INTERVAL: Duration = Duration::from_micros(1_000_000 / MAX_FPS as u64);
 /// Tolerance for capture timing jitter.
-const FRAME_JITTER: Duration = Duration::from_micros(3_500);
+const FRAME_JITTER: Duration = Duration::from_micros(1_500);
 /// Frames in the capture pool: one kept in the mailbox, one being published, one WGC draws into.
 const POOL_FRAMES: i32 = 3;
 
@@ -222,9 +222,8 @@ fn publish(context: &ID3D11DeviceContext, frame: &ID3D11Texture2D, shared: &Shar
             back: 1,
         };
         context.CopySubresourceRegion(&shared.texture, 0, 0, 0, 0, frame, 0, Some(&region));
-        shared.unlock();
-        context.Flush();
     }
+    shared.unlock();
     Lock::Held
 }
 

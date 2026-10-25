@@ -154,7 +154,6 @@ fn main() {
         std::process::exit(code);
     }
     w0rplay_host::log::init();
-    w0rplay_host::configure_process_performance();
     w0rplay_host::startup::mark("app: started");
     if !w0rplay_setup::game::running() {
         let updated = w0rplay_setup::profiles::configure_camera_zoom_for_all_profiles();
