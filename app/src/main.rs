@@ -389,8 +389,13 @@ fn cabin_content(app: &AppHandle) -> Content {
     {
         return Content::Url(format!("{}cabin.html", dev_url.as_str()));
     }
-    let bundled =
-        app.path().resource_dir().map(|dir| dir.join("ui")).ok().filter(|dir| dir.join("cabin.html").exists());
+    let beside = std::env::current_exe().ok().and_then(|exe| {
+        let dir = exe.parent()?.join("ui");
+        dir.join("cabin.html").exists().then_some(dir)
+    });
+    let bundled = beside.or_else(|| {
+        app.path().resource_dir().map(|dir| dir.join("ui")).ok().filter(|dir| dir.join("cabin.html").exists())
+    });
     // Unbundled release builds (`cargo build --release`) use the UI build next to the sources.
     let root = bundled.unwrap_or_else(|| PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../ui/dist"));
     Content::Folder { root, page: "cabin.html".into() }
