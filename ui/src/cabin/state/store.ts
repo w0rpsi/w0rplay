@@ -119,7 +119,7 @@ export const useCabin = create<CabinState>()(
       dashboardWidgets: ALL_WIDGETS,
       albumArt: true,
       textSize: DEFAULT_TEXT_SIZE,
-      oemMode: 'auto',
+      oemMode: 'off',
       equalizer: FLAT,
       equalizerCustom: false,
       power: INITIAL_POWER,
