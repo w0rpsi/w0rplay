@@ -9,6 +9,7 @@ export const words: CompanionWords = {
     map: '지도',
     setup: '설정',
     about: '정보',
+    support: '후원하기',
   },
   state: {
     starting: '시작하는 중…',
@@ -185,6 +186,7 @@ export const words: CompanionWords = {
       map: '내 게임으로 만든 지도예요. 게임이나 지도 MOD가 바뀌면 다시 준비돼요.',
       setup: 'W0RPLAY가 설치된 위치예요. 필요할 때를 위해 다시 설치와 제거도 있어요.',
       about: '버전 정보와, 문제가 있을 때 복사할 수 있는 보고서예요.',
+      support: 'W0RPLAY가 마음에 든다면 여기서 개발을 후원할 수 있어요.',
     },
     finish: '완료',
   },
@@ -289,5 +291,11 @@ export const words: CompanionWords = {
       text: '새 W0RPLAY의 플러그인을 게임에 넣어요. 설치할 때처럼 Windows가 허락을 물어요.',
       button: '계속',
     },
+  },
+  support: {
+    title: '후원하기',
+    sub: 'W0RPLAY는 무료예요. 운전이 더 즐거워졌다면 Kreosus에서 개발을 후원할 수 있어요. 한 번만 해도, 매달 해도 돼요.',
+    button: 'Kreosus에서 후원하기',
+    note: '브라우저에서 Kreosus가 열려요.',
   },
 }

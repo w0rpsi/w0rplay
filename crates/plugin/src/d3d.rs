@@ -397,8 +397,13 @@ unsafe fn on_present(swapchain: *mut c_void) {
         if !FIRST_PRESENT_LOGGED.swap(true, Ordering::Relaxed) {
             log_renderer(swapchain);
         }
-        if frame.is_multiple_of(DUMP_EVERY_FRAMES * 10) {
-            screens::log_stats();
+        if frame.is_multiple_of(DUMP_EVERY_FRAMES) {
+            if TEXTURES_DIRTY.swap(false, Ordering::Relaxed) {
+                dump_textures();
+            }
+            if frame.is_multiple_of(DUMP_EVERY_FRAMES * 10) {
+                screens::log_stats();
+            }
         }
     }
 }

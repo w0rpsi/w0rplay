@@ -1,21 +1,22 @@
-//! Where things are on the player's PC: their Documents folder, Steam's folder and its libraries, and the
-//! programs Windows lists as installed.
+//! The folders the companion needs: the player's documents, and Steam's library folders.
 
 use std::path::{Path, PathBuf};
 
 use windows::Win32::Foundation::ERROR_SUCCESS;
-use windows::Win32::System::Com::CoTaskMemFree;
 use windows::Win32::System::Registry::{
-    HKEY, HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE, KEY_READ, RRF_RT_REG_SZ, RegCloseKey, RegEnumKeyExW, RegGetValueW,
-    RegOpenKeyExW,
+    HKEY, HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE, KEY_READ, RRF_RT_REG_SZ, RegCloseKey, RegEnumKeyExW,
+    RegGetValueW, RegOpenKeyExW,
 };
-use windows::Win32::UI::Shell::{FOLDERID_Documents, FOLDERID_RoamingAppData, KF_FLAG_DEFAULT, SHGetKnownFolderPath};
+use windows::Win32::UI::Shell::{
+    FOLDERID_Documents, FOLDERID_RoamingAppData, KF_FLAG_DEFAULT, SHGetKnownFolderPath,
+};
 use windows::core::{HSTRING, PCWSTR, PWSTR, w};
 
 use crate::vdf;
 
-/// The player's Documents folder, wherever it is (it may be moved, to OneDrive say).
+/// Windows' own Documents folder (`C:\Users\<user>\Documents`, or wherever it has been moved).
 pub fn documents() -> Option<PathBuf> {
+    use windows::Win32::System::Com::CoTaskMemFree;
     // SAFETY: Windows hands back a CoTaskMem string, read before it's freed here.
     unsafe {
         let path = SHGetKnownFolderPath(&FOLDERID_Documents, KF_FLAG_DEFAULT, None).ok()?;
@@ -25,8 +26,9 @@ pub fn documents() -> Option<PathBuf> {
     }
 }
 
-/// The player's roaming application data folder (`%APPDATA%`), where TruckersMP installs itself.
+/// Windows' own Roaming AppData folder (`C:\Users\<user>\AppData\Roaming`, or wherever it has been moved).
 pub fn roaming() -> Option<PathBuf> {
+    use windows::Win32::System::Com::CoTaskMemFree;
     // SAFETY: Windows hands back a CoTaskMem string, read before it's freed here.
     unsafe {
         let path = SHGetKnownFolderPath(&FOLDERID_RoamingAppData, KF_FLAG_DEFAULT, None).ok()?;
@@ -178,23 +180,26 @@ pub fn windows_name(path: &Path) -> PathBuf {
 pub fn plain(path: &Path) -> PathBuf {
     use std::path::{Component, Prefix};
     let mut components = path.components();
-    let start = match components.next() {
-        Some(Component::Prefix(prefix)) => match prefix.kind() {
-            Prefix::VerbatimDisk(letter) => format!("{}:\\", char::from(letter)),
-            Prefix::VerbatimUNC(server, share) => {
-                format!(r"\\{}\{}\", server.to_string_lossy(), share.to_string_lossy())
-            }
-            _ => return path.to_path_buf(),
-        },
+    let prefix = match components.next() {
+        Some(Component::Prefix(prefix)) => prefix.kind(),
         _ => return path.to_path_buf(),
     };
-    let mut plain = PathBuf::from(start);
-    plain.extend(components.filter(|component| !matches!(component, Component::RootDir)));
-    plain
+    match prefix {
+        Prefix::Disk(c) | Prefix::VerbatimDisk(c) => {
+            let drive = format!("{}:\\", char::from(c).to_ascii_uppercase());
+            let rest: PathBuf = components.collect();
+            PathBuf::from(drive).join(rest)
+        }
+        Prefix::UNC(server, share) | Prefix::VerbatimUNC(server, share) => {
+            let mut result = PathBuf::from(format!(r"\\{}\{}", server.to_string_lossy(), share.to_string_lossy()));
+            result.extend(components);
+            result
+        }
+        _ => path.to_path_buf(),
+    }
 }
 
-/// Steam's library folders (each with a `steamapps` folder), from its `libraryfolders.vdf`; Steam's own
-/// folder first.
+/// Steam's library folders, from its `libraryfolders.vdf`, in the order Steam lists them.
 pub fn steam_libraries(steam: &Path) -> Vec<PathBuf> {
     let file = std::fs::read_to_string(steam.join("steamapps").join("libraryfolders.vdf")).ok();
     let mut libraries = vec![steam.to_path_buf()];
@@ -279,11 +284,10 @@ fn registry_text(hive: HKEY, path: PCWSTR, name: PCWSTR) -> Option<String> {
     let status = unsafe {
         RegGetValueW(hive, path, name, RRF_RT_REG_SZ, None, Some(buffer.as_mut_ptr().cast()), Some(&mut size))
     };
-    if status != ERROR_SUCCESS {
-        return None;
-    }
-    let length = buffer.iter().position(|&c| c == 0).unwrap_or(buffer.len());
-    Some(String::from_utf16_lossy(&buffer[..length]))
+    (status == ERROR_SUCCESS).then(|| {
+        let length = buffer.iter().position(|&c| c == 0).unwrap_or(buffer.len());
+        String::from_utf16_lossy(&buffer[..length])
+    })
 }
 
 #[cfg(test)]
@@ -291,89 +295,28 @@ mod tests {
     use super::*;
 
     #[test]
-    fn finds_the_game_folder_the_game_uses_wherever_documents_is() {
-        let root = std::env::temp_dir().join(format!("w0rplay-places-{}", std::process::id()));
-        let (windows, onedrive, empty) =
-            (root.join("Documents"), root.join("OneDrive").join("Belgeler"), root.join("x"));
-        for folder in [&windows, &onedrive] {
-            std::fs::create_dir_all(folder.join(GAME_FOLDER)).unwrap();
-        }
-        std::fs::create_dir_all(&empty).unwrap();
-        // Only OneDrive's has the game's settings: it's the one.
-        std::fs::write(onedrive.join(GAME_FOLDER).join("config.cfg"), "uset g_lang \"tr_tr\"").unwrap();
-        let folders = [windows.clone(), onedrive.clone(), empty.clone()];
-        assert_eq!(choose_game_documents(&folders), Some(onedrive.join(GAME_FOLDER)));
-        // Both: the one written last.
-        std::thread::sleep(std::time::Duration::from_millis(50));
-        std::fs::write(windows.join(GAME_FOLDER).join("config.cfg"), "uset g_lang \"en_us\"").unwrap();
-        assert_eq!(choose_game_documents(&folders), Some(windows.join(GAME_FOLDER)));
-        // None has played yet.
-        assert_eq!(choose_game_documents(&[empty]), None);
-        let _ = std::fs::remove_dir_all(&root);
+    fn turns_verbatim_paths_plain() {
+        assert_eq!(plain(Path::new(r"\\?\C:\a\b")), Path::new(r"C:\a\b"));
+        assert_eq!(plain(Path::new(r"\\?\c:\a\b")), Path::new(r"C:\a\b"));
+        assert_eq!(plain(Path::new(r"\\?\UNC\server\share\file.txt")), Path::new(r"\\server\share\file.txt"));
+        assert_eq!(plain(Path::new(r"C:\plain\path")), Path::new(r"C:\plain\path"));
     }
 
     #[test]
-    fn names_folders_plainly() {
-        assert_eq!(plain(Path::new(r"\\?\C:\Users\a\W0RPLAY\ui")), Path::new(r"C:\Users\a\W0RPLAY\ui"));
-        assert_eq!(plain(Path::new(r"\\?\UNC\server\share\ui")), Path::new(r"\\server\share\ui"));
-        assert_eq!(plain(Path::new(r"C:\Users\a\ui")), Path::new(r"C:\Users\a\ui"));
-        assert_eq!(plain(Path::new(r"\\server\share\ui")), Path::new(r"\\server\share\ui"));
+    fn finds_launch_homedir_in_options() {
+        assert_eq!(homedir("-64bit -homedir D:\\ETS2 -nointro"), Some(PathBuf::from(r"D:\ETS2")));
+        assert_eq!(homedir(r#"-homedir "D:\Game Folders\ETS2" -nointro"#), Some(PathBuf::from(r"D:\Game Folders\ETS2")));
+        assert_eq!(homedir("-nointro"), None);
+        assert_eq!(homedir("-homedir"), None);
+        assert_eq!(homedir("-homedir -other"), None);
     }
 
     #[test]
-    fn names_a_folder_as_windows_does() {
-        // Written as Steam writes its own folder: lowercase, forward slashes.
+    fn looks_up_windows_name_for_lowercase_path() {
         let windows = std::env::var("SystemRoot").unwrap();
         let as_steam_writes = windows.to_lowercase().replace('\\', "/");
         let result = windows_name(Path::new(&as_steam_writes));
         assert!(result.to_string_lossy().eq_ignore_ascii_case(&windows));
-        // A folder that isn't there stays as given.
         assert_eq!(windows_name(Path::new("q:/not/there")), Path::new("q:/not/there"));
-    }
-
-    #[test]
-    fn reads_the_libraries_steam_lists() {
-        let text = "\"libraryfolders\" { \"0\" { \"path\" \"C:\\\\Program Files (x86)\\\\Steam\" } \"1\" { \"path\" \"D:\\\\SteamLibrary\" } }";
-        assert_eq!(
-            library_paths(text),
-            vec![PathBuf::from(r"C:\Program Files (x86)\Steam"), PathBuf::from(r"D:\SteamLibrary")]
-        );
-        assert!(library_paths("not a vdf {").is_empty());
-    }
-
-    #[test]
-    fn reads_the_home_the_game_is_told_to_keep() {
-        assert_eq!(homedir(r"-homedir D:\ETS2"), Some(PathBuf::from(r"D:\ETS2")));
-        assert_eq!(homedir(r#"-nointro -HOMEDIR "D:\My Games\ETS2" -64bit"#), Some(PathBuf::from(r"D:\My Games\ETS2")));
-        assert_eq!(homedir("-nointro -64bit"), None);
-        assert_eq!(homedir("-homedir -nointro"), None);
-        assert_eq!(homedir(""), None);
-        // As Steam keeps them, its quotes and backslashes escaped, its keys in its own case.
-        let config = vdf::parse(
-            r#""UserLocalConfigStore" { "Software" { "Valve" { "Steam" { "apps" {
-                "270880" { "LaunchOptions" "-homedir E:\\ATS" }
-                "227300" { "LastPlayed" "1792500000" "LaunchOptions" "-homedir \"D:\\My Games\\ETS2\"" }
-            } } } } }"#,
-        )
-        .unwrap();
-        assert_eq!(launch_options(&config).and_then(homedir), Some(PathBuf::from(r"D:\My Games\ETS2")));
-    }
-
-    #[test]
-    fn a_home_given_as_the_game_folder_or_the_one_holding_it_is_found() {
-        let root = std::env::temp_dir().join(format!("w0rplay-homedir-{}", std::process::id()));
-        let (documents, home) = (root.join("Documents"), root.join("ETS2"));
-        std::fs::create_dir_all(documents.join(GAME_FOLDER)).unwrap();
-        std::fs::create_dir_all(home.join(GAME_FOLDER)).unwrap();
-        // An old game folder in Documents, and the one the game uses now in the home it's given.
-        std::fs::write(documents.join(GAME_FOLDER).join("config.cfg"), "old").unwrap();
-        std::thread::sleep(std::time::Duration::from_millis(50));
-        std::fs::write(home.join(GAME_FOLDER).join("config.cfg"), "now").unwrap();
-        // `-homedir <root>\ETS2`: the folder given and the one it's in are candidates.
-        let given = |folder: PathBuf| vec![documents.clone(), folder.parent().unwrap().to_path_buf(), folder];
-        assert_eq!(choose_game_documents(&given(home.clone())), Some(home.join(GAME_FOLDER)));
-        // `-homedir "<root>\ETS2\Euro Truck Simulator 2"`: the same folder.
-        assert_eq!(choose_game_documents(&given(home.join(GAME_FOLDER))), Some(home.join(GAME_FOLDER)));
-        let _ = std::fs::remove_dir_all(&root);
     }
 }

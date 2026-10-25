@@ -9,6 +9,7 @@ export const words: CompanionWords = {
     map: 'Kaart',
     setup: 'Seadistus',
     about: 'Teave',
+    support: 'Toeta mind',
   },
   state: {
     starting: 'Käivitub…',
@@ -185,6 +186,7 @@ export const words: CompanionWords = {
       map: 'Sinu kaart, tehtud sinu mängust. See valmistatakse uuesti, kui mäng või sinu kaardimodid muutuvad.',
       setup: 'Kuhu W0RPLAY on paigaldatud, koos uuesti paigaldamise ja eemaldamisega, kui neid kunagi vaja läheb.',
       about: 'Sinu versioon ja kopeeritav aruanne, kui miski pole õige.',
+      support: 'Kui W0RPLAY sulle meeldib, saad siin selle arendust toetada.',
     },
     finish: 'Valmis',
   },
@@ -289,5 +291,11 @@ export const words: CompanionWords = {
       text: 'Uue W0RPLAY pistikprogramm läheb sinu mängu. Windows küsib luba nagu paigaldamisel.',
       button: 'Jätka',
     },
+  },
+  support: {
+    title: 'Toeta mind',
+    sub: 'W0RPLAY on tasuta. Kui see teeb su sõidud paremaks, saad selle arendust toetada Kreosuses ühekordselt või igal kuul.',
+    button: 'Toeta Kreosuses',
+    note: 'Avab Kreosuse sinu brauseris.',
   },
 }

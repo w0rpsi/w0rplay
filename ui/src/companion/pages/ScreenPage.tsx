@@ -1,4 +1,4 @@
-import { setW0rplayOpen } from '../useHostStatus'
+import { setWestplayOpen } from '../useHostStatus'
 import { Group, Note, Panel, Row, Status, Switch, Tick } from '../room/parts'
 import { banner } from '../room/room'
 import { GLOW, useScreenAt } from '../room/screen'
@@ -9,36 +9,11 @@ import { type PageProps, screenState } from './page'
  * connection from W0RPLAY to the game to the screen. On the room's screen, Home, and W0RPLAY saying the
  * same in a banner.
  */
-export function ScreenPage({ status, settings, cw, setup }: PageProps) {
+export function ScreenPage({ status, settings, cw }: PageProps) {
   const w = cw.screen
   const state = screenState(status)
   // Known once the cabin page has said (it owns the state): the switch waits for it.
   const open = status?.w0rplayOpen ?? null
-
-  const game = setup?.game
-  const isAts = game?.dir
-    ? game.dir.toLowerCase().includes('american') || game.dir.toLowerCase().includes('amtruck')
-    : false
-
-  const gameName = status?.gameConnected
-    ? (isAts ? 'American Truck Simulator' : (game?.name || 'Euro Truck Simulator 2'))
-    : (game?.name ? `${game.name} & ATS` : w.game)
-
-  const adaptText = (text: string) => {
-    if (isAts) {
-      return text
-        .replace(/Euro Truck Simulator 2[’']?[yY]?[iI]?/g, 'American Truck Simulator’ı')
-        .replace(/Euro Truck Simulator 2/g, 'American Truck Simulator')
-    }
-    return text
-  }
-
-  const subText = adaptText(w.subs[state])
-  const noGameBanner = {
-    title: adaptText(w.banners.noGame.title),
-    text: adaptText(w.banners.noGame.text),
-  }
-
   useScreenAt(
     state === 'original' ? 'dashboard' : 'home',
     GLOW.home,
@@ -49,12 +24,12 @@ export function ScreenPage({ status, settings, cw, setup }: PageProps) {
         : state === 'notInCab'
           ? banner(w.banners.notInCab)
           : state === 'noGame'
-            ? banner(noGameBanner, true)
+            ? banner(w.banners.noGame, true)
             : null,
   )
   const fps = status?.framesPerSecond ?? 0
   return (
-    <Panel place="page" title={w.titles[state]} sub={subText}>
+    <Panel place="page" title={w.titles[state]} sub={w.subs[state]}>
       <Group place={4}>
         <Row
           title={w.show}
@@ -65,7 +40,7 @@ export function ScreenPage({ status, settings, cw, setup }: PageProps) {
               disabled={open === null || !status?.screenDrawing}
               label={w.show}
               change={(on) => {
-                setW0rplayOpen(on).catch((error: unknown) => console.error('W0RPLAY could not be switched', error))
+                setWestplayOpen(on).catch((error: unknown) => console.error('W0RPLAY could not be switched', error))
               }}
             />
           }
@@ -78,13 +53,13 @@ export function ScreenPage({ status, settings, cw, setup }: PageProps) {
           accessory={<Status tone={status?.error ? 'bad' : status ? 'good' : 'busy'} />}
         />
         <Row
-          title={gameName}
+          title={w.game}
           value={status?.gameConnected ? w.gameConnected : w.gameNotRunning}
           accessory={<Status tone={status?.gameConnected ? 'good' : 'idle'} />}
         />
         <Row
           title={w.truckScreen}
-          value={status?.screenDrawing ? (fps > 0 ? w.screenLive.replace('{fps}', String(fps)) : '30 FPS (Aktif)') : w.screenNotInView}
+          value={status?.screenDrawing ? w.screenLive.replace('{fps}', String(fps)) : w.screenNotInView}
           accessory={<Status tone={status?.screenDrawing ? 'good' : status?.gameConnected ? 'busy' : 'idle'} />}
         />
       </Group>

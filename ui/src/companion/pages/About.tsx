@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { appVersion, CURRENT_SERIAL_VERSION, openUrl } from '../bridge'
+import { appVersion } from '../bridge'
 import { Button, Group, Panel, Row } from '../room/parts'
 import { banner } from '../room/room'
 import { GLOW, useScreenAt } from '../room/screen'
@@ -56,20 +56,7 @@ export function About({ status, setup, cw, update, showUpdate }: PageProps) {
       }
     >
       <Group place={4}>
-        <Row
-          title={
-            <span>
-              W<span className="w0-slash">0</span>RPLAY (w0rpsi)
-            </span>
-          }
-          value={version || CURRENT_SERIAL_VERSION}
-        />
-        <Row
-          title="GitHub"
-          value="github.com/w0rpsi/w0rplay"
-          link
-          onClick={() => openUrl('https://github.com/w0rpsi/w0rplay')}
-        />
+        <Row title={w.version} value={version} />
         {update ? (
           <Row
             title={cw.update.row}
@@ -84,7 +71,7 @@ export function About({ status, setup, cw, update, showUpdate }: PageProps) {
       <Group title={w.diagnostics} place={5}>
         <Row
           title={w.frames}
-          value={status?.screenDrawing ? (status.framesPerSecond > 0 ? w.perSecond.replace('{n}', String(status.framesPerSecond)) : '60 Hz (Aktif)') : '—'}
+          value={status?.screenDrawing ? w.perSecond.replace('{n}', String(status.framesPerSecond)) : '—'}
         />
         <Row title={w.dropped} value={status ? String(status.droppedTotal) : '—'} />
         <Row title={w.cabGpu} detail={status?.cabAdapter ?? '—'} />
@@ -99,7 +86,7 @@ export function About({ status, setup, cw, update, showUpdate }: PageProps) {
 /** The report to copy: plain facts, in English (for whoever helps), nothing of the player's accounts. */
 function report(version: string, status: HostStatus | null, game: string | null, dir: string | null): string {
   return [
-    `W0rplay by W0rpsi ${version}`,
+    `W0RPLAY ${version}`,
     `Game: ${game ?? 'unknown'}${dir ? ` (${dir})` : ''}`,
     `State: ${screenState(status)}`,
     `Engine: ${status?.error ? `stopped: ${status.error}` : status ? 'running' : 'starting'}`,

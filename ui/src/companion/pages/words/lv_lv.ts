@@ -9,6 +9,7 @@ export const words: CompanionWords = {
     map: 'Karte',
     setup: 'Iestatīšana',
     about: 'Par',
+    support: 'Atbalsti mani',
   },
   state: {
     starting: 'Startē…',
@@ -185,6 +186,7 @@ export const words: CompanionWords = {
       map: 'Tava karte, veidota no tavas spēles. Tā tiek sagatavota no jauna, kad mainās spēle vai tavi kartes modi.',
       setup: 'Kur W0RPLAY ir instalēts, ar pārinstalēšanu un atinstalēšanu, ja tās kādreiz būs vajadzīgas.',
       about: 'Tava versija un ziņojums kopēšanai, ja kaut kas nav kārtībā.',
+      support: 'Ja tev patīk W0RPLAY, šeit vari atbalstīt tā izstrādi.',
     },
     finish: 'Gatavs',
   },
@@ -290,5 +292,11 @@ export const words: CompanionWords = {
       text: 'Jaunā W0RPLAY spraudnis tiek ievietots tavā spēlē. Windows lūgs atļauju, tāpat kā instalējot.',
       button: 'Turpināt',
     },
+  },
+  support: {
+    title: 'Atbalsti mani',
+    sub: 'W0RPLAY ir bez maksas. Ja tas padara tavus braucienus labākus, vari atbalstīt tā izstrādi Kreosus vienreiz vai katru mēnesi.',
+    button: 'Atbalstīt Kreosus',
+    note: 'Atver Kreosus tavā pārlūkā.',
   },
 }

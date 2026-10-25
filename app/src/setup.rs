@@ -40,9 +40,6 @@ impl SetupStore {
     /// The record kept in `dir`, and the game it names for the host.
     pub fn load(dir: &Path, app: &AppHandle) -> Self {
         let record = Record::load(dir);
-        if let Some(ref g) = record.game {
-            ensure_mod_updated(g);
-        }
         let game = Arc::new(SetUpGame::new(record.game.clone()));
         Self(Arc::new(Inner { dir: dir.to_path_buf(), record: Mutex::new(record), game, plugin: plugin_file(app) }))
     }
@@ -67,32 +64,23 @@ impl Inner {
     }
 }
 
-const EMBEDDED_PLUGIN: &[u8] = include_bytes!("../w0rplay.dll");
-
-/// W0RPLAY's plugin: shipped beside the app, in resources, or extracted from embedded binary for standalone EXE.
+/// W0RPLAY's plugin: shipped beside the app (its resources, or the app's own folder in an unbundled release
+/// build); while developing, the release build of it (the one the dev loop builds and installs).
 fn plugin_file(app: &AppHandle) -> Option<PathBuf> {
-    let beside = std::env::current_exe().ok().and_then(|exe| Some(exe.parent()?.join(plugin::FILE_NAME)));
-    if let Some(path) = beside.filter(|p| p.is_file()) {
-        return Some(path);
-    }
-    let resources = app.path().resource_dir().ok().map(|dir| dir.join(plugin::FILE_NAME));
-    if let Some(path) = resources.filter(|p| p.is_file()) {
-        return Some(path);
-    }
-    // Standalone single-EXE distribution: extract embedded DLL to local app data!
-    let local = app.path().app_local_data_dir().ok()?.join(plugin::FILE_NAME);
-    if let Some(parent) = local.parent() {
-        let _ = std::fs::create_dir_all(parent);
-    }
-    let _ = std::fs::write(&local, EMBEDDED_PLUGIN);
-    local.is_file().then_some(local)
+    let candidates: Vec<PathBuf> = if cfg!(debug_assertions) {
+        vec![PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../target/release").join(plugin::FILE_NAME)]
+    } else {
+        let resources = app.path().resource_dir().ok().map(|dir| dir.join(plugin::FILE_NAME));
+        let beside = std::env::current_exe().ok().and_then(|exe| Some(exe.parent()?.join(plugin::FILE_NAME)));
+        resources.into_iter().chain(beside).collect()
+    };
+    candidates.into_iter().find(|path| path.is_file())
 }
 
 /// An install of the game, as the companion shows it.
 #[derive(Clone, Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct GameInfo {
-    name: &'static str,
     dir: PathBuf,
     /// `steam`, `installed` (another store's, or SCS's own installer) or `chosen`.
     found_by: &'static str,
@@ -105,7 +93,6 @@ pub struct GameInfo {
 impl From<&Game> for GameInfo {
     fn from(game: &Game) -> Self {
         Self {
-            name: game.name(),
             dir: game.dir.clone(),
             found_by: match game.found_by {
                 FoundBy::Steam => "steam",
@@ -145,42 +132,10 @@ pub async fn setup_state(store: State<'_, SetupStore>) -> Result<SetupState, Str
     blocking(move || {
         let record = inner.record();
         let found = game::find();
-        let mut game = record.game.as_deref().and_then(Game::recognise);
-        let mut finished = record.finished;
-
-        // Auto-detect if plugin is already installed in any game:
-        if !finished {
-            let ours = inner.plugin.as_deref();
-            if let Some(ours) = ours {
-                let mut found_installed: Option<Game> = None;
-                if let Some(current_game) = &game {
-                    if matches!(plugin::state(current_game, ours), Ok(plugin::State::Current)) {
-                        found_installed = Some(current_game.clone());
-                    }
-                }
-                if found_installed.is_none() {
-                    for candidate in &found {
-                        if matches!(plugin::state(candidate, ours), Ok(plugin::State::Current)) {
-                            found_installed = Some(candidate.clone());
-                            break;
-                        }
-                    }
-                }
-                if let Some(installed_game) = found_installed {
-                    finished = true;
-                    let _ = inner.update(|rec| {
-                        rec.game = Some(installed_game.dir.clone());
-                        rec.version = Some(VERSION.into());
-                        rec.finished = true;
-                    });
-                    game = Some(installed_game);
-                }
-            }
-        }
-
+        let game = record.game.as_deref().and_then(Game::recognise);
         Ok(SetupState {
-            finished,
-            updated: game.is_some() && finished && is_update(record.version.as_deref()),
+            finished: record.finished,
+            updated: game.is_some() && record.finished && is_update(record.version.as_deref()),
             game: game.as_ref().map(GameInfo::from),
             found: found.iter().map(GameInfo::from).collect(),
             game_running: game::running(),
@@ -192,10 +147,10 @@ pub async fn setup_state(store: State<'_, SetupStore>) -> Result<SetupState, Str
 
 /// The onboarding speaks the game's language, as W0RPLAY does in the cab (its words, and the map's place
 /// names): the one the game was last set to (its `config.cfg`), or one set for trying it out
-/// (`W0RPLAY_LANGUAGE`). A player who never started the game has neither: the onboarding then follows
+/// (`WESTPLAY_LANGUAGE`). A player who never started the game has neither: the onboarding then follows
 /// Windows'.
 fn onboarding_language() -> Option<String> {
-    let set = std::env::var("W0RPLAY_LANGUAGE").ok().filter(|code| !code.is_empty());
+    let set = std::env::var("WESTPLAY_LANGUAGE").ok().filter(|code| !code.is_empty());
     set.or_else(|| {
         let config = std::fs::read_to_string(places::game_documents()?.join("config.cfg")).ok()?;
         w0rplay_mapdata::locale::game_language(&config)
@@ -225,6 +180,7 @@ pub async fn choose_game_folder(window: WebviewWindow, title: String) -> Result<
     })
     .await
 }
+
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -318,7 +274,7 @@ pub async fn check_game(dir: PathBuf, store: State<'_, SetupStore>) -> Result<Ga
     let ours = store.0.plugin.clone();
     blocking(move || {
         let game = Game::recognise(&dir).ok_or("gameGone")?;
-        let (profiles, installed) = match places::game_documents_for(game.name()).or_else(places::game_documents) {
+        let (profiles, installed) = match places::game_documents() {
             Some(documents) => {
                 let userdata = places::steam().map(|steam| steam.join("userdata"));
                 let found = profiles::find(&documents, userdata.as_deref(), Some(&game));
@@ -432,34 +388,14 @@ pub async fn install_into_game(
         };
         let done = mod_error.is_none() && matches!(plugin, PluginOutcome::Installed);
         if done {
-            let _ = w0rplay_setup::profiles::configure_camera_zoom_for_all_profiles();
-            let _ = w0rplay_setup::prism::deploy_all();
-            if let Some(doc) = places::game_documents_for(game.name()) {
-                let _ = w0rplay_setup::prism::install_into_documents(&doc);
-            }
             inner.update(|record| {
                 record.game = Some(game.dir.clone());
                 record.version = Some(VERSION.into());
-                record.finished = true;
             })?;
         }
         Ok(InstallReport { plugin, mod_error, done })
     })
     .await
-}
-
-pub fn ensure_mod_updated(game_dir: &Path) {
-    let _ = w0rplay_setup::prism::deploy_all();
-    if let Ok(files) = GameFiles::install(game_dir) {
-        if let Ok((bytes, _)) = game_mod::build(&files) {
-            if let Some(ours) = places::w0rplay_documents() {
-                let _ = game_mod::install(&bytes, &ours);
-            }
-            for doc in places::documents_folders() {
-                let _ = game_mod::install(&bytes, &doc.join("W0RPLAY"));
-            }
-        }
-    }
 }
 
 /// The mod into W0RPLAY's own folder; then, from a game W0RPLAY 1.2 set up, its copy taken out of the game's
@@ -515,7 +451,6 @@ fn is_update(installed_by: Option<&str>) -> bool {
 /// The onboarding was gone through to its end.
 #[tauri::command]
 pub fn finish_setup(store: State<SetupStore>) -> Result<(), String> {
-    let _ = w0rplay_setup::profiles::configure_camera_zoom_for_all_profiles();
     store.0.update(|record| record.finished = true)
 }
 

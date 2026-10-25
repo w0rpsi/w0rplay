@@ -129,14 +129,17 @@ export function appleMusicSignOut(): Promise<void> {
   return call('apple_music_sign_out')
 }
 
+/** Opens the support page (Kreosus) in the player's browser. */
+export function openSupportPage(): Promise<void> {
+  return call('open_support_page')
+}
+
 /** Runs Apple Music's web player (hidden), so the status says whether it's signed in. */
 export function appleMusicCheck(): Promise<void> {
   return call('apple_music_check')
 }
 
 /** Opens or closes W0RPLAY on the truck's screen (the status then reports it, once the cabin has). */
-export function setW0rplayOpen(open: boolean): Promise<void> {
+export function setWestplayOpen(open: boolean): Promise<void> {
   return call('set_w0rplay_open', { open })
 }
-export const setWestplayOpen = setW0rplayOpen
-export const setW0playOpen = setW0rplayOpen

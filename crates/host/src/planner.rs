@@ -425,21 +425,21 @@ mod tests {
     }
 
     /// Replays a Go on a player's map against the route their game planned (owner 2026-10-22: a border
-    /// crossing, and no routes at all on a toll plaza's approach). `W0RPLAY_GRAPH`: the map's
-    /// `route-graph.bin`; `W0RPLAY_ROUTES`: the game's routes as `examples/route_dump` wrote them;
-    /// `W0RPLAY_CASE`: `<route number> <truck x> <truck z> <destination uid hex>`, the truck heading along
+    /// crossing, and no routes at all on a toll plaza's approach). `WESTPLAY_GRAPH`: the map's
+    /// `route-graph.bin`; `WESTPLAY_ROUTES`: the game's routes as `examples/route_dump` wrote them;
+    /// `WESTPLAY_CASE`: `<route number> <truck x> <truck z> <destination uid hex>`, the truck heading along
     /// the game's route from it.
     #[test]
     #[ignore = "reads a player's map and recorded routes"]
     fn replays_a_go_on_a_players_map() {
         let var = |name: &str| std::env::var(name).unwrap_or_else(|_| panic!("{name}"));
-        let graph = read(Path::new(&var("W0RPLAY_GRAPH"))).expect("the graph");
-        let case = var("W0RPLAY_CASE");
+        let graph = read(Path::new(&var("WESTPLAY_GRAPH"))).expect("the graph");
+        let case = var("WESTPLAY_CASE");
         let words: Vec<&str> = case.split_whitespace().collect();
         let number: u32 = words[0].parse().unwrap();
         let (x, z): (f32, f32) = (words[1].parse().unwrap(), words[2].parse().unwrap());
         let to = u64::from_str_radix(words[3], 16).unwrap();
-        let game = recorded_route(&var("W0RPLAY_ROUTES"), number);
+        let game = recorded_route(&var("WESTPLAY_ROUTES"), number);
         // The truck's heading: along the game's route from its first node to one 50 m on.
         let first = game[0];
         let on = game.iter().find(|node| (node.1 - first.1).hypot(node.2 - first.2) > 50.0).unwrap();

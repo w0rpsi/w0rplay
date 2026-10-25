@@ -44,7 +44,7 @@ const RECHECK_MODS: Duration = Duration::from_secs(5 * 60);
 
 /// The memory a build wants free, bytes: the base game's whole map peaked at 2.93 GB (2026-10-17, measured
 /// as it was built), and a margin for the rest of the PC.
-pub const MEMORY_NEEDED: u64 = 1_000_000_000;
+pub const MEMORY_NEEDED: u64 = 3_500_000_000;
 
 /// The most memory a build may take ([`memory_ceiling`]) on any PC, bytes: twice what the biggest map known
 /// takes (ProMods with its Middle East, 2.25 GB peak; 2026-10-19).
@@ -237,6 +237,7 @@ struct Basis {
 type Failures = HashMap<PathBuf, (serde_json::Value, String)>;
 
 fn watch(maps: &Path, set_up: &SetUpGame, sender: &Sender<MapUpdate>, played: &PlayedMap) {
+    let documents = places::game_documents();
     let userdata = places::steam().map(|steam| steam.join("userdata"));
     let mut sent: Option<MapUpdate> = None;
     let mut worked_out: Option<(Basis, Vec<Want>)> = None;
@@ -248,9 +249,7 @@ fn watch(maps: &Path, set_up: &SetUpGame, sender: &Sender<MapUpdate>, played: &P
     let mut not_removed: HashSet<PathBuf> = HashSet::new();
     loop {
         let set_up_in = set_up.state().clone();
-        let running_game = w0rplay_setup::game::running_game();
-        let game = running_game.or_else(|| set_up_in.dir.as_deref().and_then(Game::recognise));
-        let documents = game.as_ref().and_then(|g| places::game_documents_for(g.name())).or_else(places::game_documents);
+        let game = set_up_in.dir.as_deref().and_then(Game::recognise);
         let asked_now = set_up_in.asked_again != asked_again;
         if asked_now {
             asked_again = set_up_in.asked_again;
@@ -320,8 +319,7 @@ fn basis(game: &Game, documents: &Path, userdata: Option<&Path>) -> Basis {
                 (dir, at)
             })
             .collect(),
-        game_written: written(&game.dir.join("bin").join("win_x64").join("amtrucks.exe"))
-            .or_else(|| written(&game.dir.join("bin").join("win_x64").join("eurotrucks2.exe"))),
+        game_written: written(&game.dir.join("bin").join("win_x64").join("eurotrucks2.exe")),
         truckersmp: truckersmp::installation().map(|installation| {
             let packs = truckersmp::packs(&installation).into_iter().map(|pack| {
                 let at = written(&pack);
@@ -342,9 +340,7 @@ fn basis(game: &Game, documents: &Path, userdata: Option<&Path>) -> Basis {
 fn profile_dirs(documents: &Path, userdata: Option<&Path>) -> Vec<PathBuf> {
     let mut folders = vec![documents.join("profiles"), documents.join("steam_profiles")];
     for user in userdata.into_iter().flat_map(|dir| std::fs::read_dir(dir).into_iter().flatten().flatten()) {
-        for app in game::STEAM_APPS {
-            folders.push(user.path().join(app).join("remote").join("profiles"));
-        }
+        folders.push(user.path().join(game::STEAM_APP).join("remote").join("profiles"));
     }
     let mut dirs: Vec<PathBuf> = folders
         .iter()
@@ -933,7 +929,7 @@ mod tests {
     fn waits_for_memory_only_when_it_will_come() {
         const GB: u64 = 1_000_000_000;
         assert_eq!(memory_short(Some((10 * GB, 32 * GB))), None);
-        assert_eq!(memory_short(Some((GB / 2, 32 * GB))), Some(GB / 2));
+        assert_eq!(memory_short(Some((2 * GB, 32 * GB))), Some(2 * GB));
         assert_eq!(memory_short(Some((GB, 3 * GB))), None);
         assert_eq!(memory_short(None), None);
         let (free, total) = memory().expect("Windows says");

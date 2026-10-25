@@ -1,5 +1,5 @@
-// W0RPLAY, in YouTube Music's web player (youtube_music.rs): YouTube Music's own page, run hidden under the cab.
-// The YouTube Music app the player sees is W0RPLAY's own; this answers its questions and plays as it asks,
+// WestPlay, in YouTube Music's web player (youtube_music.rs): YouTube Music's own page, run hidden under the cab.
+// The YouTube Music app the player sees is WestPlay's own; this answers its questions and plays as it asks,
 // through the page's own player:
 //
 // - Questions (Home, Explore, a page, a search, an album's, playlist's or artist's page, the Library, a song's
@@ -1103,7 +1103,7 @@
 
   // The truck's own speakers (cab_sound.js, loaded first): the player's media element, told the speakers, the
   // head and the camera by the host.
-  const cab = window.w0rplayCabSound?.(() => media(), post)
+  const cab = window.westplayCabSound?.(() => media(), post)
   if (cab) setInterval(() => cab.tick(), 250)
   const CAB = {
     speakers: (data) => cab?.speakers(data.speakers),

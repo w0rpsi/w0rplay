@@ -9,6 +9,7 @@ export const words: CompanionWords = {
     map: 'Žemėlapis',
     setup: 'Sąranka',
     about: 'Apie',
+    support: 'Paremk mane',
   },
   state: {
     starting: 'Paleidžiama…',
@@ -185,6 +186,7 @@ export const words: CompanionWords = {
       map: 'Tavo žemėlapis, sukurtas iš tavo žaidimo. Jis paruošiamas iš naujo, kai pasikeičia žaidimas ar tavo žemėlapio modai.',
       setup: 'Kur įdiegtas W0RPLAY, su diegimu iš naujo ir pašalinimu, jei kada prireiktų.',
       about: 'Tavo versija ir ataskaita kopijuoti, jei kažkas negerai.',
+      support: 'Jei tau patinka W0RPLAY, čia gali paremti jo kūrimą.',
     },
     finish: 'Atlikta',
   },
@@ -290,5 +292,11 @@ export const words: CompanionWords = {
       text: 'Naujojo W0RPLAY papildinys įdedamas į tavo žaidimą. Windows paprašys leidimo, kaip ir diegiant.',
       button: 'Tęsti',
     },
+  },
+  support: {
+    title: 'Paremk mane',
+    sub: 'W0RPLAY nemokamas. Jei jis daro tavo keliones geresnes, gali paremti jo kūrimą „Kreosus“ vieną kartą arba kas mėnesį.',
+    button: 'Paremti „Kreosus“',
+    note: 'Atidaro „Kreosus“ tavo naršyklėje.',
   },
 }

@@ -27,9 +27,5 @@ dist/
 # Signing keys (the updater's private key stays with its owner, outside the repository)
 *.key
 
-# Compiled binaries and release output
-/release-w0rplay/
-*.old
-*.exe
-*.dll
-*.scs
+orjinalkod/
+release-w0rplay/

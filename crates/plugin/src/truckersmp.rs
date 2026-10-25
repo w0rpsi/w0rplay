@@ -382,6 +382,6 @@ mod tests {
     fn fills_a_descriptors_field_cut_and_terminated() {
         let mut field = [0xffu8; 8];
         fill(&mut field, "W0RPLAY plugin");
-        assert_eq!(&field, b"W0RPLAY\0");
+        assert_eq!(&field, b"WestPla\0");
     }
 }

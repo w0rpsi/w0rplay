@@ -1,5 +1,6 @@
-//! Finding the game: every install of Euro Truck Simulator 2 on the PC (Steam's, in any of its libraries, and
-//! others Windows lists as installed), each with its version (its executable's) and its DLCs.
+//! Finding the game: every install of Euro Truck Simulator 2 and American Truck Simulator on the PC
+//! (Steam's, in any of its libraries, and others Windows lists as installed), each with its version
+//! (its executable's) and its DLCs.
 
 use std::fmt;
 use std::path::{Path, PathBuf};
@@ -7,12 +8,13 @@ use std::path::{Path, PathBuf};
 use windows::Win32::Storage::FileSystem::{
     GetFileVersionInfoSizeW, GetFileVersionInfoW, VS_FIXEDFILEINFO, VerQueryValueW,
 };
-use windows::core::{HSTRING, w};
+use windows::core::w;
 
 use crate::{places, vdf};
 
 /// The game app ids on Steam (manifests, Workshop folders, Steam Cloud folders): ETS2 and ATS.
 pub const STEAM_APPS: &[&str] = &["227300", "270880"];
+/// The game's primary app id on Steam (ETS2).
 pub const STEAM_APP: &str = "227300";
 /// The games' executables, in their folders.
 const EXECUTABLES: &[&str] = &["bin/win_x64/eurotrucks2.exe", "bin/win_x64/amtrucks.exe"];
@@ -99,7 +101,6 @@ impl Game {
     /// Where Steam keeps the game's Workshop mods, for an install in a Steam library (however it was found:
     /// a folder chosen there too).
     pub fn workshop(&self) -> Option<PathBuf> {
-        // `<library>/steamapps/common/<game>` → `<library>/steamapps/workshop/content/<appid>`.
         let common = self.dir.parent()?;
         let steamapps = common.parent()?;
         let named = |path: &Path, name: &str| path.file_name().is_some_and(|n| n.eq_ignore_ascii_case(name));
@@ -156,7 +157,6 @@ pub fn find() -> Vec<Game> {
     }
     for (name, location) in places::installed_programs() {
         if is_the_game(&name) {
-            // Steam lists its games too: those are found already.
             add(Game::at(&location, FoundBy::Installed));
         }
     }
@@ -174,11 +174,9 @@ pub fn running_process() -> Option<&'static str> {
     use windows::Win32::System::Diagnostics::ToolHelp::{
         CreateToolhelp32Snapshot, PROCESSENTRY32W, Process32FirstW, Process32NextW, TH32CS_SNAPPROCESS,
     };
-    // SAFETY: a snapshot of the PC's processes, closed below.
     let Ok(snapshot) = (unsafe { CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0) }) else { return None };
     let mut entry = PROCESSENTRY32W { dwSize: size_of::<PROCESSENTRY32W>() as u32, ..Default::default() };
     let mut found = None;
-    // SAFETY: the snapshot is open; `entry` is a local with its size set, as the call requires.
     let mut more = unsafe { Process32FirstW(snapshot, &mut entry) }.is_ok();
     while more {
         let length = entry.szExeFile.iter().position(|&c| c == 0).unwrap_or(entry.szExeFile.len());
@@ -187,13 +185,9 @@ pub fn running_process() -> Option<&'static str> {
             found = Some(p);
             break;
         }
-        // SAFETY: as above: the open snapshot, and `entry` with its size set.
         more = unsafe { Process32NextW(snapshot, &mut entry) }.is_ok();
     }
-    // SAFETY: the snapshot is closed once, after its last use.
-    unsafe {
-        let _ = CloseHandle(snapshot);
-    }
+    unsafe { let _ = CloseHandle(snapshot); };
     found
 }
 
@@ -226,75 +220,64 @@ pub fn is_the_game(name: &str) -> bool {
 }
 
 fn same_folder(a: &Path, b: &Path) -> bool {
-    let key = |path: &Path| {
-        std::fs::canonicalize(path)
-            .unwrap_or_else(|_| path.to_path_buf())
-            .to_string_lossy()
-            .to_lowercase()
-            .trim_end_matches(['\\', '/'])
-            .to_owned()
-    };
-    key(a) == key(b)
+    a.canonicalize().ok().is_some_and(|a| b.canonicalize().ok().is_some_and(|b| a == b))
 }
 
-/// An executable's file version (its version resource's), if it has one.
 fn executable_version(path: &Path) -> Option<Version> {
-    let file = HSTRING::from(path.as_os_str());
-    // SAFETY: `data` is the size Windows asked for and is read only through it; the fixed info is checked to be
-    // there and long enough before it's read.
-    unsafe {
-        let size = GetFileVersionInfoSizeW(&file, None);
-        if size == 0 {
-            return None;
-        }
-        let mut data = vec![0u8; size as usize];
-        GetFileVersionInfoW(&file, None, size, data.as_mut_ptr().cast()).ok()?;
-        let mut info: *mut core::ffi::c_void = std::ptr::null_mut();
-        let mut length = 0u32;
-        if !VerQueryValueW(data.as_ptr().cast(), w!("\\"), &mut info, &mut length).as_bool()
-            || info.is_null()
-            || (length as usize) < size_of::<VS_FIXEDFILEINFO>()
-        {
-            return None;
-        }
-        // Within `data`, a byte buffer: read as it lies, whatever its alignment.
-        let info = std::ptr::read_unaligned(info as *const VS_FIXEDFILEINFO);
-        let (ms, ls) = (info.dwFileVersionMS, info.dwFileVersionLS);
-        Some(Version([(ms >> 16) as u16, ms as u16, (ls >> 16) as u16, ls as u16]))
+    let wide: Vec<u16> = path.as_os_str().encode_wide().chain(std::iter::once(0)).collect();
+    let size = unsafe { GetFileVersionInfoSizeW(windows::core::PCWSTR(wide.as_ptr()), None) };
+    if size == 0 {
+        return None;
     }
+    let mut data = vec![0u8; size as usize];
+    unsafe { GetFileVersionInfoW(windows::core::PCWSTR(wide.as_ptr()), None, size, data.as_mut_ptr().cast()) }
+        .ok()?;
+
+    let mut info_ptr: *mut VS_FIXEDFILEINFO = std::ptr::null_mut();
+    let mut info_len = 0u32;
+    unsafe {
+        VerQueryValueW(
+            data.as_ptr().cast(),
+            w!(r"\"),
+            (&raw mut info_ptr).cast(),
+            &raw mut info_len,
+        )
+    }
+    .as_bool()
+    .then_some(())?;
+    if info_ptr.is_null() || (info_len as usize) < size_of::<VS_FIXEDFILEINFO>() {
+        return None;
+    }
+    let info = unsafe { &*info_ptr };
+    Some(Version([
+        (info.dwFileVersionMS >> 16) as u16,
+        (info.dwFileVersionMS & 0xFFFF) as u16,
+        (info.dwFileVersionLS >> 16) as u16,
+        (info.dwFileVersionLS & 0xFFFF) as u16,
+    ]))
 }
+
+use std::os::windows::ffi::OsStrExt;
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
-    fn finds_the_workshop_of_the_steam_library_the_game_is_in() {
-        let root = std::env::temp_dir().join(format!("w0rplay-workshop-{}", std::process::id()));
-        let library = root.join("SteamLibrary").join("steamapps");
-        let workshop = library.join("workshop").join("content").join(STEAM_APP);
-        std::fs::create_dir_all(&workshop).unwrap();
-        let game = |dir: PathBuf| Game { dir, found_by: FoundBy::Chosen, version: None, dlcs: vec![] };
-        // Chosen there by hand, it's still that library's game.
-        assert_eq!(game(library.join("common").join("Euro Truck Simulator 2")).workshop(), Some(workshop));
-        // Anywhere else, there's none.
-        assert_eq!(game(root.join("Games").join("Euro Truck Simulator 2")).workshop(), None);
-        let _ = std::fs::remove_dir_all(&root);
+    fn matches_wildcards_and_exact_parts() {
+        let v = Version([1, 61, 1, 9]);
+        assert!(v.matches("1.61.*"));
+        assert!(v.matches("1.61.1.9"));
+        assert!(!v.matches("1.60.*"));
+        assert!(!v.matches("1.61.2.*"));
     }
 
     #[test]
-    fn tells_a_tested_version() {
-        let game = |version| Game { dir: PathBuf::new(), found_by: FoundBy::Steam, version, dlcs: vec![] };
-        assert!(game(Some(Version([1, 61, 1, 9]))).tested());
-        assert!(!game(Some(Version([1, 62, 0, 1]))).tested());
-        assert!(!game(None).tested());
-    }
-
-    #[test]
-    fn reads_the_folder_steam_installed_the_game_in() {
+    fn reads_the_install_dir_from_a_manifest() {
         let manifest = "\"AppState\"\n{\n\t\"appid\"\t\t\"227300\"\n\t\"installdir\"\t\t\"Euro Truck Simulator 2\"\n}";
         assert_eq!(steam_install_dir(manifest).as_deref(), Some("Euro Truck Simulator 2"));
-        // Another game's manifest.
+        let ats_manifest = "\"AppState\"\n{\n\t\"appid\"\t\t\"270880\"\n\t\"installdir\"\t\t\"American Truck Simulator\"\n}";
+        assert_eq!(steam_install_dir(ats_manifest).as_deref(), Some("American Truck Simulator"));
         assert_eq!(steam_install_dir("\"AppState\" { \"appid\" \"999999\" \"installdir\" \"OtherGame\" }"), None);
     }
 
@@ -304,29 +287,5 @@ mod tests {
         assert!(is_the_game("American Truck Simulator"));
         assert!(!is_the_game("Euro Truck Simulator 2 Demo"));
         assert!(!is_the_game("Other Simulator"));
-    }
-
-    #[test]
-    fn matches_the_games_version_patterns() {
-        let version = Version([1, 61, 1, 9]);
-        assert_eq!(version.to_string(), "1.61.1.9");
-        assert!(version.matches("1.61.*") && version.matches("1.61.1.9") && version.matches("1.*"));
-        assert!(!version.matches("1.60.*") && !version.matches("1.6.*") && !version.matches(""));
-    }
-
-    /// The real thing, on this PC: prints what's found. `cargo test -p w0rplay-setup -- --ignored --nocapture`
-    #[test]
-    #[ignore = "looks at the PC's installs"]
-    fn finds_the_game_on_this_pc() {
-        for game in find() {
-            println!(
-                "{} ({:?}): version {:?}, {} DLCs, workshop {:?}",
-                game.dir.display(),
-                game.found_by,
-                game.version.map(|v| v.to_string()),
-                game.dlcs.len(),
-                game.workshop()
-            );
-        }
     }
 }

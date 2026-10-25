@@ -101,7 +101,7 @@ function BannerView({ banner }: { banner: Banner | null }) {
     >
       {text && (
         <>
-          <img src="/w0rplay.png" alt="W0RPLAY" />
+          <img src="/w0rplay.png" alt="" />
           <div className="ts-banner-words">
             {leaving && <BannerWords banner={leaving} leaving />}
             <BannerWords key={text.title} banner={text} entering={messages > 0} />

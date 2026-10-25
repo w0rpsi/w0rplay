@@ -78,25 +78,7 @@ pub fn screen_layout_for_texture(width: u32, height: u32) -> Option<usize> {
 /// The trucks W0RPLAY shows in on a layout that trucks it doesn't support share (SDK model ids, without the
 /// `vehicle.` prefix): most trucks' interiors name the stock GPS screen (`generic`, `ui/gps.sii`), and of
 /// those only the Scania S and R are W0RPLAY's. The other layouts are their own trucks' scripts.
-const SHARED_LAYOUT_TRUCKS: &[(&str, &[&str])] = &[(
-    "generic",
-    &[
-        "scania.s_2016",
-        "scania.r_2016",
-        "kenworth.w900",
-        "kenworth.t680",
-        "peterbilt.579",
-        "peterbilt.579_2022",
-        "peterbilt.389",
-        "westernstar.49x",
-        "international.lonestar",
-        "international.lt",
-        "international.9900i",
-        "mack.anthem",
-        "mack.pinnacle",
-        "volvo.vnl",
-    ],
-)];
+const SHARED_LAYOUT_TRUCKS: &[(&str, &[&str])] = &[("generic", &["scania.s_2016", "scania.r_2016"])];
 
 /// Whether W0RPLAY shows on the layout at `index` (in [`screen_layouts`]) in the truck `truck_id` (the SDK's
 /// id, with or without its `vehicle.` prefix): every other truck keeps the game's own screen.
@@ -892,8 +874,6 @@ mod tests {
         // A truck's own layout is its own.
         assert!(screen_supported(layout("daf-2021"), "vehicle.daf.2021"));
         assert!(screen_supported(layout("iveco-sway"), "vehicle.iveco.sway"));
-        assert!(screen_supported(layout("volvo-vnl-2025"), "vehicle.volvo.vnl2025"));
-        assert!(screen_supported(generic, "vehicle.kenworth.w900"));
         assert!(!screen_supported(screen_layouts().len(), "vehicle.scania.s_2016"));
     }
 

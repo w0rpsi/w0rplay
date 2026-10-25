@@ -3,159 +3,165 @@
 <h1 align="center">W0RPLAY</h1>
 
 <p align="center">
-  <b>Euro Truck Simulator 2 & American Truck Simulator için yeni nesil araç içi CarPlay ekranı.</b><br>
-  Canlı TV, haritanız, rotanız, YouTube ve müzikleriniz doğrudan çekicinizin konsol ekranında.
+  <b>A CarPlay-style screen for the trucks of Euro Truck Simulator 2.</b><br>
+  Your map, your music and YouTube, on your truck's own dashboard screen.
 </p>
 
 <p align="center">
-  <a href="https://github.com/w0rpsi/w0rplay/releases/latest"><img alt="Download W0RPLAY" src="https://img.shields.io/badge/İndir-1b268-409c42?style=for-the-badge&logo=github"></a>
+  <a href="https://github.com/enes-less/W0RPLAY/releases/latest"><img alt="Download for Windows" src="https://img.shields.io/badge/download-for%20Windows-409c42?style=for-the-badge"></a>
   <img alt="Windows 10 and 11" src="https://img.shields.io/badge/Windows-10%20%7C%2011-2b2b2b?style=for-the-badge">
-  <img alt="ETS2 & ATS" src="https://img.shields.io/badge/ETS2%20%26%20ATS-1.61%2B-blue?style=for-the-badge">
-  <a href="LICENSE"><img alt="Licence: GPL-3.0-or-later" src="https://img.shields.io/badge/Lisans-GPL--3.0-2b2b2b?style=for-the-badge"></a>
-  <a href="https://github.com/w0rpsi"><img alt="Developer: w0rpsi" src="https://img.shields.io/badge/Geliştirici-w0rpsi-181717?style=for-the-badge&logo=github"></a>
+  <img alt="Euro Truck Simulator 2 1.61" src="https://img.shields.io/badge/ETS2-1.61-2b2b2b?style=for-the-badge">
+  <a href="LICENSE"><img alt="Licence: GPL-3.0-or-later" src="https://img.shields.io/badge/licence-GPL--3.0-2b2b2b?style=for-the-badge"></a>
 </p>
 
 <p align="center">
-  <a href="#özellikler">Özellikler</a> ·
-  <a href="#ekran-görüntüleri">Ekran Görüntüleri</a> ·
-  <a href="#kurulum">Kurulum</a> ·
-  <a href="#desteklenen-çekiciler">Desteklenen Çekiciler</a> ·
-  <a href="#güncellemeler">Güncellemeler</a> ·
-  <a href="#gizlilik">Gizlilik</a>
+  <a href="#features">Features</a> ·
+  <a href="#trucks">Trucks</a> ·
+  <a href="#install">Install</a> ·
+  <a href="#privacy">Privacy</a> ·
+  <a href="#support">Support</a>
 </p>
 
 <br>
 
-<p align="center">
-  <img alt="W0RPLAY Yeni Nesil CarPlay Ana Ekranı" src="docs/images/carplay-home.png" width="100%" style="border-radius: 12px; box-shadow: 0 12px 36px rgba(0,0,0,0.5);">
-</p>
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/home-dark.png">
+  <source media="(prefers-color-scheme: light)" srcset="docs/images/home-light.png">
+  <img alt="W0RPLAY's Home screen: Maps, Music, Spotify, YouTube and YouTube Music on the truck's screen" src="docs/images/home-dark.png" width="100%">
+</picture>
 
-W0RPLAY, Euro Truck Simulator 2 ve American Truck Simulator çekicilerinizin kendi dijital konsol ekranına akıllı telefon tarzı bir CarPlay arayüzü entegre eder. Oyununuzun gerçek yollarından üretilen harita rotası, Spotify, YouTube Music, YouTube ve canlı ulusal televizyon kanalları (ATV, TRT 1, TV8 vb.) tam kabin içinde yer alır. `Sol Alt` tuşuna basılı tutarak farenizle ekranı doğrudan kabin içinden kontrol edebilirsiniz.
+W0RPLAY puts a phone-style car screen on your truck's own dashboard display, inside the game. Your route on a
+map made from your own game, your music, YouTube, the weather on your drive: right where a real truck has its
+screen, used with the mouse while you hold a key.
 
----
-
-## Ekran Görüntüleri
+## Features
 
 <table>
   <tr>
     <td width="50%" valign="top">
-      <img alt="W0RPLAY CarPlay Ana Ekranı" src="docs/images/carplay-home.png" width="100%">
-      <h4 align="center">CarPlay Ana Ekranı (Liquid Glass)</h4>
-      3D squircle ikonlar, modern yüzen cam kapsüller ve akıcı dock çubuğu.
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="docs/images/maps-dark.png">
+        <source media="(prefers-color-scheme: light)" srcset="docs/images/maps-light.png">
+        <img alt="Maps, around Frankfurt am Main" src="docs/images/maps-dark.png" width="100%">
+      </picture>
+      <h3>Maps from your own game</h3>
+      Drawn from your game's map, map mods included (ProMods and others), with your route, turn-by-turn
+      guidance, and search that adds stops to the game's own GPS.
     </td>
     <td width="50%" valign="top">
-      <img alt="W0RPLAY Kokpitte Canlı TV" src="docs/images/ingame-tv.png" width="100%">
-      <h4 align="center">Kabin İçi Canlı TV & Multimedya</h4>
-      Çekicinizin konsolunda sinema modu ve canlı TV yayını deneyimi.
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="docs/images/dashboard-dark.png">
+        <source media="(prefers-color-scheme: light)" srcset="docs/images/dashboard-light.png">
+        <img alt="The Dashboard: the map beside what's playing" src="docs/images/dashboard-dark.png" width="100%">
+      </picture>
+      <h3>A Dashboard for the drive</h3>
+      The map beside what's playing and where you're going, the weather on your drive, all on one screen.
     </td>
   </tr>
   <tr>
     <td width="50%" valign="top">
-      <img alt="W0RPLAY Bölünmüş Dashboard Ekranı" src="docs/images/carplay-dashboard.png" width="100%">
-      <h4 align="center">Bölünmüş Dashboard & Navigasyon</h4>
-      Harita, rota kılavuzu ve medya oynatıcı tek ekranda.
+      <img alt="YouTube Music's Now Playing" src="docs/images/youtube-music.png" width="100%">
+      <h3>Your music</h3>
+      Apple Music, Spotify and YouTube Music, with Now Playing and lyrics. A song's music video plays right in
+      Now Playing, and YouTube has its channels, playlists, captions and quality.
     </td>
     <td width="50%" valign="top">
-      <img alt="W0RPLAY Companion Uygulaması" src="docs/images/companion.png" width="100%">
-      <h4 align="center">W0RPLAY Masaüstü Paneli</h4>
-      Otomatik oyun tespiti (ETS2/ATS), harita oluşturucu ve ekran durumu.
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="docs/images/looks-light.png">
+        <source media="(prefers-color-scheme: light)" srcset="docs/images/looks-dark.png">
+        <img alt="Home in its other look" src="docs/images/looks-light.png" width="100%">
+      </picture>
+      <h3>Light and dark, and your own look</h3>
+      It turns dark at night or when you switch your headlights on, like a car's light sensor. Bring your own
+      wallpapers and app icons.
     </td>
   </tr>
 </table>
 
----
+**The companion app** on your PC sets everything up: it finds the game, installs W0RPLAY into it, builds your
+map, and keeps W0RPLAY up to date.
 
-## Özellikler
-
-* **📺 Canlı TV & HLS Akışları:** TRT 1, TV8, ATV, Now TV ve ulusal kanallarla canlı yayın desteği. Dilerseniz kendi özel m3u8 veya canlı yayın bağlantınızı da ekleyebilirsiniz.
-* **⚡ Sabit 30 FPS Optimizasyonu:** Yenilenen kare hızlandırıcı ve paylaşımlı Direct3D doku belleği sayesinde oyun içi FPS drop yaşanmaz; akıcı 30 FPS deneyimi sunar.
-* **🎵 Kesintisiz Medya & Müzik:** Spotify, YouTube Music, YouTube ve Apple Music desteği. Çekicinin motoru stop ettiğinde veya kontak kapalıyken bile müzik çalmaya devam eder.
-* **🗺️ Oyundan Birebir Haritalar:** Oyunun kendi dosyalarından ve harita modlarından (ProMods vb.) otomatik harita vektörleri üretilir; adım adım dönüş kılavuzu ve GPS entegrasyonu sunar.
-* **🚚 Çift Oyun Desteği:** Hem Euro Truck Simulator 2 hem de American Truck Simulator ile tam uyumludur.
-* **🔄 Otomatik GitHub Güncelleyici:** Uygulama her açıldığında [w0rpsi/w0rplay](https://github.com/w0rpsi/w0rplay) deposundaki en güncel sürümü denetler; yeni bir build (örneğin `1b268`) yayınlandığında sizi uyarır.
-* **🎨 Tema ve Özelleştirme:** İster Açık/Koyu mod, ister kendi duvar kağıtlarınız. Farlar açıldığında veya hava karardığında otomatik gece görünümü.
-
----
-
-## Nasıl Çalışır?
+## How it works
 
 ```mermaid
 flowchart LR
-  game["Euro Truck Simulator 2 / ATS"] -- "Telemetri, rota, durum" --> plugin["w0rplay.dll<br/>(Oyun Eklentisi)"]
-  plugin <--> app["W0RPLAY.exe<br/>(Masaüstü Motoru)"]
-  app -- "D3D Paylaşımlı Doku (30 FPS)" --> plugin
-  plugin -- "Kabin Ekranına Çizer" --> screen["Çekici Dashboard Ekranı"]
+  game["Euro Truck Simulator 2"] -- "the truck, its route" --> plugin["W0RPLAY's plugin<br/>(in the game)"]
+  plugin <--> app["W0RPLAY<br/>(on your PC)"]
+  app -- "the screen, drawn in W0RPLAY's own browser" --> plugin
+  plugin -- "draws it on" --> screen["The truck's own screen"]
 ```
 
-W0RPLAY, masaüstünüzde bağımsız ve hafif bir arayüz motoru çalıştırır. `w0rplay.dll` eklentisi ise bu arayüzü GPU üzerinde paylaşımlı doku ile oyun içerisindeki çekicinizin orijinal ekran yüzeyine 30 FPS olarak yansıtır.
+W0RPLAY draws its screen in a browser of its own on your PC, and its plugin puts each frame on your truck's
+display, inside the game. The trucks' own screens and their information bars stay theirs: W0RPLAY takes the
+GPS's place, and its Vehicle Bar setting says whether the truck's bar stays beside it.
 
----
+## Trucks
 
-## Kurulum
+W0RPLAY draws on the screens of the trucks that have CarPlay support in real life:
 
-1. [En Son Sürümü İndirin](https://github.com/w0rpsi/w0rplay/releases/latest) (`W0RPLAY-1b268.zip`).
-2. Arşiv içerisindeki **`w0rplay.dll`** dosyasını oyununuzun eklenti klasörüne kopyalayın:
-   * **ETS2 için:** `Euro Truck Simulator 2/bin/win_x64/plugins/w0rplay.dll`
-   * **ATS için:** `American Truck Simulator/bin/win_x64/plugins/w0rplay.dll`
-   *(Klasör yoksa `plugins` adıyla kendiniz oluşturabilirsiniz)*
-3. **`W0RPLAY.exe`** uygulamasını başlatın. Masaüstü paneli oyununuzu otomatik olarak algılayacaktır.
-4. Oyuna girin ve çekicinize geçin. Ekranı kullanmak için **`Sol Alt`** tuşuna basılı tutarak farenizle etkileşime geçin.
+- **DAF** XF and XG/XG+ 2021 (and Jasper's DAF 2021)
+- **Scania** S and R, with the 7" screen or the Smart Dash
+- **Iveco** S-Way
+- **Renault** T (2024)
 
----
+A later release adds a tablet accessory, so W0RPLAY works in every truck and bus.
 
-## Desteklenen Çekiciler
+## Install
 
-Gerçek hayatta CarPlay / dijital multimedya ekranı bulunan çekiciler desteklenmektedir:
+1. Download the installer from the [latest release](https://github.com/enes-less/W0RPLAY/releases/latest) and run it.
+2. The companion opens and walks you through the rest: it finds your game, installs W0RPLAY's plugin and its
+   screens mod, and builds your map.
+3. Start the game and get in a truck.
 
-* **Euro Truck Simulator 2:**
-  * **DAF** XF ve XG / XG+ 2021 (ve Jasper DAF 2021)
-  * **Scania** S ve R (7" ekran veya Smart Dash)
-  * **Iveco** S-Way
-  * **Renault** T (2024)
-* **American Truck Simulator:**
-  * **Freightliner** Cascadia
-  * **Kenworth** T680 (Next Gen)
-  * **Peterbilt** 579
-  * **Volvo** VNL
+W0RPLAY looks for updates on its own and asks before installing one.
 
----
+**Requirements:** Windows 10 or 11 (64-bit), Euro Truck Simulator 2 version 1.61 (other versions may work; the
+companion says when one is untested), and Microsoft Edge WebView2 (part of Windows 11; the installer adds it
+where it's missing).
 
-## Güncellemeler
+## Privacy
 
-W0RPLAY, seri numaralı sürüm takibi kullanır (örn: `1b268`). Uygulamayı başlattığınızda GitHub API üzerinden en güncel sürüm taranır; yeni bir sürüm çıktığında masaüstü panelinde indirme bildirimi görüntülenir.
+W0RPLAY has no servers, no accounts of its own and no analytics. It doesn't collect or send anything about you.
 
----
+- You sign in to Apple Music, Spotify and YouTube on their own pages, in W0RPLAY's own browser profile on your PC,
+  as you would in a browser. W0RPLAY keeps no account data of its own.
+- Your map is built from your game on your PC and stays there.
+- W0RPLAY talks to the services you use, to GitHub to look for updates, and to Kreosus only if you open
+  "Support me".
 
-## Gizlilik
+## Support
 
-W0RPLAY hiçbir özel sunucuya, hesaba veya telemetri servisine veri göndermez.
-* Spotify, YouTube ve diğer servis oturumlarınız yalnızca kendi yerel tarayıcı profilinizde saklanır.
-* Harita verileriniz kendi bilgisayarınızda derlenir ve dışarı çıkmaz.
-* Uygulama yalnızca GitHub API üzerinden sürüm güncellemesi kontrolü yapar.
+W0RPLAY is free. If it makes your drives better, you can support its development:
 
----
+<p>
+  <a href="https://kreosus.com/enes-less"><img alt="Support W0RPLAY on Kreosus" src="https://img.shields.io/badge/support%20on-Kreosus-409c42?style=for-the-badge"></a>
+</p>
 
-## Kaynak Koddan Derleme
+<details>
+<summary><b>Building from source</b></summary>
+<br>
 
-Geliştiriciler için kaynak koddan derleme adımları:
-
-Gereksinimler: [Rust](https://rustup.rs) (stable) ve [Node.js](https://nodejs.org) 24+ (Windows 64-bit).
+You need [Rust](https://rustup.rs) (stable) and [Node.js](https://nodejs.org) 24, on Windows.
 
 ```sh
-# Arayüz bağımlılıklarını kurma
-npm install --prefix ui
-
-# Geliştirme modunda çalıştırma
-npm run dev --prefix ui
-
-# Oyun eklentisini derleme
-cargo build --release -p w0rplay-plugin
+npm install      # the companion's tools and the UI's packages
+npm run dev      # W0RPLAY, with the UI served live
 ```
 
----
+`cargo test --workspace` and `npm test --prefix ui` run the tests. The game plugin is built with
+`cargo build --release -p w0rplay-plugin`.
 
-## Lisans
+</details>
 
-W0RPLAY, **GNU General Public License v3.0 (GPL-3.0)** kapsamında açık kaynaklıdır. Detaylar için [LICENSE](LICENSE) dosyasına bakabilirsiniz.
+## Licence
 
-<sub>W0RPLAY bağımsız bir projedir; SCS Software, Apple, Spotify veya Google ile resmi bir bağı bulunmamaktadır. Tüm marka ve model isimleri uyumluluk belirtme amacıyla kullanılmıştır.</sub>
+W0RPLAY is free software: you can redistribute it and modify it under the terms of the GNU General Public
+License, version 3 or (at your option) any later version. See [LICENSE](LICENSE).
+
+The libraries W0RPLAY ships keep their own licences: see [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md), and
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for the work it follows.
+
+<sub>W0RPLAY is an independent project, not affiliated with or endorsed by Apple, SCS Software, Spotify, Google or
+the truck makers. CarPlay, Apple Music, Spotify, YouTube, YouTube Music and the truck makers' names and logos are
+trademarks of their owners, used to name what W0RPLAY works with. The screenshots show W0RPLAY's preview with
+made-up songs.</sub>

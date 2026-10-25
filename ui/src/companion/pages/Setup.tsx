@@ -57,34 +57,7 @@ export function Setup(props: PageProps) {
             : banner(w.checking, true),
   )
 
-  const isMultiGame = !!(setup.found && setup.found.length > 1)
-
-  const reinstallAll = async (administrator: boolean) => {
-    const targets = setup.found && setup.found.length > 0 ? setup.found : (game ? [game] : [])
-    if (targets.length === 0) return
-    setInstalling(true)
-    setInstallError(null)
-    try {
-      let lastResult: InstallReport | null = null
-      for (const target of targets) {
-        lastResult = await installIntoGame(target.dir, administrator)
-      }
-      setReport(lastResult)
-      if (lastResult?.done) {
-        screen.reboot()
-        if (game) checkGame(game.dir).then(checked, () => {})
-      }
-    } catch (e) {
-      setInstallError(explain(words, e))
-    } finally {
-      setInstalling(false)
-    }
-  }
-
   const reinstall = async (administrator: boolean) => {
-    if (isMultiGame) {
-      return reinstallAll(administrator)
-    }
     if (!game) return
     setInstalling(true)
     setInstallError(null)
@@ -112,54 +85,15 @@ export function Setup(props: PageProps) {
       title={w.title}
       sub={w.sub}
       action={
-        (game || (setup.found && setup.found.length > 0)) && (
+        game && (
           <Button glass onClick={() => reinstall(asAdministrator)} busy={installing} disabled={running !== false}>
-            {asAdministrator
-              ? words.install.asAdministrator
-              : isMultiGame
-                ? 'Tüm Oyunlara Kur (ETS2 & ATS)'
-                : w.reinstall}
+            {asAdministrator ? words.install.asAdministrator : w.reinstall}
           </Button>
         )
       }
     >
-      {setup.found && setup.found.length > 0 ? (
-        <Group title="Kurulu Oyunlar (ETS2 & ATS)" place={4}>
-          {setup.found.map((g) => {
-            const isThisAts = g.dir.toLowerCase().includes('american') || g.dir.toLowerCase().includes('amtruck')
-            const gTitle = g.name || (isThisAts ? 'American Truck Simulator' : 'Euro Truck Simulator 2')
-            const isCurrent = g.dir === game?.dir
-            return (
-              <Row
-                key={g.dir}
-                title={gTitle}
-                detail={g.dir}
-                accessory={
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    {isCurrent && <Tick done />}
-                    <Button
-                      glass
-                      onClick={() => {
-                        setInstalling(true)
-                        installIntoGame(g.dir, asAdministrator)
-                          .then((r) => {
-                            setReport(r)
-                            if (r.done) screen.reboot()
-                          })
-                          .catch((e) => setInstallError(explain(words, e)))
-                          .finally(() => setInstalling(false))
-                      }}
-                    >
-                      Yükle
-                    </Button>
-                  </div>
-                }
-              />
-            )
-          })}
-        </Group>
-      ) : game ? (
-        <Group title={game.name || w.game} place={4}>
+      {game && (
+        <Group title={w.game} place={4}>
           <Row title={w.folder} detail={game.dir} />
           <Row
             title={words.check.version}
@@ -167,7 +101,7 @@ export function Setup(props: PageProps) {
             accessory={game.tested ? <Tick done /> : undefined}
           />
         </Group>
-      ) : null}
+      )}
       <Group title={w.installed} place={5}>
         <Row
           title={w.plugin}
@@ -184,18 +118,6 @@ export function Setup(props: PageProps) {
           }
         />
       </Group>
-      <Group title="Kabin Doku Yayıncısı (W0rpsiTextureStreamer)" place={5}>
-        <Row
-          title="W0rpsiTextureStreamer / GPS & Gösterge Dokuları"
-          detail="Oyun içi kabin ekranları için DDS ve TOBJ dokularını belgeler dizinine otomatik aktarır."
-          accessory={
-            <Button glass onClick={handleChooseStreamerDir} busy={streamerBusy}>
-              Dizin Seç ve Aktar
-            </Button>
-          }
-        />
-      </Group>
-      {streamerStatus && <Note tone="calm">{streamerStatus}</Note>}
       {check?.modProblem && (
         <Note tone="bad">
           <b>{words.check.cantInstall}</b> {check.modProblem}
@@ -232,6 +154,18 @@ export function Setup(props: PageProps) {
         </Note>
       )}
       {(installError ?? error) && <Note tone="bad">{installError ?? error}</Note>}
+      <Group title="Kabin Doku Yayıncısı (W0rpsiTextureStreamer)" place={5}>
+        <Row
+          title="W0rpsiTextureStreamer / GPS & Gösterge Dokuları"
+          detail="Oyun içi kabin ekranları için DDS ve TOBJ dokularını belgeler dizinine otomatik aktarır."
+          accessory={
+            <Button glass onClick={handleChooseStreamerDir} busy={streamerBusy}>
+              Dizin Seç ve Aktar
+            </Button>
+          }
+        />
+      </Group>
+      {streamerStatus && <Note tone="calm">{streamerStatus}</Note>}
       <Group place={6}>
         <Row title={w.tutorial} link onClick={tutorial} />
         <Row title={cw.uninstall.row} danger onClick={uninstall} />

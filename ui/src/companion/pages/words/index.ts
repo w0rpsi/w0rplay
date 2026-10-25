@@ -188,6 +188,13 @@ export interface CompanionWords {
     banners: { updating: { title: string; text: string }; updated: { title: string; text: string } }
     finish: { title: string; text: string; button: string }
   }
+  /** Support me: W0RPLAY's development, supported on its maker's Kreosus page (opened in the browser). */
+  support: {
+    title: string
+    sub: string
+    button: string
+    note: string
+  }
 }
 
 export interface UninstallWords {
@@ -231,7 +238,7 @@ export interface TutorialWords {
   finish: string
 }
 
-export type SectionId = 'screen' | 'controls' | 'customize' | 'accounts' | 'map' | 'setup' | 'about'
+export type SectionId = 'screen' | 'controls' | 'customize' | 'accounts' | 'map' | 'setup' | 'about' | 'support'
 
 const WORDS: Record<string, CompanionWords> = Object.fromEntries(
   Object.entries(import.meta.glob<CompanionWords>('./[a-z][a-z]_[a-z][a-z].ts', { eager: true, import: 'words' })).map(

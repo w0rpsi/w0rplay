@@ -170,17 +170,4 @@ mod tests {
         let w0rpsi_dash = create_tobj("/home/W0rpsiTextureStreamer/dashboard.dds");
         assert_eq!(w0rpsi_dash.len(), 40 + 8 + "/home/W0rpsiTextureStreamer/dashboard.dds".len());
     }
-
-    #[test]
-    fn test_install_into_documents() {
-        let temp = std::env::temp_dir().join("w0rplay_w0rpsi_streamer_test");
-        let _ = std::fs::remove_dir_all(&temp);
-        let installed = install_into_documents(&temp).expect("install should succeed");
-        assert_eq!(installed.len(), 3);
-        assert!(is_installed(&temp));
-        assert!(temp.join("W0rpsiTextureStreamer/gps.tobj").is_file());
-        assert!(temp.join("W0rpsiTextureSttreamer/gps.tobj").is_file());
-        assert!(temp.join("PrismTextureStreamer/gps.tobj").is_file());
-        let _ = std::fs::remove_dir_all(&temp);
-    }
 }

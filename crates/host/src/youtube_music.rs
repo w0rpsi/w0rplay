@@ -1423,7 +1423,7 @@ mod tests {
     }
 
     /// A music video's picture as Now Playing shows it (the page scaled into a small rectangle of the screen):
-    /// where the page lays its video out, measured, and the page photographed (`W0RPLAY_CAPTURE`, a folder).
+    /// where the page lays its video out, measured, and the page photographed (`WESTPLAY_CAPTURE`, a folder).
     #[test]
     #[ignore = "plays a music video from music.youtube.com"]
     fn a_music_videos_picture_fills_its_rectangle() {
@@ -1481,7 +1481,7 @@ mod tests {
             )
             .unwrap();
         println!("playing a video: {playing_video}\n{measured}");
-        if let Some(folder) = std::env::var_os("W0RPLAY_CAPTURE") {
+        if let Some(folder) = std::env::var_os("WESTPLAY_CAPTURE") {
             let path = std::path::PathBuf::from(folder).join("youtube-music-video.png");
             music.view.capture_png(&path).unwrap();
             println!("photographed: {}", path.display());

@@ -751,7 +751,7 @@ mod tests {
     }
 
     /// A song's words, asked of the hidden web player as the cab asks them (a search's songs). Muted; only
-    /// whether they're synced, how many lines there are and where they're from is printed (W0RPLAY_SPOTIFY_PROFILE:
+    /// whether they're synced, how many lines there are and where they're from is printed (WESTPLAY_SPOTIFY_PROFILE:
     /// a signed-in profile, the player's own).
     #[test]
     #[ignore = "asks open.spotify.com"]
@@ -760,7 +760,7 @@ mod tests {
         // SAFETY: COM on this test's own thread, once, before anything uses it.
         unsafe { CoInitializeEx(None, COINIT_APARTMENTTHREADED).ok().unwrap() };
         let user_data =
-            std::path::PathBuf::from(std::env::var_os("W0RPLAY_SPOTIFY_PROFILE").expect("a signed-in profile"));
+            std::path::PathBuf::from(std::env::var_os("WESTPLAY_SPOTIFY_PROFILE").expect("a signed-in profile"));
         let stage = Stage::new(1280, 720).unwrap();
         let spotify = Spotify::start(&stage, 1280, 720, &user_data).unwrap();
         spotify.view.set_muted(true).unwrap();
@@ -808,7 +808,7 @@ mod tests {
     /// Spotify's sound through the truck's speakers (cab_sound.js), as the cab plays it: an album through a
     /// Scania S's speakers, heard from the driver's seat, across a Next; how loud each ear is printed every
     /// second, and it must not fall silent while playing (once, protected, it did). Muted: never heard
-    /// (W0RPLAY_SPOTIFY_PROFILE: a signed-in profile, the player's own; W0RPLAY_SPOTIFY_QUERY: what to play).
+    /// (WESTPLAY_SPOTIFY_PROFILE: a signed-in profile, the player's own; WESTPLAY_SPOTIFY_QUERY: what to play).
     #[test]
     #[ignore = "plays from open.spotify.com"]
     fn sounds_through_the_truck_speakers() {
@@ -816,7 +816,7 @@ mod tests {
         // SAFETY: COM on this test's own thread, once, before anything uses it.
         unsafe { CoInitializeEx(None, COINIT_APARTMENTTHREADED).ok().unwrap() };
         let user_data =
-            std::path::PathBuf::from(std::env::var_os("W0RPLAY_SPOTIFY_PROFILE").expect("a signed-in profile"));
+            std::path::PathBuf::from(std::env::var_os("WESTPLAY_SPOTIFY_PROFILE").expect("a signed-in profile"));
         let stage = Stage::new(1280, 720).unwrap();
         let spotify = Spotify::start(&stage, 1280, 720, &user_data).unwrap();
         spotify.view.set_muted(true).unwrap();
@@ -837,7 +837,7 @@ mod tests {
         let head = Head { x: -0.47, y: 1.33, z: 0.32, heading: 0.0, pitch: 0.0 };
         spotify.cab("scania.s_2016", head, false, 0.0, Equalizer::default(), false).unwrap();
         // An album, from a search's first song.
-        let query = std::env::var("W0RPLAY_SPOTIFY_QUERY").unwrap_or_else(|_| "tarkan".into());
+        let query = std::env::var("WESTPLAY_SPOTIFY_QUERY").unwrap_or_else(|_| "tarkan".into());
         spotify.command(&Command::Ask { id: 1, question: Question::Search { query } }).unwrap();
         let mut song = None;
         let until = std::time::Instant::now() + std::time::Duration::from_secs(40);

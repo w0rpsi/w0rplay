@@ -16,7 +16,7 @@ const PLACEHOLDER_FOLDERS = [
 ]
 
 /**
- * Release builds (W0RPLAY_RELEASE=1, used by `tauri build`) must not contain the development placeholders
+ * Release builds (WESTPLAY_RELEASE=1, used by `tauri build`) must not contain the development placeholders
  * (see src/shared/icons.ts and src/shared/wallpapers.ts). Vite copies public/ into the build, so those
  * folders must be gone or empty before a release can be built.
  */
@@ -25,7 +25,7 @@ function noPlaceholders(): Plugin {
     name: 'w0rplay-no-placeholders',
     apply: 'build',
     buildStart() {
-      if (process.env.W0RPLAY_RELEASE !== '1') return
+      if (process.env.WESTPLAY_RELEASE !== '1') return
       for (const relative of PLACEHOLDER_FOLDERS) {
         const folder = resolve(import.meta.dirname, relative)
         if (existsSync(folder) && readdirSync(folder).length > 0) {
@@ -82,7 +82,7 @@ function devMap(): Plugin {
 const VERSION = /^version = "([^"]+)"/m.exec(readFileSync(resolve(import.meta.dirname, '../Cargo.toml'), 'utf8'))?.[1]
 
 export default defineConfig({
-  define: { __W0RPLAY_VERSION__: JSON.stringify(VERSION ?? '') },
+  define: { __WESTPLAY_VERSION__: JSON.stringify(VERSION ?? '') },
   plugins: [react(), noPlaceholders(), devMap()],
   clearScreen: false,
   test: {

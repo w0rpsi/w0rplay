@@ -9,6 +9,7 @@ export const words: CompanionWords = {
     map: 'Kartta',
     setup: 'Asennus',
     about: 'Tietoja',
+    support: 'Tue minua',
   },
   state: {
     starting: 'Käynnistyy…',
@@ -186,6 +187,7 @@ export const words: CompanionWords = {
       map: 'Karttasi, tehty pelistäsi. Se valmistellaan uudelleen, kun peli tai karttamodisi muuttuvat.',
       setup: 'Mihin W0RPLAY on asennettu, sekä uudelleenasennus ja poisto, jos niitä joskus tarvitset.',
       about: 'Versiosi ja kopioitava raportti, jos jokin ei ole kunnossa.',
+      support: 'Jos pidät W0RPLAYsta, voit tukea sen kehitystä täällä.',
     },
     finish: 'Valmis',
   },
@@ -291,5 +293,11 @@ export const words: CompanionWords = {
       text: 'Uuden W0RPLAYn laajennus asennetaan peliisi. Windows pyytää lupaa kuten asennuksessa.',
       button: 'Jatka',
     },
+  },
+  support: {
+    title: 'Tue minua',
+    sub: 'W0RPLAY on ilmainen. Jos se tekee ajoistasi parempia, voit tukea sen kehitystä Kreosuksessa kerran tai joka kuukausi.',
+    button: 'Tue Kreosuksessa',
+    note: 'Avaa Kreosuksen selaimessasi.',
   },
 }

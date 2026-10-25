@@ -37,20 +37,10 @@ export function on<T>(event: string, handler: (payload: T) => void): () => void 
   }
 }
 
-export const CURRENT_SERIAL_VERSION = '1b268'
-
-/** W0RPLAY's serial version. */
+/** W0RPLAY's version: the app's own; in the preview, the workspace's (vite.config.ts). */
 export function appVersion(): Promise<string> {
-  return Promise.resolve(CURRENT_SERIAL_VERSION)
-}
-
-/** Opens an external URL in the default browser. */
-export function openUrl(url: string): void {
-  if (IN_APP) {
-    call('open_url', { url }).catch(() => window.open(url, '_blank'))
-  } else {
-    window.open(url, '_blank')
-  }
+  if (IN_APP) return import('@tauri-apps/api/app').then((app) => app.getVersion())
+  return Promise.resolve(__WESTPLAY_VERSION__)
 }
 
 /** In the preview only: `?tutorial` (or `?tutorial=launch`) opens the tutorial, as the onboarding's end does. */

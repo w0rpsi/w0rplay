@@ -1,5 +1,5 @@
-// W0RPLAY, in Spotify's web player (spotify.rs): Spotify's own page, run hidden under the cab. The Spotify app
-// the player sees is W0RPLAY's own; this answers its questions and plays as it asks, from the page itself, as
+// WestPlay, in Spotify's web player (spotify.rs): Spotify's own page, run hidden under the cab. The Spotify app
+// the player sees is WestPlay's own; this answers its questions and plays as it asks, from the page itself, as
 // the page's own code would:
 //
 // - Questions (Home, Your Library, Browse all, a search, a playlist's, album's or artist's page) are asked of
@@ -95,7 +95,7 @@
     return response
   }
 
-  const PAGE_REQUEST = Symbol('w0rplay')
+  const PAGE_REQUEST = Symbol('westplay')
   const open = XMLHttpRequest.prototype.open
   const setRequestHeader = XMLHttpRequest.prototype.setRequestHeader
   const send = XMLHttpRequest.prototype.send
@@ -890,7 +890,7 @@
           shuffle: state.shuffle,
           repeat: state.repeat,
           volume: state.volume,
-          // Playing on this page's device (W0RPLAY's), not another of the account's (a phone): only that
+          // Playing on this page's device (WestPlay's), not another of the account's (a phone): only that
           // pauses with the game.
           here: !connect.active || !connect.device || connect.active === connect.device,
           next: state.next.map((uri) => songs.get(uri)).filter(Boolean),
@@ -926,7 +926,7 @@
     return setMediaKeys.apply(this, args)
   }
   addEventListener('playing', (event) => keep(event.target), true)
-  const cab = window.w0rplayCabSound?.(() => playingNow() ?? document.querySelector('audio, video'), post)
+  const cab = window.westplayCabSound?.(() => playingNow() ?? document.querySelector('audio, video'), post)
   // What the speakers made of it, said once each way for the host's log: the element found and played
   // through them, none found while Spotify plays, or Spotify playing while the speakers hear nothing for 4 s
   // on end (with how many elements it has played from, and whether the one taken is playing).
@@ -955,7 +955,7 @@
     }, 250)
   }
   // How loud it is through the speakers, each ear (and the limiter's cut), for the live test (spotify.rs).
-  window.w0rplaySpeakerLevel = () => cab?.level() ?? null
+  window.westplaySpeakerLevel = () => cab?.level() ?? null
   const CAB = {
     speakers: (data) => cab?.speakers(data.speakers),
     head: (data) => cab?.head(data),

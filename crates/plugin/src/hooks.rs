@@ -65,19 +65,19 @@ pub unsafe fn vtable_entry(object: *mut c_void, slot: usize) -> usize {
 }
 
 thread_local! {
-    static IN_W0RPLAY: Cell<bool> = const { Cell::new(false) };
+    static IN_WESTPLAY: Cell<bool> = const { Cell::new(false) };
 }
 
 /// Runs plugin code from a hook. Re-entrant calls are skipped (our own calls can land in hooked functions),
 /// and panics are contained so they can never unwind into or abort the game.
 pub fn guarded(f: impl FnOnce()) {
-    if IN_W0RPLAY.with(|flag| flag.replace(true)) {
+    if IN_WESTPLAY.with(|flag| flag.replace(true)) {
         return;
     }
     if std::panic::catch_unwind(AssertUnwindSafe(f)).is_err() {
         log!("panic inside a hook was contained");
     }
-    IN_W0RPLAY.with(|flag| flag.set(false));
+    IN_WESTPLAY.with(|flag| flag.set(false));
 }
 
 /// Runs plugin code the game calls directly (the SDK's init and shutdown, its telemetry callbacks): a panic is

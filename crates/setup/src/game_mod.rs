@@ -254,7 +254,6 @@ pub fn build(game: &GameFiles) -> Result<(Vec<u8>, Built), BuildError> {
         Ok(sharp) => files.extend(sharp),
         Err(why) => built.not_sharp = Some(why),
     }
-
     files.sort_by(|a, b| a.0.cmp(&b.0));
     Ok((zip(&files), built))
 }
@@ -378,12 +377,8 @@ pub fn patch_gps_script(text: &str, texture: &str, shown: Option<&ShownPart>) ->
         .iter()
         .find(|block| block.kind == "ui::group" && field(&lines, block, "id") == Some(SCREEN_ON_GROUP))
         .ok_or("no group with id 100")?;
-    let window = blocks
-        .iter()
-        .find(|block| block.kind == "ui::window")
-        .ok_or("no ui::window")?;
     let count: usize =
-        field(&lines, window, "my_children").unwrap_or("0").parse().map_err(|_| "my_children isn't a count")?;
+        field(&lines, group, "my_children").unwrap_or("0").parse().map_err(|_| "my_children isn't a count")?;
     let coord = |name| field(&lines, group, name).ok_or_else(|| format!("the group has no {name}"));
     let (left, right, top, bottom) = (coord("coords_l")?, coord("coords_r")?, coord("coords_t")?, coord("coords_b")?);
     let (left, right, top, bottom) = match shown {
@@ -404,7 +399,7 @@ pub fn patch_gps_script(text: &str, texture: &str, shown: Option<&ShownPart>) ->
     let element = "_nameless.w0rplay.screen";
 
     let mut body = Vec::new();
-    for line in &lines[window.start + 1..window.end] {
+    for line in &lines[group.start + 1..group.end] {
         let trimmed = line.trim();
         let line = if trimmed.starts_with("my_children:") {
             format!(" my_children: {}", count + 1)
@@ -437,13 +432,13 @@ pub fn patch_gps_script(text: &str, texture: &str, shown: Option<&ShownPart>) ->
         format!(" layer: {SCREEN_LAYER}"),
         " tab: -1".into(),
         " pointer: -1".into(),
-        format!(" my_parent: {}", window.name),
+        format!(" my_parent: {}", group.name),
         "}".into(),
     ];
     let last_end = blocks.last().map(|block| block.end).ok_or("no blocks")?;
-    let mut patched: Vec<String> = lines[..=window.start].iter().map(|line| (*line).to_owned()).collect();
+    let mut patched: Vec<String> = lines[..=group.start].iter().map(|line| (*line).to_owned()).collect();
     patched.extend(body);
-    patched.extend(lines[window.end..=last_end].iter().map(|line| (*line).to_owned()));
+    patched.extend(lines[group.end..=last_end].iter().map(|line| (*line).to_owned()));
     patched.extend(screen);
     patched.extend(lines[last_end + 1..].iter().map(|line| (*line).to_owned()));
     Ok(patched.join(newline))
@@ -529,9 +524,11 @@ mod tests {
     #[test]
     fn adds_the_screen_on_top_of_the_screen_on_group() {
         let patched = patch_gps_script(SCRIPT, "screen_generic", None).unwrap();
-        assert!(patched.contains("ui::window : _nameless.1 {\n my_children: 2\n my_children[0]: _nameless.2\n my_children[1]: _nameless.w0rplay.screen\n"));
+        assert!(patched.contains(" my_children: 3\n my_children[0]: _nameless.3\n my_children[1]: _nameless.4\n my_children[2]: _nameless.w0rplay.screen\n"));
         assert!(patched.contains("ui::text : _nameless.w0rplay.screen {\n text: \"<img src=/material/ui/w0rplay/screen_generic.mat xscale=stretch yscale=stretch>\"\n coords_l: 0\n coords_r: 1279\n coords_t: 719\n coords_b: 0\n"));
-        assert!(patched.contains(" layer: 100\n tab: -1\n pointer: -1\n my_parent: _nameless.1\n}\n\n}\n"));
+        assert!(patched.contains(" layer: 100\n tab: -1\n pointer: -1\n my_parent: _nameless.2\n}\n\n}\n"));
+        // The window still has its one child; the rest is as it was.
+        assert!(patched.starts_with("SiiNunit\n{\nui::window : _nameless.1 {\n my_children: 1\n"));
     }
 
     #[test]
@@ -587,7 +584,7 @@ mod tests {
     #[test]
     fn keeps_a_scripts_windows_line_endings() {
         let patched = patch_gps_script(&SCRIPT.replace('\n', "\r\n"), "screen_generic", None).unwrap();
-        assert!(patched.contains(" my_children[1]: _nameless.w0rplay.screen\r\n") && !patched.contains("\r\r"));
+        assert!(patched.contains(" my_children[2]: _nameless.w0rplay.screen\r\n") && !patched.contains("\r\r"));
     }
 
     #[test]
@@ -610,23 +607,6 @@ mod tests {
 
     /// The real thing: the mod built from the game installed on this PC (written to the temp folder, not the
     /// game's). `cargo test -p w0rplay-setup -- --ignored --nocapture builds_the_mod`
-    #[test]
-    #[ignore = "reads ATS game"]
-    fn builds_the_mod_from_ats() {
-        let dir = std::path::Path::new(r"D:\SteamLibrary\steamapps\common\American Truck Simulator");
-        let files = GameFiles::install(dir).unwrap();
-        let (bytes, built) = build(&files).unwrap();
-        println!("ATS: {} bytes, patched {:?}, missing {:?}", bytes.len(), built.patched, built.missing);
-
-        for folder in crate::places::documents_folders() {
-            let target = folder.join("W0RPLAY").join(FILE_NAME);
-            let _ = std::fs::create_dir_all(folder.join("W0RPLAY"));
-            if let Ok(()) = std::fs::write(&target, &bytes) {
-                println!("Successfully installed updated w0rplay.scs to {}", target.display());
-            }
-        }
-    }
-
     #[test]
     #[ignore = "reads the PC's game"]
     fn builds_the_mod_from_the_installed_game() {

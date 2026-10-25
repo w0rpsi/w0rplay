@@ -939,9 +939,9 @@ mod tests {
         use windows::Win32::System::Com::{COINIT_APARTMENTTHREADED, CoInitializeEx};
         // SAFETY: COM on this test's own thread, once, before anything uses it.
         unsafe { CoInitializeEx(None, COINIT_APARTMENTTHREADED).ok().unwrap() };
-        // A signed-in profile to time full songs with (W0RPLAY_APPLE_MUSIC_PROFILE, the player's own: never
+        // A signed-in profile to time full songs with (WESTPLAY_APPLE_MUSIC_PROFILE, the player's own: never
         // deleted), or a fresh one, signed out (previews), deleted after.
-        let own = std::env::var_os("W0RPLAY_APPLE_MUSIC_PROFILE").map(std::path::PathBuf::from);
+        let own = std::env::var_os("WESTPLAY_APPLE_MUSIC_PROFILE").map(std::path::PathBuf::from);
         let user_data = own.clone().unwrap_or_else(|| {
             std::env::temp_dir().join(format!("w0rplay-apple-music-timing-{}", std::process::id()))
         });
@@ -990,7 +990,7 @@ mod tests {
         music.cab("scania.s_2016", head, false, 0.0, Equalizer::default(), false).unwrap();
         music
             .command(&Command::Play {
-                id: Some(std::env::var("W0RPLAY_ALBUM").unwrap_or_else(|_| "albums:499332675".into())),
+                id: Some(std::env::var("WESTPLAY_ALBUM").unwrap_or_else(|_| "albums:499332675".into())),
                 songs: None,
                 index: None,
                 shuffle: Some(false),
@@ -1050,7 +1050,7 @@ mod tests {
         use windows::Win32::System::Com::{COINIT_APARTMENTTHREADED, CoInitializeEx};
         // SAFETY: COM on this test's own thread, once, before anything uses it.
         unsafe { CoInitializeEx(None, COINIT_APARTMENTTHREADED).ok().unwrap() };
-        let own = std::env::var_os("W0RPLAY_APPLE_MUSIC_PROFILE").map(std::path::PathBuf::from);
+        let own = std::env::var_os("WESTPLAY_APPLE_MUSIC_PROFILE").map(std::path::PathBuf::from);
         let user_data = own.clone().unwrap_or_else(|| {
             std::env::temp_dir().join(format!("w0rplay-apple-music-resume-{}", std::process::id()))
         });
@@ -1091,7 +1091,7 @@ mod tests {
         }
         assert!(ready, "the web player said nothing");
         music.command(&Command::Volume { percent: 2.0 }).unwrap();
-        let album = std::env::var("W0RPLAY_ALBUM").unwrap_or_else(|_| "albums:499332675".into());
+        let album = std::env::var("WESTPLAY_ALBUM").unwrap_or_else(|_| "albums:499332675".into());
         music.command(&Command::Play { id: Some(album), songs: None, index: None, shuffle: Some(false) }).unwrap();
         pump(14.6, &mut said, &mut ready);
         println!("pause");
@@ -1231,7 +1231,7 @@ mod tests {
 
     /// A song's words, asked of the hidden web player as the cab asks them: of the Library's songs (by their Apple
     /// Music ones) and of Apple Music's (a search's). Muted; only whether they're synced and how many lines and
-    /// writers there are is printed (W0RPLAY_APPLE_MUSIC_PROFILE: a signed-in profile, the player's own).
+    /// writers there are is printed (WESTPLAY_APPLE_MUSIC_PROFILE: a signed-in profile, the player's own).
     #[test]
     #[ignore = "asks music.apple.com"]
     fn answers_a_songs_words() {
@@ -1239,7 +1239,7 @@ mod tests {
         // SAFETY: COM on this test's own thread, once, before anything uses it.
         unsafe { CoInitializeEx(None, COINIT_APARTMENTTHREADED).ok().unwrap() };
         let user_data =
-            std::path::PathBuf::from(std::env::var_os("W0RPLAY_APPLE_MUSIC_PROFILE").expect("a signed-in profile"));
+            std::path::PathBuf::from(std::env::var_os("WESTPLAY_APPLE_MUSIC_PROFILE").expect("a signed-in profile"));
         let stage = Stage::new(1280, 720).unwrap();
         let music = AppleMusic::start(&stage, 1280, 720, &user_data).unwrap();
         music.view.set_muted(true).unwrap();

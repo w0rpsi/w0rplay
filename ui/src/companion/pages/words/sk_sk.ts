@@ -9,6 +9,7 @@ export const words: CompanionWords = {
     map: 'Mapa',
     setup: 'Inštalácia',
     about: 'O aplikácii',
+    support: 'Podporte ma',
   },
   state: {
     starting: 'Spúšťa sa…',
@@ -185,6 +186,7 @@ export const words: CompanionWords = {
       map: 'Vaša mapa, vytvorená z vašej hry. Pripraví sa znova, keď sa zmení hra alebo vaše mapové módy.',
       setup: 'Kde je W0RPLAY nainštalovaný, s preinštalovaním a odinštalovaním pre prípad potreby.',
       about: 'Vaša verzia a správa na skopírovanie, keď niečo nefunguje.',
+      support: 'Ak sa vám W0RPLAY páči, môžete tu podporiť jeho vývoj.',
     },
     finish: 'Hotovo',
   },
@@ -290,5 +292,11 @@ export const words: CompanionWords = {
       text: 'Plugin nového W0RPLAY sa nainštaluje do vašej hry. Windows požiada o povolenie ako pri inštalácii.',
       button: 'Pokračovať',
     },
+  },
+  support: {
+    title: 'Podporte ma',
+    sub: 'W0RPLAY je zadarmo. Ak vám spríjemňuje jazdy, môžete podporiť jeho vývoj na Kreosus, jednorazovo alebo každý mesiac.',
+    button: 'Podporiť na Kreosus',
+    note: 'Otvorí Kreosus v prehliadači.',
   },
 }

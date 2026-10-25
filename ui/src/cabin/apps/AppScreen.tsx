@@ -11,6 +11,7 @@ import { SpotifyApp } from './spotify/SpotifyApp'
 import { YouTubeMusicApp } from './youtubeMusic/YouTubeMusicApp'
 import { WeatherApp } from './weather/WeatherApp'
 import { YouTubeApp } from './youtube/YouTubeApp'
+import { TVApp } from './tv/TVApp'
 import './apps.css'
 
 /**
@@ -87,6 +88,8 @@ function AppContent({ app }: { app: AppId }) {
       return <SettingsApp />
     case 'weather':
       return <WeatherApp />
+    case 'tv':
+      return <TVApp />
     default:
       return <NotBuiltYet app={app} />
   }

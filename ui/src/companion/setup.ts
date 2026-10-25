@@ -3,7 +3,6 @@ import type { HostStatus } from './useHostStatus'
 
 /** An install of the game. Mirrors the app's `setup::GameInfo`. */
 export interface GameInfo {
-  name?: string
   dir: string
   foundBy: 'steam' | 'installed' | 'chosen'
   version: string | null
@@ -25,7 +24,7 @@ export interface SetupState {
   found: GameInfo[]
   gameRunning: boolean
   /** The onboarding's language, a game language code (`tr_tr`): the game's own (or one set to try it out,
-   * `W0RPLAY_LANGUAGE`); `null` before the game was ever started: then Windows'. */
+   * `WESTPLAY_LANGUAGE`); `null` before the game was ever started: then Windows'. */
   language: string | null
 }
 

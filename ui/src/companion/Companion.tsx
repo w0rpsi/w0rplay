@@ -1,8 +1,8 @@
-import { type CSSProperties, type ReactNode, useEffect, useRef, useState } from 'react'
-import { useAskOnce, useSignedIn } from './accounts'
-import { call, CURRENT_SERIAL_VERSION, PREVIEW_TUTORIAL } from './bridge'
+import { type CSSProperties, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { type SignedIn, useAskOnce, useSignedIn } from './accounts'
+import { appVersion, call, PREVIEW_TUTORIAL } from './bridge'
 import { Onboarding } from './onboarding/Onboarding'
-import { languageOf, wordsFor } from './onboarding/words'
+import { languageOf, percent, type Words, wordsFor } from './onboarding/words'
 import { About } from './pages/About'
 import { useHeldKey } from './pages/heldKey'
 import { Lesson, TouchLayer } from './pages/Lesson'
@@ -10,15 +10,16 @@ import { Launch, TourCard } from './pages/Tour'
 import { Accounts } from './pages/Accounts'
 import { Controls } from './pages/Controls'
 import { Customize } from './pages/Customize'
-import { useMapProgress } from './mapProgress'
+import { type MapProgress, useMapProgress } from './mapProgress'
 import { MapPage } from './pages/MapPage'
 import { screenState } from './pages/page'
 import { ScreenPage } from './pages/ScreenPage'
 import { Setup } from './pages/Setup'
+import { Support } from './pages/Support'
 import { UninstallSheet } from './pages/UninstallSheet'
 import { FinishUpdate, UpdateSheet } from './pages/UpdateSheet'
 import { type CompanionWords, companionWords, type SectionId } from './pages/words'
-import { RoomText, WordsContext } from './room/room'
+import { RoomText, n, WordsContext } from './room/room'
 import './room/room.css'
 import { GLOW, type Screen, ScreenContext } from './room/screen'
 import { type Banner, GlassCursor, type Pose, TruckScreen } from './room/TruckScreen'
@@ -28,6 +29,7 @@ import { defaultMapAddress, type GameCheck, type SetupState, setupState } from '
 import { FILES_BASE, useCustomizations } from './customize'
 import { type Offer, useUpdateOffer } from './update'
 import { type HostStatus, useHostStatus } from './useHostStatus'
+import { useKeyName } from './keys'
 import { DEFAULT_KEY, type SettingsState, useSettings } from './useSettings'
 
 /**
@@ -79,6 +81,7 @@ const SECTIONS: SectionId[][] = [
   ['screen', 'controls', 'customize'],
   ['accounts', 'map'],
   ['setup', 'about'],
+  ['support'],
 ]
 /** The sections in order: the tutorial's tour goes through them. */
 const TOUR = SECTIONS.flat()
@@ -99,6 +102,7 @@ const SECTION_GLOW: Record<SectionId, string> = {
   map: GLOW.maps,
   setup: GLOW.scan,
   about: GLOW.dashboard,
+  support: GLOW.home,
 }
 
 /** How long a page's words take to leave before the next one's arrive. */
@@ -310,12 +314,17 @@ function Room({
               />
             )}
             {roomShown && (
-              <Sidebar
+              <SectionList
                 section={section}
                 open={open}
                 cw={cw}
+                words={words}
                 status={status}
+                signedIn={signedIn}
+                settings={settings}
+                setup={setup}
                 update={update}
+                mapProgress={mapProgress}
               />
             )}
             {roomShown && section === 'screen' && <ScreenPage {...page} />}
@@ -325,6 +334,7 @@ function Room({
             {roomShown && section === 'map' && <MapPage {...page} />}
             {roomShown && section === 'setup' && <Setup {...page} />}
             {roomShown && section === 'about' && <About {...page} />}
+            {roomShown && section === 'support' && <Support {...page} />}
             {phase === 'tour' && (
               <TourCard cw={cw} section={section} last={section === TOUR[TOUR.length - 1]} next={nextInTour} />
             )}
@@ -342,161 +352,130 @@ function Room({
   )
 }
 
-function ScreenIcon() {
-  return (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <rect width="20" height="14" x="2" y="3" rx="2" />
-      <line x1="8" x2="16" y1="21" y2="21" />
-      <line x1="12" x2="12" y1="17" y2="21" />
-    </svg>
-  )
-}
-
-function ControlsIcon() {
-  return (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <line x1="6" x2="10" y1="12" y2="12" />
-      <line x1="8" x2="8" y1="10" y2="14" />
-      <line x1="15" x2="15.01" y1="13" y2="13" />
-      <line x1="18" x2="18.01" y1="11" y2="11" />
-      <rect width="20" height="12" x="2" y="6" rx="6" />
-    </svg>
-  )
-}
-
-function CustomizeIcon() {
-  return (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="13.5" cy="6.5" r=".5" fill="currentColor" />
-      <circle cx="17.5" cy="10.5" r=".5" fill="currentColor" />
-      <circle cx="8.5" cy="7.5" r=".5" fill="currentColor" />
-      <circle cx="6.5" cy="12.5" r=".5" fill="currentColor" />
-      <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.563-2.512 5.563-5.562C22 6.5 17.5 2 12 2z" />
-    </svg>
-  )
-}
-
-function AccountsIcon() {
-  return (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M9 18V5l12-2v13" />
-      <circle cx="6" cy="18" r="3" />
-      <circle cx="18" cy="16" r="3" />
-    </svg>
-  )
-}
-
-function MapIcon() {
-  return (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21" />
-      <line x1="9" x2="9" y1="3" y2="18" />
-      <line x1="15" x2="15" y1="6" y2="21" />
-    </svg>
-  )
-}
-
-function SetupIcon() {
-  return (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
-      <circle cx="12" cy="12" r="3" />
-    </svg>
-  )
-}
-
-function AboutIcon() {
-  return (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="10" />
-      <line x1="12" x2="12" y1="16" y2="12" />
-      <line x1="12" x2="12.01" y1="8" y2="8" />
-    </svg>
-  )
-}
-
-const SIDEBAR_ICONS: Record<SectionId, () => ReactNode> = {
-  screen: ScreenIcon,
-  controls: ControlsIcon,
-  customize: CustomizeIcon,
-  accounts: AccountsIcon,
-  map: MapIcon,
-  setup: SetupIcon,
-  about: AboutIcon,
-}
-
-function Sidebar({
+/**
+ * The sections, at the left: W0RPLAY's name and where it is now, then each section with what it is now
+ * (W0RPLAY on or off, the key, who's signed in, the map, the game's version, W0RPLAY's own or an update), in
+ * groups. The one that's open is lit by a capsule of glass that glides from section to section.
+ */
+function SectionList({
   section,
   open,
   cw,
+  words,
   status,
+  signedIn,
+  settings,
+  setup,
   update,
+  mapProgress,
 }: {
   section: SectionId
   open(section: SectionId): void
   cw: CompanionWords
+  words: Words
   status: HostStatus | null
+  signedIn: SignedIn
+  settings: SettingsState
+  setup: SetupState
   update: Offer | null
+  mapProgress: MapProgress
 }) {
+  const list = useRef<HTMLElement>(null)
+  const [lit, setLit] = useState<{ top: number; height: number } | null>(null)
+  const version = useVersion()
   const state = screenState(status)
+  const keyName = useKeyName(settings.settings?.interaction.key ?? DEFAULT_KEY, words)
 
+  useLayoutEffect(() => {
+    const row = list.current?.querySelector<HTMLElement>(`[data-section="${section}"]`)
+    if (row) setLit({ top: row.offsetTop, height: row.offsetHeight })
+  }, [section])
+
+  const value: Record<SectionId, string> = {
+    screen:
+      state === 'live'
+        ? cw.values.on
+        : state === 'original'
+          ? cw.values.off
+          : state === 'notInCab'
+            ? cw.values.waiting
+            : '',
+    controls: keyName,
+    customize: '',
+    accounts:
+      signedIn.youtube === null && signedIn.spotify === null && signedIn.appleMusic === null
+        ? ''
+        : [signedIn.youtube && 'YouTube', signedIn.spotify && 'Spotify', signedIn.appleMusic && 'Apple Music']
+            .filter(Boolean)
+            .join(', ') || cw.values.none,
+    map: mapValue(status, mapProgress, cw, words),
+    setup: setup.game?.version ?? '',
+    about: update ? cw.update.badge : version,
+    support: '',
+  }
+
+  let place = 2
   return (
-    <aside className="cp-sidebar" aria-label="W0RPLAY">
-      <header className="cp-sidebar-brand">
-        <img src="/w0rplay.png" alt="W0RPLAY" className="cp-sidebar-logo" />
-        <div className="cp-sidebar-brand-meta">
-          <div className="cp-sidebar-brand-title">
-            <b>W<span className="w0-slash">0</span>RPLAY</b>
-            <span className="cp-sidebar-serial">{CURRENT_SERIAL_VERSION}</span>
-          </div>
-          <span className="cp-sidebar-brand-sub">In-Cab Infotainment</span>
-        </div>
+    <nav ref={list} className="cp-list" aria-label="W0RPLAY">
+      <header className="cp-brand ob-in" style={n(0)}>
+        <img src="/w0rplay.png" alt="" />
+        <span>
+          <b>W0RPLAY</b>
+          <span className="cp-state" data-state={state}>
+            <i />
+            {cw.state[state]}
+          </span>
+        </span>
       </header>
-
-      <nav className="cp-sidebar-nav" aria-label="Bölümler">
-        {TOUR.map((id) => {
-          const isActive = id === section
-          const Icon = SIDEBAR_ICONS[id]
-          return (
+      {lit && <i className="cp-lit" style={{ top: lit.top, height: lit.height }} />}
+      {SECTIONS.map((group, g) => (
+        <div key={g} className="cp-group">
+          {group.map((id) => (
             <button
               key={id}
               type="button"
-              className="cp-sidebar-row"
-              data-active={isActive || undefined}
+              className="cp-row ob-in"
+              style={n(place++)}
               data-section={id}
+              data-here={id === section || undefined}
               onClick={() => open(id)}
             >
-              <span className="cp-row-icon">
-                <Icon />
-              </span>
-              <span className="cp-row-label">{cw.sections[id]}</span>
-              {id === 'about' && update && <span className="cp-row-dot" />}
+              <b>{cw.sections[id]}</b>
+              <span>{value[id]}</span>
             </button>
-          )
-        })}
-      </nav>
-
-      <footer className="cp-sidebar-footer">
-        <div className="cp-sidebar-status" data-state={state} title={cw.state[state]}>
-          <i className="cp-status-dot" />
-          <span className="cp-status-text">
-            {state === 'live'
-              ? 'ETS2 / ATS Bağlı'
-              : state === 'original'
-                ? 'Kabin Ekranı'
-                : state === 'notInCab'
-                  ? 'Kabinde Değil'
-                  : 'ETS2 / ATS Bekleniyor'}
-          </span>
+          ))}
         </div>
-        <div className="cp-sidebar-fps" title="Sabit 30 FPS Optimizasyonu">
-          30 FPS
-        </div>
-      </footer>
-    </aside>
+      ))}
+    </nav>
   )
 }
 
+function mapValue(status: HostStatus | null, progress: MapProgress, cw: CompanionWords, words: Words): string {
+  const map = status?.map
+  switch (map?.state) {
+    case 'ready':
+    case 'building':
+      // The maps being made (one after another): how far, the Map page's bar's number.
+      return progress.building ? percent(words, progress.shown) : cw.values.ready
+    case 'waitingForGame':
+    case 'waitingForMemory':
+      return cw.values.waiting
+    case 'failed':
+    case 'notAllowed':
+      return cw.values.failed
+    default:
+      return ''
+  }
+}
+
+/** W0RPLAY's version, once the app has said. */
+function useVersion(): string {
+  const [version, setVersion] = useState('')
+  useEffect(() => {
+    appVersion().then(setVersion, () => setVersion(''))
+  }, [])
+  return version
+}
 
 /** The window starts hidden (so it never shows blank while this page loads): it shows once `ready`, after the
  * page has painted. */

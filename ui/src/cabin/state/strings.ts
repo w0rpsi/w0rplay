@@ -462,6 +462,22 @@ export interface Strings {
   /** Apps. */
   apps: Record<AppId, string>
   notBuiltYet: string
+  tvApp: {
+    title: string
+    channels: string
+    live: string
+    cinemaMode: string
+    customStream: string
+    enterUrl: string
+    play: string
+    pause: string
+    mute: string
+    unmute: string
+    fullscreen: string
+    exitFullscreen: string
+    sleeperMirror: string
+    allChannels: string
+  }
 }
 
 const ENGLISH_ORDINALS = ['first', 'second', 'third', 'fourth', 'fifth', 'sixth', 'seventh', 'eighth']
@@ -940,6 +956,7 @@ export const STRINGS: Record<Language, Strings> = {
       spotify: 'Spotify',
       youtube: 'YouTube',
       youtubeMusic: 'YouTube Music',
+      tv: 'Live TV',
       podcasts: 'Podcasts',
       phone: 'Phone',
       messages: 'Messages',
@@ -947,6 +964,22 @@ export const STRINGS: Record<Language, Strings> = {
       settings: 'Settings',
     },
     notBuiltYet: 'Not built yet',
+    tvApp: {
+      title: 'TV & Live Stream',
+      channels: 'Channels',
+      live: 'LIVE',
+      cinemaMode: 'Cinema Mode',
+      customStream: 'Custom Stream / URL',
+      enterUrl: 'Enter stream or YouTube live URL...',
+      play: 'Play',
+      pause: 'Pause',
+      mute: 'Mute',
+      unmute: 'Unmute',
+      fullscreen: 'Fullscreen',
+      exitFullscreen: 'Exit Fullscreen',
+      sleeperMirror: 'Sleeper TV Active',
+      allChannels: 'All Channels',
+    },
   },
   tr: {
     decimal: ',',
@@ -1425,6 +1458,7 @@ export const STRINGS: Record<Language, Strings> = {
       spotify: 'Spotify',
       youtube: 'YouTube',
       youtubeMusic: 'YouTube Music',
+      tv: 'Canlı TV',
       podcasts: 'Podcast’ler',
       phone: 'Telefon',
       messages: 'Mesajlar',
@@ -1432,6 +1466,22 @@ export const STRINGS: Record<Language, Strings> = {
       settings: 'Ayarlar',
     },
     notBuiltYet: 'Henüz hazır değil',
+    tvApp: {
+      title: 'TV & Canlı Yayın',
+      channels: 'Kanallar',
+      live: 'CANLI',
+      cinemaMode: 'Sinema Modu',
+      customStream: 'Özel Yayın / URL',
+      enterUrl: 'Yayın veya YouTube canlı URL girin...',
+      play: 'Oynat',
+      pause: 'Duraklat',
+      mute: 'Sessiz',
+      unmute: 'Sesi Aç',
+      fullscreen: 'Tam Ekran',
+      exitFullscreen: 'Tam Ekrandan Çık',
+      sleeperMirror: 'Yatak TV Aktif',
+      allChannels: 'Tüm Kanallar',
+    },
   },
 }
 

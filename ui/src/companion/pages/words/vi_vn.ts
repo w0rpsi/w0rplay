@@ -9,6 +9,7 @@ export const words: CompanionWords = {
     map: 'Bản đồ',
     setup: 'Thiết lập',
     about: 'Giới thiệu',
+    support: 'Ủng hộ tôi',
   },
   state: {
     starting: 'Đang khởi động…',
@@ -186,6 +187,7 @@ export const words: CompanionWords = {
       map: 'Bản đồ của bạn, được tạo từ trò chơi của bạn. Bản đồ được chuẩn bị lại khi trò chơi hoặc mod bản đồ thay đổi.',
       setup: 'W0RPLAY được cài ở đâu, cùng nút Cài đặt lại và Gỡ cài đặt nếu bạn cần.',
       about: 'Phiên bản của bạn, và một báo cáo để sao chép nếu có gì không ổn.',
+      support: 'Nếu bạn thích W0RPLAY, bạn có thể ủng hộ việc phát triển tại đây.',
     },
     finish: 'Xong',
   },
@@ -291,5 +293,11 @@ export const words: CompanionWords = {
       text: 'Plugin của W0RPLAY mới được đưa vào trò chơi của bạn. Windows sẽ xin phép, như khi bạn cài đặt.',
       button: 'Tiếp tục',
     },
+  },
+  support: {
+    title: 'Ủng hộ tôi',
+    sub: 'W0RPLAY miễn phí. Nếu nó giúp những chuyến đi của bạn tốt hơn, bạn có thể ủng hộ việc phát triển W0RPLAY trên Kreosus, một lần hoặc hằng tháng.',
+    button: 'Ủng hộ trên Kreosus',
+    note: 'Mở Kreosus trong trình duyệt của bạn.',
   },
 }

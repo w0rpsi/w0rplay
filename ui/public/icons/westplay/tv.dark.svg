@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="tvDark" x1="0" y1="48" x2="0" y2="975" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#1a1c29"/><stop offset="1" stop-color="#0d0e15"/>
+    </linearGradient>
+    <linearGradient id="screenGrad" x1="0" y1="352" x2="0" y2="708" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#0984e3"/><stop offset="1" stop-color="#6c5ce7"/>
+    </linearGradient>
+  </defs>
+  <rect x="64" y="64" width="896" height="896" rx="200" fill="url(#tvDark)"/>
+  <rect x="68" y="68" width="888" height="888" rx="196" fill="none" stroke="#ffffff" stroke-width="4" opacity="0.15"/>
+  <!-- Antennas -->
+  <path d="M380 210 L480 320 M644 210 L544 320" stroke="#0984e3" stroke-width="24" stroke-linecap="round"/>
+  <!-- TV Monitor Body -->
+  <rect x="180" y="300" width="664" height="440" rx="44" fill="#2d3436" stroke="#485460" stroke-width="8"/>
+  <!-- TV Inner Screen -->
+  <rect x="210" y="330" width="604" height="380" rx="24" fill="url(#screenGrad)"/>
+  <!-- Live Signal / Play Symbol -->
+  <circle cx="260" cy="375" r="14" fill="#ff4757"/>
+  <polygon points="480,460 480,580 585,520" fill="#ffffff"/>
+  <!-- TV Stand Base -->
+  <path d="M412 765 L612 765" stroke="#747d8c" stroke-width="24" stroke-linecap="round"/>
+  <path d="M512 740 L512 765" stroke="#747d8c" stroke-width="24"/>
+</svg>

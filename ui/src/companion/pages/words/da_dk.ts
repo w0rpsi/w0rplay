@@ -9,6 +9,7 @@ export const words: CompanionWords = {
     map: 'Kort',
     setup: 'Opsætning',
     about: 'Om',
+    support: 'Støt mig',
   },
   state: {
     starting: 'Starter…',
@@ -186,6 +187,7 @@ export const words: CompanionWords = {
       map: 'Dit kort, lavet ud fra dit spil. Det gøres klar igen, når spillet eller dine kortmods ændrer sig.',
       setup: 'Hvor W0RPLAY er installeret, med Geninstaller og Afinstaller, hvis du nogensinde får brug for dem.',
       about: 'Din version og en rapport, du kan kopiere, hvis noget ikke er, som det skal være.',
+      support: 'Kan du lide W0RPLAY, kan du støtte udviklingen her.',
     },
     finish: 'Færdig',
   },
@@ -290,5 +292,11 @@ export const words: CompanionWords = {
       text: 'Det nye W0RPLAYs plugin lægges i dit spil. Windows beder om tilladelse ligesom ved installationen.',
       button: 'Fortsæt',
     },
+  },
+  support: {
+    title: 'Støt mig',
+    sub: 'W0RPLAY er gratis. Gør det dine ture bedre, kan du støtte udviklingen på Kreosus, én gang eller hver måned.',
+    button: 'Støt på Kreosus',
+    note: 'Åbner Kreosus i din browser.',
   },
 }

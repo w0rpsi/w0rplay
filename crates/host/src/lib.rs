@@ -478,7 +478,6 @@ pub fn run(mut config: Config, stop: Arc<AtomicBool>) -> Result<(), Error> {
                 if !running {
                     players_closing = true;
                     log!("the game closed: its web players are closed");
-                    w0rplay_setup::profiles::configure_camera_zoom_for_all_profiles();
                 }
                 let _ = webview.post_json(&game_message(running));
             }
@@ -736,7 +735,7 @@ pub fn run(mut config: Config, stop: Arc<AtomicBool>) -> Result<(), Error> {
                         let _ = webview.post_json(message);
                     }
                 }
-                Some(PageMessage::W0rplay { open }) => {
+                Some(PageMessage::Westplay { open }) => {
                     if status.w0rplay_open != Some(open) {
                         status.w0rplay_open = Some(open);
                         (config.on_status)(&status);
@@ -1361,7 +1360,7 @@ pub fn run(mut config: Config, stop: Arc<AtomicBool>) -> Result<(), Error> {
             }
         }
 
-        if last_telemetry_post.elapsed() >= Duration::from_millis(16) {
+        if last_telemetry_post.elapsed() >= Duration::from_millis(50) {
             last_telemetry_post = Instant::now();
             let plugin = &bridge.bridge().plugin;
             // A write the game never finished (it crashed in the middle) reads as nothing: nothing to send. A
@@ -1821,8 +1820,7 @@ enum PageMessage {
     /// A startup stage the page reached (the boot screens shown), for the startup log (`startup`).
     Startup { stage: String },
     /// Whether W0RPLAY is open on the truck's screen: posted as the page loads and whenever it changes.
-    #[serde(rename = "w0rplay", alias = "westplay", alias = "w0play")]
-    W0rplay { open: bool },
+    Westplay { open: bool },
     /// The wallpaper chosen in the cab's Settings (an id: `wallpapers.ts`), to keep with the settings.
     Wallpaper { id: String },
     /// The truck's information bar beside W0RPLAY, kept or not, chosen in the cab's Settings (Appearance).
@@ -2016,7 +2014,7 @@ mod tests {
         );
         assert_eq!(
             parse_page_message(r#"{"type":"w0rplay","open":false}"#),
-            Some(PageMessage::W0rplay { open: false })
+            Some(PageMessage::Westplay { open: false })
         );
         assert_eq!(parse_page_message(r#"{"type":"w0rplay"}"#), None);
         assert_eq!(

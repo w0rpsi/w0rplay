@@ -9,6 +9,7 @@ export const words: CompanionWords = {
     map: '地圖',
     setup: '設定',
     about: '關於',
+    support: '支持我',
   },
   state: {
     starting: '正在啟動…',
@@ -184,6 +185,7 @@ export const words: CompanionWords = {
       map: '你的地圖，根據你的遊戲製作。遊戲或地圖 MOD 變更時，它會重新準備。',
       setup: 'W0RPLAY 安裝在哪裡，以及需要時可用的重新安裝和解除安裝。',
       about: '你的版本，以及出問題時可以複製的報告。',
+      support: '如果你喜歡 W0RPLAY，可以在這裡支持它的開發。',
     },
     finish: '完成',
   },
@@ -286,5 +288,11 @@ export const words: CompanionWords = {
       text: '新 W0RPLAY 的外掛程式會放入你的遊戲。和安裝時一樣，Windows 會請求許可。',
       button: '繼續',
     },
+  },
+  support: {
+    title: '支持我',
+    sub: 'W0RPLAY 是免費的。如果它讓你的駕駛更愉快，你可以在 Kreosus 上支持它的開發，一次或每月都可以。',
+    button: '在 Kreosus 上支持',
+    note: '會在你的瀏覽器中開啟 Kreosus。',
   },
 }

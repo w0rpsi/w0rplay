@@ -9,6 +9,7 @@ export const words: CompanionWords = {
     map: 'Mapa',
     setup: 'Configuración',
     about: 'Acerca de',
+    support: 'Apóiame',
   },
   state: {
     starting: 'Iniciando…',
@@ -186,6 +187,7 @@ export const words: CompanionWords = {
       map: 'O teu mapa, creado a partir do teu xogo. Prepárase de novo cando cambian o xogo ou os teus mods de mapa.',
       setup: 'Onde está instalado W0RPLAY, con Reinstalar e Desinstalar por se algunha vez os necesitas.',
       about: 'A túa versión e un informe para copiar se algo non vai ben.',
+      support: 'Se che gusta W0RPLAY, aquí podes apoiar o seu desenvolvemento.',
     },
     finish: 'Feito',
   },
@@ -294,5 +296,11 @@ export const words: CompanionWords = {
       text: 'O complemento do novo W0RPLAY vai ao teu xogo. Windows pide permiso, como cando o instalaches.',
       button: 'Continuar',
     },
+  },
+  support: {
+    title: 'Apóiame',
+    sub: 'W0RPLAY é de balde. Se fai mellores as túas viaxes, podes apoiar o seu desenvolvemento en Kreosus, unha vez ou cada mes.',
+    button: 'Apoiar en Kreosus',
+    note: 'Abre Kreosus no teu navegador.',
   },
 }

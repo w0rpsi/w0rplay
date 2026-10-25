@@ -73,26 +73,6 @@ pub const TRUCKS: &[Truck] = &[
         source: Source::Game("volvo.fh_2024"),
         layout: Some("volvo-fh"),
     },
-    // American Truck Simulator trucks
-    Truck { id: "kw-w900", name: "Kenworth W900", source: Source::Game("kenworth.w900"), layout: Some("generic") },
-    Truck { id: "kw-t680", name: "Kenworth T680", source: Source::Game("kenworth.t680"), layout: Some("generic") },
-    Truck { id: "kw-t680-2022", name: "Kenworth T680 (2022)", source: Source::Game("kenworth.t680_2022"), layout: Some("kenworth-t680-22") },
-    Truck { id: "pb-579", name: "Peterbilt 579", source: Source::Game("peterbilt.579"), layout: Some("generic") },
-    Truck { id: "pb-579-2022", name: "Peterbilt 579 (2022)", source: Source::Game("peterbilt.579_2022"), layout: Some("generic") },
-    Truck { id: "pb-389", name: "Peterbilt 389", source: Source::Game("peterbilt.389"), layout: Some("generic") },
-    Truck { id: "fl-cascadia", name: "Freightliner Cascadia", source: Source::Game("freightliner.cascadia"), layout: Some("cascadia-2019") },
-    Truck { id: "fl-cascadia-2024", name: "Freightliner Cascadia (2024)", source: Source::Game("freightliner.cascadia2024"), layout: Some("cascadia-2024") },
-    Truck { id: "ws-49x", name: "Western Star 49X", source: Source::Game("westernstar.49x"), layout: Some("generic") },
-    Truck { id: "ws-57x", name: "Western Star 57X", source: Source::Game("westernstar.57x"), layout: Some("westernstar-57x") },
-    Truck { id: "ws-5700xe", name: "Western Star 5700XE", source: Source::Game("westernstar.5700xe"), layout: Some("westernstar-5700") },
-    Truck { id: "intl-lonestar", name: "International LoneStar", source: Source::Game("international.lonestar"), layout: Some("generic") },
-    Truck { id: "intl-lt", name: "International LT", source: Source::Game("international.lt"), layout: Some("generic") },
-    Truck { id: "intl-9900i", name: "International 9900i", source: Source::Game("international.9900i"), layout: Some("generic") },
-    Truck { id: "mack-anthem", name: "Mack Anthem", source: Source::Game("mack.anthem"), layout: Some("generic") },
-    Truck { id: "mack-pinnacle", name: "Mack Pinnacle", source: Source::Game("mack.pinnacle"), layout: Some("generic") },
-    Truck { id: "volvo-vnl", name: "Volvo VNL", source: Source::Game("volvo.vnl"), layout: Some("generic") },
-    Truck { id: "volvo-vnl-2018", name: "Volvo VNL (2018)", source: Source::Game("volvo.vnl2018"), layout: Some("volvo-vnl-2018") },
-    Truck { id: "volvo-vnl-2025", name: "Volvo VNL (2025)", source: Source::Game("volvo.vnl2025"), layout: Some("volvo-vnl-2025") },
 ];
 
 /// Whether a player can have W0RPLAY in a truck.

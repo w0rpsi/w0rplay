@@ -31,8 +31,8 @@ export function UpdateSheet({ cw, offer, close }: { cw: CompanionWords; offer: O
     setProgress(null)
     screen.banner(banner(w.banners.updating, true))
     try {
-      await installUpdate(offer.url)
-      close()
+      // Comes back only if it couldn't be installed: otherwise W0RPLAY quits for the installer.
+      await installUpdate()
     } catch (e) {
       setError(String(e) === 'gameRunning' ? null : `${w.failed} ${explain(words, e)}`)
       setWorking(false)

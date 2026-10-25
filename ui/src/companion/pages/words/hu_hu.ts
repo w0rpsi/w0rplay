@@ -9,6 +9,7 @@ export const words: CompanionWords = {
     map: 'Térkép',
     setup: 'Beállítás',
     about: 'Névjegy',
+    support: 'Támogass engem',
   },
   state: {
     starting: 'Indul…',
@@ -187,6 +188,7 @@ export const words: CompanionWords = {
       map: 'A térképed, a játékodból készítve. Újra elkészül, ha a játék vagy a térképmodjaid változnak.',
       setup: 'Hová van telepítve a W0RPLAY, újratelepítéssel és eltávolítással, ha valaha kellenének.',
       about: 'A verziód és egy másolható jelentés, ha valami nem stimmel.',
+      support: 'Ha tetszik a W0RPLAY, itt támogathatod a fejlesztését.',
     },
     finish: 'Kész',
   },
@@ -292,5 +294,11 @@ export const words: CompanionWords = {
       text: 'Az új W0RPLAY bővítménye a játékodba kerül. A Windows engedélyt kér, mint a telepítéskor.',
       button: 'Tovább',
     },
+  },
+  support: {
+    title: 'Támogass engem',
+    sub: 'A W0RPLAY ingyenes. Ha jobbá teszi az utaidat, a Kreosuson támogathatod a fejlesztését, egyszer vagy havonta.',
+    button: 'Támogatás a Kreosuson',
+    note: 'Megnyitja a Kreosust a böngésződben.',
   },
 }

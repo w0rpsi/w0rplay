@@ -15,7 +15,7 @@ use w0rplay_mapdata::archive::Archive;
 use w0rplay_mapdata::save;
 use w0rplay_mapdata::sii::Unit;
 
-use crate::game::{Game, STEAM_APPS};
+use crate::game::{Game, STEAM_APP};
 
 /// A profile of the player's.
 #[derive(Clone, Debug, PartialEq)]
@@ -138,9 +138,7 @@ pub fn find(game_documents: &Path, steam_userdata: Option<&Path>, game: Option<&
     let mut folders = vec![(game_documents.join("profiles"), false), (game_documents.join("steam_profiles"), true)];
     if let Some(userdata) = steam_userdata {
         for user in std::fs::read_dir(userdata).into_iter().flatten().flatten() {
-            for app in STEAM_APPS {
-                folders.push((user.path().join(app).join("remote").join("profiles"), true));
-            }
+            folders.push((user.path().join(STEAM_APP).join("remote").join("profiles"), true));
         }
     }
     let mod_dir = game_documents.join("mod");
@@ -424,65 +422,9 @@ impl ModFiles {
     }
 }
 
-/// Configures `camzoom` in `controls.sii` to include `keyboard.lalt?0` if not already present.
-pub fn enable_camera_zoom_in_controls_file(path: &Path) -> Result<bool, std::io::Error> {
-    let text = std::fs::read_to_string(path)?;
-    for line in text.lines() {
-        if line.contains("mix camzoom") && line.contains("keyboard.lalt") {
-            return Ok(false);
-        }
-    }
-    if !text.contains("mix camzoom `") {
-        return Ok(false);
-    }
-    let updated = text.replace("mix camzoom `", "mix camzoom `keyboard.lalt?0 | ");
-    std::fs::write(path, updated)?;
-    Ok(true)
-}
-
-/// Automatically configures camera zoom for Alt across all profiles (both ATS and ETS2).
-pub fn configure_camera_zoom_for_all_profiles() -> usize {
-    let mut updated = 0;
-    for doc in crate::places::documents_folders() {
-        for game in ["American Truck Simulator", "Euro Truck Simulator 2"] {
-            let game_dir = doc.join(game);
-            if !game_dir.is_dir() {
-                continue;
-            }
-            for sub in ["profiles", "steam_profiles"] {
-                let sub_dir = game_dir.join(sub);
-                if let Ok(entries) = std::fs::read_dir(sub_dir) {
-                    for entry in entries.flatten() {
-                        let controls = entry.path().join("controls.sii");
-                        if controls.is_file() {
-                            if let Ok(true) = enable_camera_zoom_in_controls_file(&controls) {
-                                updated += 1;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-    updated
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn enables_camera_zoom_in_controls_text() {
-        let original = "config_lines[238]: \"mix camzoom `mouse.button_middle?0 | semantical.camzoom?0`\"\n";
-        let temp = std::env::temp_dir().join(format!("controls-test-{}.sii", std::process::id()));
-        std::fs::write(&temp, original).unwrap();
-        assert!(enable_camera_zoom_in_controls_file(&temp).unwrap());
-        let text = std::fs::read_to_string(&temp).unwrap();
-        assert!(text.contains("mix camzoom `keyboard.lalt?0 | mouse.button_middle?0"));
-        // Calling it again is a no-op
-        assert!(!enable_camera_zoom_in_controls_file(&temp).unwrap());
-        let _ = std::fs::remove_file(temp);
-    }
 
     /// The mods installed on this PC for its game (the Documents folder's `mod` and the Workshop), printed.
     #[test]

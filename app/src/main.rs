@@ -30,7 +30,7 @@ struct Host {
 /// Requests from the companion window to open or close W0RPLAY on the truck's screen (the cabin page owns
 /// that state, which it also changes itself: its sidebar's truck button, its W0RPLAY button, the interaction
 /// key and W; the host reports it back in its status).
-struct W0rplayOpen(Arc<OpenRequest>);
+struct WestplayOpen(Arc<OpenRequest>);
 
 /// The companion's sign-ins and sign-outs (YouTube, Spotify, Apple Music), for the host.
 struct Accounts(Arc<AccountRequests>);
@@ -56,7 +56,7 @@ fn companion_ready(window: WebviewWindow) {
 }
 
 #[tauri::command]
-fn set_w0rplay_open(open: bool, request: State<W0rplayOpen>) {
+fn set_w0rplay_open(open: bool, request: State<WestplayOpen>) {
     request.0.request(open);
 }
 
@@ -114,15 +114,14 @@ fn apple_music_check(accounts: State<Accounts>) {
     accounts.0.apple_music.request(AccountAction::Check);
 }
 
+/// The maker's Kreosus page, where players support W0RPLAY's development.
+const SUPPORT_PAGE: &str = "https://kreosus.com/enes-less";
 
-/// Opens an external URL in the default browser.
+/// Opens the support page (Support me) in the player's browser. The address is fixed here, so the companion
+/// can't open any other.
 #[tauri::command]
-fn open_url(url: String) {
-    if url.starts_with("http://") || url.starts_with("https://") {
-        let _ = std::process::Command::new("rundll32")
-            .args(["url.dll,FileProtocolHandler", &url])
-            .spawn();
-    }
+fn open_support_page() {
+    w0rplay_host::browser::open(SUPPORT_PAGE);
 }
 
 /// A keyboard key's name for the player's keyboard, by its virtual-key code (the keybinds' labels); `None`
@@ -155,12 +154,6 @@ fn main() {
     }
     w0rplay_host::log::init();
     w0rplay_host::startup::mark("app: started");
-    if !w0rplay_setup::game::running() {
-        let updated = w0rplay_setup::profiles::configure_camera_zoom_for_all_profiles();
-        if updated > 0 {
-            w0rplay_host::log::write(&format!("setup: configured camera zoom on Alt for {updated} profile(s)"));
-        }
-    }
     // One W0RPLAY at a time: a second only says so (held until the app ends).
     let Some(_instance) = w0rplay_host::Instance::claim() else {
         w0rplay_host::tell_already_running();
@@ -171,12 +164,11 @@ fn main() {
     let app = tauri::Builder::default()
         .plugin(tauri_plugin_updater::Builder::new().build())
         .manage(update::Updates::default())
-        .manage(W0rplayOpen(open_request.clone()))
+        .manage(WestplayOpen(open_request.clone()))
         .manage(Accounts(accounts.clone()))
         .register_asynchronous_uri_scheme_protocol(maps::SCHEME, maps::serve)
         .register_asynchronous_uri_scheme_protocol(maps::CUSTOMIZE_SCHEME, maps::serve_customize)
         .invoke_handler(tauri::generate_handler![
-            open_url,
             companion_ready,
             set_w0rplay_open,
             youtube_sign_in,
@@ -188,6 +180,7 @@ fn main() {
             apple_music_sign_in,
             apple_music_sign_out,
             apple_music_check,
+            open_support_page,
             customize::customize_list,
             customize::add_wallpapers,
             customize::add_icon_set,
@@ -217,7 +210,6 @@ fn main() {
             std::thread::spawn(|| {
                 let deployed = w0rplay_setup::prism::deploy_all();
                 if deployed.is_empty() {
-                    // Ask user to locate game documents folder if not found automatically
                     if let Some(chosen) = w0rplay_setup::pick::folder(0, "Euro Truck Simulator 2 veya ATS Belgeler Klasörünü Seçin") {
                         let _ = w0rplay_setup::prism::install_into_custom(&chosen);
                     }
@@ -390,22 +382,16 @@ fn start_host(
     Ok(Host { stop, thread: Some(thread) })
 }
 
-/// The cabin page: from the bundled UI or the folder beside the app.
+/// The cabin page: from the Vite dev server while developing, from the bundled UI otherwise.
 fn cabin_content(app: &AppHandle) -> Content {
-    let beside = std::env::current_exe().ok().and_then(|e| {
-        let dir = e.parent()?.join("ui");
-        dir.join("cabin.html").exists().then_some(dir)
-    });
-    let bundled = app
-        .path()
-        .resource_dir()
-        .map(|dir| dir.join("ui"))
-        .ok()
-        .filter(|dir| dir.join("cabin.html").exists());
-    let source_dist = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../ui/dist");
-    let root = beside
-        .or(bundled)
-        .or_else(|| source_dist.exists().then_some(source_dist))
-        .unwrap_or_else(|| PathBuf::from("ui"));
+    if cfg!(debug_assertions)
+        && let Some(dev_url) = &app.config().build.dev_url
+    {
+        return Content::Url(format!("{}cabin.html", dev_url.as_str()));
+    }
+    let bundled =
+        app.path().resource_dir().map(|dir| dir.join("ui")).ok().filter(|dir| dir.join("cabin.html").exists());
+    // Unbundled release builds (`cargo build --release`) use the UI build next to the sources.
+    let root = bundled.unwrap_or_else(|| PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../ui/dist"));
     Content::Folder { root, page: "cabin.html".into() }
 }

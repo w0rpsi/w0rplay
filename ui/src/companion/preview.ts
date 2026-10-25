@@ -302,10 +302,8 @@ export function answer(command: string, args?: Record<string, unknown>): Promise
     case 'apple_music_sign_in':
       signIn('appleMusic')
       return later(undefined)
-    case 'open_url':
-      if (args && typeof args.url === 'string') {
-        window.open(args.url, '_blank', 'noopener')
-      }
+    case 'open_support_page':
+      window.open('https://kreosus.com/enes-less', '_blank', 'noopener')
       return later(undefined)
     case 'youtube_sign_out':
       setTimeout(() => {

@@ -20,19 +20,19 @@ export const words: Words = {
   game: {
     title: 'Your game',
     titleMissing: 'Where’s your game?',
-    found: 'W0RPLAY found truck simulators on this PC.',
-    foundMany: 'Both ETS2 and ATS were found. Choose the game you want to set up with W0RPLAY.',
+    found: 'W0RPLAY found Euro Truck Simulator 2 on this PC.',
+    foundMany: 'Euro Truck Simulator 2 is installed in more than one place. Choose the one you play.',
     missing:
-      'W0RPLAY couldn’t find ETS2 or ATS. Choose the folder you installed it in, the one with base.scs inside.',
+      'W0RPLAY couldn’t find Euro Truck Simulator 2. Choose the folder you installed it in, the one with base.scs inside.',
     chooseAnother: 'Use a Different Folder…',
     chooseFolder: 'Choose Folder…',
-    picker: 'Choose your ETS2 or ATS folder',
+    picker: 'Choose your Euro Truck Simulator 2 folder',
     bannerMissing: 'Choose its folder to continue',
-    notTheGame: 'This folder doesn’t contain ETS2 or ATS. Choose the one with base.scs inside.',
+    notTheGame: 'This folder doesn’t contain Euro Truck Simulator 2. Choose the one with base.scs inside.',
     gameGone: 'The game is no longer in this folder.',
     closeToGoOn: {
       title: 'Please close the game.',
-      text: 'W0RPLAY can only set itself up while the game isn’t running.',
+      text: 'W0RPLAY can only set itself up while Euro Truck Simulator 2 isn’t running.',
     },
   },
   check: {

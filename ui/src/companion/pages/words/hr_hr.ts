@@ -9,6 +9,7 @@ export const words: CompanionWords = {
     map: 'Karta',
     setup: 'Postavljanje',
     about: 'O programu',
+    support: 'Podržite me',
   },
   state: {
     starting: 'Pokretanje…',
@@ -186,6 +187,7 @@ export const words: CompanionWords = {
       map: 'Vaša karta, izrađena iz vaše igre. Ponovno se priprema kad se promijene igra ili vaši modovi karte.',
       setup: 'Gdje je W0RPLAY instaliran, s ponovnom instalacijom i deinstalacijom ako ih ikad zatrebate.',
       about: 'Vaša verzija i izvješće za kopiranje ako nešto nije u redu.',
+      support: 'Ako vam se W0RPLAY sviđa, ovdje možete podržati njegov razvoj.',
     },
     finish: 'Gotovo',
   },
@@ -291,5 +293,11 @@ export const words: CompanionWords = {
       text: 'Dodatak novog W0RPLAYa ide u vašu igru. Windows traži dopuštenje, kao i pri instalaciji.',
       button: 'Nastavi',
     },
+  },
+  support: {
+    title: 'Podržite me',
+    sub: 'W0RPLAY je besplatan. Ako vam uljepšava vožnje, možete podržati njegov razvoj na Kreosusu, jednokratno ili svaki mjesec.',
+    button: 'Podrži na Kreosusu',
+    note: 'Otvara Kreosus u vašem pregledniku.',
   },
 }

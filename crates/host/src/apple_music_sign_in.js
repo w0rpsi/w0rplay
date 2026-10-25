@@ -1,4 +1,4 @@
-// W0RPLAY, in Apple Music's sign-in window (signin.rs): Apple's own web player, where signing in is a dialog of
+// WestPlay, in Apple Music's sign-in window (signin.rs): Apple's own web player, where signing in is a dialog of
 // its own. The window is for signing in: the dialog opens at once (the page's own Sign In pressed), and once
 // the page is signed in (MusicKit, the page's own player, says so) this says it, nothing more of the account.
 ;(() => {

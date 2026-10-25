@@ -9,6 +9,7 @@ export const words: CompanionWords = {
     map: 'Zemljevid',
     setup: 'Namestitev',
     about: 'O programu',
+    support: 'Podpri me',
   },
   state: {
     starting: 'Zaganjanje …',
@@ -185,6 +186,7 @@ export const words: CompanionWords = {
       map: 'Tvoj zemljevid, ustvarjen iz tvoje igre. Znova se pripravi, ko se spremenijo igra ali tvoje modifikacije zemljevida.',
       setup: 'Kje je W0RPLAY nameščen, z vnovično namestitvijo in odstranitvijo, če ju kdaj potrebuješ.',
       about: 'Tvoja različica in poročilo za kopiranje, če kaj ni v redu.',
+      support: 'Če ti je W0RPLAY všeč, lahko tukaj podpreš njegov razvoj.',
     },
     finish: 'Končano',
   },
@@ -290,5 +292,11 @@ export const words: CompanionWords = {
       text: 'Vtičnik novega W0RPLAYa gre v tvojo igro. Windows te prosi za dovoljenje, kot pri namestitvi.',
       button: 'Nadaljuj',
     },
+  },
+  support: {
+    title: 'Podpri me',
+    sub: 'W0RPLAY je brezplačen. Če ti polepša vožnje, lahko podpreš njegov razvoj na Kreosusu, enkratno ali vsak mesec.',
+    button: 'Podpri na Kreosusu',
+    note: 'Odpre Kreosus v tvojem brskalniku.',
   },
 }

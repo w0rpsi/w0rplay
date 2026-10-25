@@ -712,17 +712,17 @@ mod tests {
         assert_eq!(host_of("about:blank"), "about:blank");
     }
 
-    /// A built cab page (`W0RPLAY_UI`: the folder with `cabin.html`, as installed) served and loaded as the
+    /// A built cab page (`WESTPLAY_UI`: the folder with `cabin.html`, as installed) served and loaded as the
     /// host does, and what it says: whether its scripts ran, and every error on the way.
     #[test]
-    #[ignore = "loads a built cab page (W0RPLAY_UI)"]
+    #[ignore = "loads a built cab page (WESTPLAY_UI)"]
     fn a_built_cab_page_runs() {
         use windows::Win32::System::Com::{COINIT_APARTMENTTHREADED, CoInitializeEx};
-        let Some(ui) = std::env::var_os("W0RPLAY_UI") else { panic!("W0RPLAY_UI: the built UI's folder") };
+        let Some(ui) = std::env::var_os("WESTPLAY_UI") else { panic!("WESTPLAY_UI: the built UI's folder") };
         // SAFETY: COM on this test's own thread, once, before anything uses it.
         unsafe { CoInitializeEx(None, COINIT_APARTMENTTHREADED).ok().unwrap() };
-        // A profile of its own, or the player's (W0RPLAY_PROFILE: W0RPLAY's `webview2` folder, W0RPLAY closed).
-        let user_data = std::env::var_os("W0RPLAY_PROFILE").map_or_else(
+        // A profile of its own, or the player's (WESTPLAY_PROFILE: W0RPLAY's `webview2` folder, W0RPLAY closed).
+        let user_data = std::env::var_os("WESTPLAY_PROFILE").map_or_else(
             || std::env::temp_dir().join(format!("w0rplay-built-cab-{}", std::process::id())),
             std::path::PathBuf::from,
         );

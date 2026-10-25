@@ -53,11 +53,7 @@ export function Panel({
         {headline(title, text.locale).map((word, w) => (
           <span key={w} className="ob-word" aria-hidden>
             {word.letters.map((letter, l) => (
-              <span
-                key={l}
-                className={letter === '0' ? 'w0-slash' : undefined}
-                style={n(word.start + l)}
-              >
+              <span key={l} style={n(word.start + l)}>
                 {letter}
               </span>
             ))}
@@ -143,7 +139,7 @@ export function Row({
   danger,
   hover,
 }: {
-  title: ReactNode
+  title: string
   detail?: string
   value?: string
   accessory?: ReactNode
@@ -157,7 +153,7 @@ export function Row({
   const content = (
     <>
       <span className="ob-row-text">
-        <b title={typeof title === 'string' ? title : undefined}>{title}</b>
+        <b title={title}>{title}</b>
         {detail && <span>{detail}</span>}
       </span>
       {value && <span className="ob-row-value">{value}</span>}

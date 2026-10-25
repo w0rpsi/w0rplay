@@ -9,6 +9,7 @@ export const words: CompanionWords = {
     map: 'Hartă',
     setup: 'Configurare',
     about: 'Despre',
+    support: 'Susține-mă',
   },
   state: {
     starting: 'Pornește…',
@@ -186,6 +187,7 @@ export const words: CompanionWords = {
       map: 'Harta ta, creată din jocul tău. Se pregătește din nou când se schimbă jocul sau modurile tale de hartă.',
       setup: 'Unde este instalat W0RPLAY, cu Reinstalează și Dezinstalează dacă vei avea vreodată nevoie.',
       about: 'Versiunea ta și un raport de copiat dacă ceva nu e în regulă.',
+      support: 'Dacă îți place W0RPLAY, aici îi poți susține dezvoltarea.',
     },
     finish: 'Gata',
   },
@@ -291,5 +293,11 @@ export const words: CompanionWords = {
       text: 'Pluginul noului W0RPLAY intră în jocul tău. Windows cere permisiunea, ca la instalare.',
       button: 'Continuă',
     },
+  },
+  support: {
+    title: 'Susține-mă',
+    sub: 'W0RPLAY este gratuit. Dacă îți face drumurile mai bune, poți susține dezvoltarea lui pe Kreosus, o dată sau în fiecare lună.',
+    button: 'Susține pe Kreosus',
+    note: 'Deschide Kreosus în browserul tău.',
   },
 }
