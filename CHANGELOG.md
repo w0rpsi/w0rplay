@@ -3,6 +3,10 @@
 What changed in each release of W0RPLAY. The newest release's notes are what the app shows when it offers the
 update.
 
+## 2.1.1 (2026-10-25)
+- Mouse click & focus freeze fix: Restored disabled state on the offscreen host window to prevent WebView2 from stealing Windows mouse capture on click, eliminating the game stall and FPS drop when interacting with the cabin screen.
+- Smooth 60 FPS cabin stream: Restored cabin capture back to native 60 FPS, eliminating cursor stutter and choppy movement.
+
 ## 2.1.0 (2026-10-25)
 - Windows 11 off-screen throttling: Fixed an issue where the in-cabin display locked to 3 FPS. The off-screen host window was moved out of Windows minimized coordinates (-32000) so Chromium's compositor stays active at full framerate.
 - Frame pacing & stutter fix: Capped in-cabin screen capture to 30 FPS. This reduces DirectX texture copy bandwidth and eliminates GPU queue stalls during in-game head rotation and heavy rendering passes.
