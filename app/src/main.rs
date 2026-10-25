@@ -146,7 +146,11 @@ fn update_settings(settings: Settings, store: State<SettingsStore>, app: AppHand
     Ok(settings)
 }
 
+#[link(name = "winmm")]
+unsafe extern "system" { fn timeBeginPeriod(uPeriod: u32) -> u32; }
+
 fn main() {
+    unsafe { timeBeginPeriod(1); }
     // Started as administrator only to copy the plugin into the game (setup asked for it): that, and done.
     let args: Vec<String> = std::env::args().collect();
     if let Some(code) = w0rplay_setup::plugin::run_as_administrator_copy(&args) {

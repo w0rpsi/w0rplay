@@ -60,6 +60,7 @@ export function CabinApp() {
   useEffect(() => postToHost({ type: 'startup', stage: `power ${phase}` }), [phase])
 
   const powered = !FOLLOW_POWER || phase === 'on'
+  useRenderHeartbeat(powered)
 
   return (
     <Shell
@@ -113,9 +114,7 @@ function usePowerOnEntry(phase: PowerPhase): boolean {
   return entering
 }
 
-/** Advances timed power phases (splash, connecting) when their time is up. A timer may fire a little early
- * (browsers round its delay down to whole milliseconds), so its tick says the moment it was set for, at the
- * earliest: a tick that didn't advance the phase would leave it there, with no timer left to try again. */
+/** Advances timed power phases (splash, connecting) when their time is up. */
 function usePowerClock() {
   const power = useCabin((state) => state.power)
   const powerEvent = useCabin((state) => state.powerEvent)
@@ -132,10 +131,7 @@ function usePowerClock() {
 const SWITCH_MS = 420
 
 /**
- * The screen for the route. Home and the Dashboard trade places live: the old one stays a moment, moving
- * and fading out while the new one comes in (shell/transitions.css). Any other change swaps at once; app
- * launches are animated by View Transitions (state/launch.ts). A press during a switch starts the next one
- * from wherever things are.
+ * The screen for the route. Home and the Dashboard trade places live.
  */
 function Screens({ route }: { route: Route }) {
   const [shown, setShown] = useState(route)
@@ -148,9 +144,6 @@ function Screens({ route }: { route: Route }) {
     setShown(route)
   }
 
-  // The switch ends when its animation does: it starts on the first frame after the change, which a busy
-  // page draws late (the Dashboard starting its map), so a timer from the change would cut it off before
-  // its end. The timer is there only for an animation that never runs.
   useEffect(() => {
     if (!leaving) return
     const timer = setTimeout(() => setLeaving(null), SWITCH_MS * 3)
@@ -168,7 +161,6 @@ function Screens({ route }: { route: Route }) {
       <div
         key={routeKey(shown)}
         className={leaving ? `screen-slot entering${switching}` : 'screen-slot'}
-        // Its own animation, not one of its icons' (theirs bubble up here too).
         onAnimationEnd={(event) => {
           if (leaving && event.target === event.currentTarget) setLeaving(null)
         }}
@@ -189,4 +181,52 @@ function RouteScreen({ route }: { route: Route }) {
     case 'app':
       return <AppScreen app={route.app} />
   }
+}
+
+/**
+ * Rock-solid render pulse for offscreen DirectComposition & Windows Graphics Capture.
+ * Keeps a continuous 60 FPS compositor tick active when the screen is powered,
+ * preventing Chromium offscreen throttling down to 0-3 FPS and ensuring fluid 60 FPS in-cabin.
+ */
+function useRenderHeartbeat(enabled: boolean) {
+  useEffect(() => {
+    if (!enabled || !isInHost()) return
+    let animId: number
+    const canvas = document.createElement('canvas')
+    canvas.width = 1
+    canvas.height = 1
+    canvas.style.position = 'fixed'
+    canvas.style.bottom = '0'
+    canvas.style.right = '0'
+    canvas.style.width = '1px'
+    canvas.style.height = '1px'
+    canvas.style.opacity = '0.01'
+    canvas.style.pointerEvents = 'none'
+    canvas.style.zIndex = '999999'
+    document.body.appendChild(canvas)
+    const ctx = canvas.getContext('2d', { alpha: true })
+
+    let flip = false
+    const render = () => {
+      if (ctx) {
+        flip = !flip
+        ctx.fillStyle = flip ? 'rgba(0,0,0,0.01)' : 'rgba(255,255,255,0.01)'
+        ctx.fillRect(0, 0, 1, 1)
+      }
+    }
+
+    const tick = () => {
+      render()
+      animId = requestAnimationFrame(tick)
+    }
+    animId = requestAnimationFrame(tick)
+
+    const intervalId = setInterval(render, 16)
+
+    return () => {
+      cancelAnimationFrame(animId)
+      clearInterval(intervalId)
+      canvas.remove()
+    }
+  }, [enabled])
 }
