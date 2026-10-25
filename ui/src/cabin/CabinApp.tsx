@@ -60,7 +60,6 @@ export function CabinApp() {
   useEffect(() => postToHost({ type: 'startup', stage: `power ${phase}` }), [phase])
 
   const powered = !FOLLOW_POWER || phase === 'on'
-  useRenderHeartbeat(powered)
 
   return (
     <Shell
@@ -181,52 +180,4 @@ function RouteScreen({ route }: { route: Route }) {
     case 'app':
       return <AppScreen app={route.app} />
   }
-}
-
-/**
- * Rock-solid render pulse for offscreen DirectComposition & Windows Graphics Capture.
- * Keeps a continuous 60 FPS compositor tick active when the screen is powered,
- * preventing Chromium offscreen throttling down to 0-3 FPS and ensuring fluid 60 FPS in-cabin.
- */
-function useRenderHeartbeat(enabled: boolean) {
-  useEffect(() => {
-    if (!enabled || !isInHost()) return
-    let animId: number
-    const canvas = document.createElement('canvas')
-    canvas.width = 1
-    canvas.height = 1
-    canvas.style.position = 'fixed'
-    canvas.style.bottom = '0'
-    canvas.style.right = '0'
-    canvas.style.width = '1px'
-    canvas.style.height = '1px'
-    canvas.style.opacity = '0.01'
-    canvas.style.pointerEvents = 'none'
-    canvas.style.zIndex = '999999'
-    document.body.appendChild(canvas)
-    const ctx = canvas.getContext('2d', { alpha: true })
-
-    let flip = false
-    const render = () => {
-      if (ctx) {
-        flip = !flip
-        ctx.fillStyle = flip ? 'rgba(0,0,0,0.01)' : 'rgba(255,255,255,0.01)'
-        ctx.fillRect(0, 0, 1, 1)
-      }
-    }
-
-    const tick = () => {
-      render()
-      animId = requestAnimationFrame(tick)
-    }
-    animId = requestAnimationFrame(tick)
-
-    const intervalId = setInterval(render, 16)
-
-    return () => {
-      cancelAnimationFrame(animId)
-      clearInterval(intervalId)
-      canvas.remove()
-    }
-  }, [enabled])
 }

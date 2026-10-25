@@ -27,7 +27,6 @@ export function Cursor() {
   const [idle, setIdle] = useState(false)
   const [light, setLight] = useState(false)
   const where = useRef<{ x: number; y: number } | null>(null)
-  const cursorRef = useRef<HTMLDivElement | null>(null)
 
   // What's under it, looked at as it moves and while it stays: changed only when two looks in a row say so.
   useEffect(() => {
@@ -50,7 +49,7 @@ export function Cursor() {
     const moved = () => {
       if (performance.now() - lookedAt >= LOOK_MOVING) look()
     }
-    window.addEventListener('pointermove', moved, { passive: true })
+    window.addEventListener('pointermove', moved)
     const timer = setInterval(look, LOOK_STILL)
     return () => {
       window.removeEventListener('pointermove', moved)
@@ -69,30 +68,19 @@ export function Cursor() {
     }
     const move = (event: PointerEvent) => {
       const pressed = (event.buttons & 1) !== 0
+      setCursor({ x: event.clientX, y: event.clientY, pressed })
       where.current = { x: event.clientX, y: event.clientY }
-      if (cursorRef.current) {
-        cursorRef.current.style.transform = `translate3d(${event.clientX}px, ${event.clientY}px, 0)`
-        cursorRef.current.style.display = 'block'
-      }
-      setCursor((prev) => {
-        if (!prev) return { x: event.clientX, y: event.clientY, pressed }
-        if (prev.pressed !== pressed) return { ...prev, pressed }
-        return prev
-      })
       awake(pressed)
     }
     const wheel = (event: WheelEvent) => awake((event.buttons & 1) !== 0)
     const leave = () => {
       clearTimeout(timer)
-      if (cursorRef.current) {
-        cursorRef.current.style.display = 'none'
-      }
       setCursor(null)
       where.current = null
     }
-    window.addEventListener('pointermove', move, { passive: true })
-    window.addEventListener('pointerdown', move, { passive: true })
-    window.addEventListener('pointerup', move, { passive: true })
+    window.addEventListener('pointermove', move)
+    window.addEventListener('pointerdown', move)
+    window.addEventListener('pointerup', move)
     window.addEventListener('wheel', wheel, { passive: true })
     document.documentElement.addEventListener('pointerleave', leave)
     return () => {
@@ -107,11 +95,12 @@ export function Cursor() {
 
   if (!cursor) return null
   return (
-    // The outer element only positions; the dot inside shrinks while pressed.
+    // The outer element only positions; the dot inside shrinks while pressed. (Scaling the positioned
+    // element itself would scale its position too, pulling the dot towards the top-left corner.)
+    // Its own transition name keeps it live and on top while screens animate (shell/transitions.css).
     <div
-      ref={cursorRef}
       className={`cursor${idle ? ' idle' : ''}${light ? ' on-light' : ''}`}
-      style={{ transform: `translate3d(${cursor.x}px, ${cursor.y}px, 0)`, viewTransitionName: 'cursor' }}
+      style={{ transform: `translate(${cursor.x}px, ${cursor.y}px)`, viewTransitionName: 'cursor' }}
       aria-hidden
     >
       <div className={cursor.pressed ? 'cursor-dot pressed' : 'cursor-dot'} />

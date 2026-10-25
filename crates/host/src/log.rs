@@ -36,6 +36,7 @@ pub fn write(line: &str) {
         let now = unsafe { GetLocalTime() };
         let _ =
             writeln!(file, "{:02}:{:02}:{:02}.{:03}  {line}", now.wHour, now.wMinute, now.wSecond, now.wMilliseconds);
+        let _ = file.flush();
     }
 }
 
