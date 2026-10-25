@@ -32,16 +32,18 @@ use windows::Win32::System::LibraryLoader::GetModuleHandleW;
 use windows::Win32::System::WinRT::{
     CreateDispatcherQueueController, DQTAT_COM_STA, DQTYPE_THREAD_CURRENT, DispatcherQueueOptions,
 };
-use windows::Win32::UI::Input::KeyboardAndMouse::EnableWindow;
-use windows::Win32::UI::WindowsAndMessaging::{CreateWindowExW, DestroyWindow, WINDOW_EX_STYLE, WS_OVERLAPPEDWINDOW};
+use windows::Win32::UI::WindowsAndMessaging::{
+    CreateWindowExW, DestroyWindow, ShowWindow, SW_SHOWNA, WS_EX_NOACTIVATE, WS_EX_TOOLWINDOW,
+    WS_POPUP, WS_VISIBLE,
+};
 use windows::core::{HSTRING, Interface, PCWSTR, PWSTR, w};
 use windows_numerics::Vector2;
 
 pub type Error = Box<dyn std::error::Error>;
 
-/// Where the WebViews' hidden host windows are (both coordinates): beyond any monitor's (Windows parks
-/// minimized windows there too).
-const OFF_THE_DESKTOP: i32 = -32000;
+/// Where the WebViews' hidden host windows are (both coordinates): beyond any monitor's, but NOT negative
+/// (Windows parks minimized windows at -32000, which causes Chromium to trigger WasHidden() and freeze).
+const OFF_THE_DESKTOP: i32 = 20000;
 
 /// The browser argument naming the GPU every WebView2 of this process draws on (graphics.rs), set before
 /// the first is made: one browser shared by several WebViews takes one set of arguments.
@@ -198,10 +200,10 @@ impl OffscreenWebView {
         // SAFETY: a window of the system's own `STATIC` class, its strings static; no parent or menu.
         let host = unsafe {
             CreateWindowExW(
-                WINDOW_EX_STYLE(0),
+                WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE,
                 w!("STATIC"),
                 w!("w0rplay-offscreen-host"),
-                WS_OVERLAPPEDWINDOW,
+                WS_POPUP | WS_VISIBLE,
                 OFF_THE_DESKTOP,
                 OFF_THE_DESKTOP,
                 width as i32,
@@ -212,12 +214,8 @@ impl OffscreenWebView {
                 None,
             )?
         };
-        // The page takes input only from W0RPLAY (`send_mouse`). Disabled, the window and the WebView's own
-        // windows inside it get none of the real mouse: otherwise, once a click makes the WebView capture the
-        // mouse, the player's real clicks and the real cursor (wherever the game parked it) reach the page too.
-        // SAFETY: `host` was just created on this thread.
         unsafe {
-            let _ = EnableWindow(host, false);
+            let _ = ShowWindow(host, SW_SHOWNA);
         }
 
         let environment = create_environment(user_data)?;
@@ -651,8 +649,9 @@ fn create_environment(user_data: &Path) -> Result<ICoreWebView2Environment, Erro
                          --disable-background-timer-throttling --disable-renderer-backgrounding --disable-backgrounding-occluded-windows \
                          --disable-frame-rate-limit --disable-gpu-vsync --autoplay-policy=no-user-gesture-required \
                          --enable-gpu-rasterization --enable-zero-copy --ignore-gpu-blocklist \
-                         --enable-accelerated-video-decode --enable-begin-frame-scheduling \
+                         --enable-accelerated-video-decode \
                          --disable-background-media-suspend --disable-low-end-device-mode \
+                         --run-all-compositor-stages-before-draw --disable-gpu-watchdog \
                          --force-high-performance-gpu --enable-features=SharedArrayBuffer"
         .to_string();
     // The GPU it draws on (graphics.rs).

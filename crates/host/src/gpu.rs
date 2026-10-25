@@ -113,8 +113,8 @@ impl SharedFrame {
     /// the raw HRESULT is compared.
     pub fn try_lock(&self) -> Lock {
         let hr =
-            // SAFETY: the keyed mutex is this frame's own, alive as long as it; short 2ms timeout for GPU lock under load.
-            unsafe { (Interface::vtable(&self.mutex).AcquireSync)(self.mutex.as_raw(), w0rplay_shared::FRAME_KEY, 2) };
+            // SAFETY: the keyed mutex is this frame's own, alive as long as it; non-blocking timeout 0.
+            unsafe { (Interface::vtable(&self.mutex).AcquireSync)(self.mutex.as_raw(), w0rplay_shared::FRAME_KEY, 0) };
         lock_of(hr.0)
     }
 

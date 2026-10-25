@@ -222,8 +222,9 @@ fn publish(context: &ID3D11DeviceContext, frame: &ID3D11Texture2D, shared: &Shar
             back: 1,
         };
         context.CopySubresourceRegion(&shared.texture, 0, 0, 0, 0, frame, 0, Some(&region));
+        shared.unlock();
+        context.Flush();
     }
-    shared.unlock();
     Lock::Held
 }
 
