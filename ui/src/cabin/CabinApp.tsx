@@ -22,12 +22,9 @@ import { connectHost, go, useCabin, useLive } from './state/store'
 import { languageOf } from './state/strings'
 import { followTimeZone } from './state/timeZone'
 
-/**
- * Plain browser previews have no truck to power the screen; they show it as if the electrics were on.
- * `?power` simulates the real sequence there too (drive it with `useCabin.getState().powerEvent`).
- */
-// Keep CarPlay screen powered on even when truck is stopped or ignition is turned off
-const FOLLOW_POWER = false
+// Plain browser previews have no truck to power the screen; they show it as if the electrics were on.
+// `?power` simulates the real sequence there too (drive it with `useCabin.getState().powerEvent`).
+const FOLLOW_POWER = isInHost() || new URLSearchParams(location.search).has('power')
 
 /** The in-cabin screen: the shell around the screen for the current route, after the boot sequence. */
 export function CabinApp() {
@@ -71,7 +68,6 @@ export function CabinApp() {
   useEffect(() => postToHost({ type: 'startup', stage: `power ${phase}` }), [phase])
 
   const powered = !FOLLOW_POWER || phase === 'on'
-  useRenderHeartbeat(powered)
 
   return (
     <Shell
@@ -203,79 +199,4 @@ function RouteScreen({ route }: { route: Route }) {
   }
 }
 
-/**
- * Rock-solid render heartbeat for the in-cabin infotainment screen.
- * Maintains a guaranteed, smooth 30 FPS baseline at all times (so the truck screen
- * never freezes or drops to 0-3 FPS while driving), and boosts to 60 FPS during
- * active user interaction (drag, clicks).
- */
-function useRenderHeartbeat(enabled: boolean) {
-  useEffect(() => {
-    if (!enabled || !isInHost()) return
-    let animId: number
-    const canvas = document.createElement('canvas')
-    canvas.width = 2
-    canvas.height = 2
-    canvas.style.position = 'fixed'
-    canvas.style.bottom = '0'
-    canvas.style.right = '0'
-    canvas.style.width = '2px'
-    canvas.style.height = '2px'
-    canvas.style.opacity = '0.04'
-    canvas.style.pointerEvents = 'none'
-    canvas.style.zIndex = '999999'
-    document.body.appendChild(canvas)
-    const ctx = canvas.getContext('2d', { alpha: true })
 
-    let highFpsUntil = 0
-    let lastTick = 0
-    let flip = false
-
-    const boost = (ms = 1500) => {
-      highFpsUntil = Math.max(highFpsUntil, performance.now() + ms)
-    }
-
-    // Boost to 60 FPS whenever there is pointer activity, clicks, or keypresses
-    const onActivity = () => boost(1500)
-    window.addEventListener('pointermove', onActivity, { passive: true })
-    window.addEventListener('pointerdown', onActivity, { passive: true })
-    window.addEventListener('keydown', onActivity, { passive: true })
-
-    const renderPixel = () => {
-      if (ctx) {
-        flip = !flip
-        ctx.fillStyle = flip ? 'rgba(0,0,0,0.04)' : 'rgba(255,255,255,0.04)'
-        ctx.fillRect(0, 0, 2, 2)
-      }
-    }
-
-    const tick = (now: number) => {
-      // 60 FPS (16.6ms) during interaction, rock-solid 30 FPS (33.3ms) minimum always
-      const targetInterval = now < highFpsUntil ? 16 : 33
-      if (now - lastTick >= targetInterval) {
-        lastTick = now
-        renderPixel()
-      }
-      animId = requestAnimationFrame(tick)
-    }
-    animId = requestAnimationFrame(tick)
-
-    // Fallback interval ensures compositor never stalls even if headless Chromium throttles rAF
-    const fallbackInterval = setInterval(() => {
-      const now = performance.now()
-      if (now - lastTick >= 33) {
-        lastTick = now
-        renderPixel()
-      }
-    }, 33)
-
-    return () => {
-      cancelAnimationFrame(animId)
-      clearInterval(fallbackInterval)
-      window.removeEventListener('pointermove', onActivity)
-      window.removeEventListener('pointerdown', onActivity)
-      window.removeEventListener('keydown', onActivity)
-      canvas.remove()
-    }
-  }, [enabled])
-}

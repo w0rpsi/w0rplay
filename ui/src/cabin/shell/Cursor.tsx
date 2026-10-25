@@ -1,132 +1,109 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { lightUnder } from './cursorLight'
 
-/** How long the cursor stays visible without mouse movement before fading out (5s). */
+/** How long the cursor stays without the mouse moving, clicking or scrolling, ms. */
 const IDLE_MS = 5000
+/** How often the cursor looks at what's under it: as it moves (at most), and while it stays (the page can move
+ * under it), ms. */
+const LOOK_MOVING = 80
+const LOOK_STILL = 250
+
+interface CursorState {
+  x: number
+  y: number
+  pressed: boolean
+}
 
 /**
- * High-performance, zero-latency interaction cursor.
- * Uses direct DOM manipulation and requestAnimationFrame to completely bypass React state
- * re-renders and eliminate layout thrashing, achieving butter-smooth 60-144 FPS pointer tracking.
+ * Where the player points on the screen while holding the interaction key (the host sends the mouse as
+ * ordinary mouse events, crates/host/src/pointer.rs). WebView2 draws no system cursor offscreen, so the page
+ * draws its own: a soft touch point that follows the mouse and shrinks while pressed, gone when the player
+ * lets go of the key (the host then sends the mouse out of the page). Left still for `IDLE_MS` (not
+ * pressed), it fades away, off the map and the art, until the mouse moves again. Over something light (a light
+ * page, a light cover) it goes dark, fading between (cursorLight.ts), as Apple Music's mini player does.
  */
 export function Cursor() {
-  const cursorRef = useRef<HTMLDivElement>(null)
-  const dotRef = useRef<HTMLDivElement>(null)
-  const idleTimer = useRef<number | null>(null)
-  const rAF = useRef<number | null>(null)
-  const state = useRef<{ x: number; y: number; pressed: boolean; visible: boolean }>({
-    x: -100,
-    y: -100,
-    pressed: false,
-    visible: false,
-  })
+  const [cursor, setCursor] = useState<CursorState | null>(null)
+  const [idle, setIdle] = useState(false)
+  const [light, setLight] = useState(false)
+  const where = useRef<{ x: number; y: number } | null>(null)
 
+  // What's under it, looked at as it moves and while it stays: changed only when two looks in a row say so.
   useEffect(() => {
-    const updateDOM = () => {
-      const el = cursorRef.current
-      const dot = dotRef.current
-      if (!el || !dot) return
-
-      if (!state.current.visible) {
-        el.style.opacity = '0'
-        return
-      }
-
-      el.style.opacity = ''
-      el.style.transform = `translate3d(${state.current.x}px, ${state.current.y}px, 0)`
-
-      if (state.current.pressed) {
-        dot.classList.add('pressed')
-      } else {
-        dot.classList.remove('pressed')
+    let showing = false
+    let pending = 0
+    let lookedAt = 0
+    const look = () => {
+      const at = where.current
+      if (!at) return
+      lookedAt = performance.now()
+      const wanted = lightUnder(at.x, at.y, showing)
+      if (wanted === null) return
+      pending = wanted === showing ? 0 : pending + 1
+      if (pending >= 2) {
+        showing = wanted
+        pending = 0
+        setLight(wanted)
       }
     }
-
-    const scheduleUpdate = () => {
-      if (rAF.current !== null) return
-      rAF.current = requestAnimationFrame(() => {
-        rAF.current = null
-        updateDOM()
-      })
+    const moved = () => {
+      if (performance.now() - lookedAt >= LOOK_MOVING) look()
     }
-
-    const awake = (pressed: boolean) => {
-      const el = cursorRef.current
-      if (el) el.classList.remove('idle')
-      if (idleTimer.current !== null) {
-        window.clearTimeout(idleTimer.current)
-      }
-      if (!pressed) {
-        idleTimer.current = window.setTimeout(() => {
-          if (cursorRef.current) cursorRef.current.classList.add('idle')
-        }, IDLE_MS)
-      }
-    }
-
-    const onPointerMove = (event: PointerEvent) => {
-      state.current.x = event.clientX
-      state.current.y = event.clientY
-      state.current.pressed = (event.buttons & 1) !== 0
-      state.current.visible = true
-      awake(state.current.pressed)
-      scheduleUpdate()
-    }
-
-    const onPointerDown = (event: PointerEvent) => {
-      state.current.x = event.clientX
-      state.current.y = event.clientY
-      state.current.pressed = true
-      state.current.visible = true
-      awake(true)
-      scheduleUpdate()
-    }
-
-    const onPointerUp = (event: PointerEvent) => {
-      state.current.pressed = (event.buttons & 1) !== 0
-      awake(state.current.pressed)
-      scheduleUpdate()
-    }
-
-    const onWheel = (event: WheelEvent) => {
-      awake((event.buttons & 1) !== 0)
-    }
-
-    const onLeave = () => {
-      state.current.visible = false
-      if (idleTimer.current !== null) {
-        window.clearTimeout(idleTimer.current)
-      }
-      scheduleUpdate()
-    }
-
-    window.addEventListener('pointermove', onPointerMove, { passive: true })
-    window.addEventListener('pointerdown', onPointerDown, { passive: true })
-    window.addEventListener('pointerup', onPointerUp, { passive: true })
-    window.addEventListener('wheel', onWheel, { passive: true })
-    document.documentElement.addEventListener('pointerleave', onLeave, { passive: true })
-
+    window.addEventListener('pointermove', moved)
+    const timer = setInterval(look, LOOK_STILL)
     return () => {
-      if (idleTimer.current !== null) window.clearTimeout(idleTimer.current)
-      if (rAF.current !== null) cancelAnimationFrame(rAF.current)
-      window.removeEventListener('pointermove', onPointerMove)
-      window.removeEventListener('pointerdown', onPointerDown)
-      window.removeEventListener('pointerup', onPointerUp)
-      window.removeEventListener('wheel', onWheel)
-      document.documentElement.removeEventListener('pointerleave', onLeave)
+      window.removeEventListener('pointermove', moved)
+      clearInterval(timer)
     }
   }, [])
 
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | undefined
+    // Any use of the mouse shows the cursor and starts the wait again (none while a button is held:
+    // a drag can pause without the cursor leaving).
+    const awake = (pressed: boolean) => {
+      setIdle(false)
+      clearTimeout(timer)
+      if (!pressed) timer = setTimeout(() => setIdle(true), IDLE_MS)
+    }
+    const move = (event: PointerEvent) => {
+      const pressed = (event.buttons & 1) !== 0
+      setCursor({ x: event.clientX, y: event.clientY, pressed })
+      where.current = { x: event.clientX, y: event.clientY }
+      awake(pressed)
+    }
+    const wheel = (event: WheelEvent) => awake((event.buttons & 1) !== 0)
+    const leave = () => {
+      clearTimeout(timer)
+      setCursor(null)
+      where.current = null
+    }
+    window.addEventListener('pointermove', move)
+    window.addEventListener('pointerdown', move)
+    window.addEventListener('pointerup', move)
+    window.addEventListener('wheel', wheel, { passive: true })
+    document.documentElement.addEventListener('pointerleave', leave)
+    return () => {
+      clearTimeout(timer)
+      window.removeEventListener('pointermove', move)
+      window.removeEventListener('pointerdown', move)
+      window.removeEventListener('pointerup', move)
+      window.removeEventListener('wheel', wheel)
+      document.documentElement.removeEventListener('pointerleave', leave)
+    }
+  }, [])
+
+  if (!cursor) return null
   return (
+    // The outer element only positions; the dot inside shrinks while pressed. (Scaling the positioned
+    // element itself would scale its position too, pulling the dot towards the top-left corner.)
+    // Its own transition name keeps it live and on top while screens animate (shell/transitions.css).
     <div
-      ref={cursorRef}
-      className="cursor"
-      style={{
-        opacity: 0,
-        willChange: 'transform',
-        transform: 'translate3d(-100px, -100px, 0)',
-      }}
+      className={`cursor${idle ? ' idle' : ''}${light ? ' on-light' : ''}`}
+      style={{ transform: `translate(${cursor.x}px, ${cursor.y}px)`, viewTransitionName: 'cursor' }}
       aria-hidden
     >
-      <div ref={dotRef} className="cursor-dot" />
+      <div className={cursor.pressed ? 'cursor-dot pressed' : 'cursor-dot'} />
     </div>
   )
 }

@@ -27,16 +27,23 @@ export type PowerEvent = { type: 'electrics'; on: boolean; at: number } | { type
 export const SPLASH_MS = 2400
 export const CONNECTING_MS = 2600
 
-export const INITIAL_POWER: PowerState = { phase: 'on', since: 0, observed: true }
+export const INITIAL_POWER: PowerState = { phase: 'off', since: 0, observed: false }
 
 export function power(state: PowerState, event: PowerEvent): PowerState {
   switch (event.type) {
     case 'electrics': {
-      // Keep CarPlay powered on even when truck stops or electrics/ignition is turned off
-      return { ...state, phase: 'on', observed: true }
+      if (!event.on) {
+        return state.phase === 'off' && state.observed ? state : { phase: 'off', since: event.at, observed: true }
+      }
+      if (state.phase !== 'off') return state.observed ? state : { ...state, observed: true }
+      return { phase: state.observed ? 'splash' : 'connecting', since: event.at, observed: true }
     }
     case 'tick': {
-      return { ...state, phase: 'on' }
+      // Against the moment the phase is due (nextPhaseAt), computed the same way, so a tick sent for that
+      // moment always advances it.
+      const due = nextPhaseAt(state)
+      if (due === null || event.at < due) return state
+      return { ...state, phase: state.phase === 'splash' ? 'connecting' : 'on', since: event.at }
     }
   }
 }
