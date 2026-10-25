@@ -648,7 +648,7 @@ fn create_environment(user_data: &Path) -> Result<ICoreWebView2Environment, Erro
     // Chromium throttles or stops rendering for hidden or occluded windows; ours is never shown.
     let mut arguments = "--disable-features=CalculateNativeWinOcclusion --disable-background-timer-throttling \
                          --disable-renderer-backgrounding --disable-backgrounding-occluded-windows \
-                         --autoplay-policy=no-user-gesture-required"
+                         --autoplay-policy=no-user-gesture-required --js-flags=--max-old-space-size=128"
         .to_string();
     if let Some(gpu) = GPU_ARGUMENT.lock().unwrap_or_else(|e| e.into_inner()).as_deref() {
         arguments = format!("{arguments} {gpu}");
