@@ -25,3 +25,16 @@ scania-2025-advanced ui/dashboard/w0rplay_scania_2025_advanced_gps.sii
 # interior's (interior/computers.sui), and the UK interiors' in mph (computers_uk.sui). One screen in both, the
 # whole 1024 x 512 surface shown at 1.75:1 (their models' screen pieces).
 volvo-fh          ui/dashboard/volvo_fh_2021_gps.sii ui/dashboard/volvo_fh_2021_mph_gps.sii ui/dashboard/volvo_fh_2024_gps.sii ui/dashboard/volvo_fh_2024_mph_gps.sii
+# American Truck Simulator
+# Volvo VNL 2025 (DLC).
+volvo-vnl-2025    ui/dashboard/volvo_vnl2025_gps.sii
+# Volvo VNL 2018 & VNR Electric (DLC).
+volvo-vnl-2018    ui/dashboard/volvo_vnl2018_gps.sii ui/dashboard/volvo_vnr_e_gps.sii
+# Freightliner Cascadia 2024 / ICC5 (DLC).
+cascadia-2024     ui/dashboard/freightliner_cascadia_2024_gps.sii ui/dashboard/freightliner_cascadia_icc5_gps.sii
+# Kenworth T680 2022 (Next Gen DLC).
+kenworth-t680-22  ui/dashboard/kenworth_t680_2022_gps.sii
+# Western Star 5700XE (DLC).
+westernstar-5700  ui/dashboard/westernstar_5700xe_gps.sii
+# Western Star 57X (DLC).
+westernstar-57x   ui/dashboard/westernstar_57x_gps.sii

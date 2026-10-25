@@ -78,7 +78,21 @@ pub fn screen_layout_for_texture(width: u32, height: u32) -> Option<usize> {
 /// The trucks W0RPLAY shows in on a layout that trucks it doesn't support share (SDK model ids, without the
 /// `vehicle.` prefix): most trucks' interiors name the stock GPS screen (`generic`, `ui/gps.sii`), and of
 /// those only the Scania S and R are W0RPLAY's. The other layouts are their own trucks' scripts.
-const SHARED_LAYOUT_TRUCKS: &[(&str, &[&str])] = &[("generic", &["scania.s_2016", "scania.r_2016"])];
+const SHARED_LAYOUT_TRUCKS: &[(&str, &[&str])] = &[("generic", &[
+    "scania.s_2016",
+    "scania.r_2016",
+    "kenworth.w900",
+    "kenworth.t680",
+    "peterbilt.389",
+    "peterbilt.579",
+    "international.lonestar",
+    "international.lt",
+    "international.9900i",
+    "mack.anthem",
+    "mack.pinnacle",
+    "westernstar.49x",
+    "volvo.vnl",
+])];
 
 /// Whether W0RPLAY shows on the layout at `index` (in [`screen_layouts`]) in the truck `truck_id` (the SDK's
 /// id, with or without its `vehicle.` prefix): every other truck keeps the game's own screen.

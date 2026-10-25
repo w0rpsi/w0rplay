@@ -211,7 +211,9 @@ fn main() {
         ])
         .setup(move |app| {
             w0rplay_host::startup::mark("app: window set up");
-            std::thread::spawn(|| {
+            let app_handle = app.handle().clone();
+            std::thread::spawn(move || {
+                setup::auto_sync(&app_handle);
                 let deployed = w0rplay_setup::prism::deploy_all();
                 if deployed.is_empty() {
                     if let Some(chosen) = w0rplay_setup::pick::folder(0, "Euro Truck Simulator 2 veya ATS Belgeler Klasörünü Seçin") {

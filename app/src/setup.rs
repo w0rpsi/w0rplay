@@ -337,8 +337,66 @@ pub async fn check_game(dir: PathBuf, store: State<'_, SetupStore>) -> Result<Ga
 }
 
 fn build_mod(game: &Game) -> Result<(Vec<u8>, game_mod::Built), String> {
-    let files = GameFiles::install(&game.dir).map_err(|e| e.to_string())?;
+    let mut files = GameFiles::install(&game.dir).map_err(|e| e.to_string())?;
+    for other in game::find() {
+        if other.dir != game.dir {
+            if let Ok(other_files) = GameFiles::install(&other.dir) {
+                for mount in other_files.into_mounts() {
+                    files.mount(mount);
+                }
+            }
+        }
+    }
     game_mod::build(&files).map_err(|e| e.to_string())
+}
+
+/// Automatically syncs the plugin DLL and game mod to all installed games (ETS2 and ATS).
+pub fn auto_sync(app: &AppHandle) {
+    let Some(ours) = plugin_file(app) else {
+        log!("setup: auto_sync: no plugin file found beside app");
+        return;
+    };
+    let games = game::find();
+    if games.is_empty() {
+        return;
+    }
+
+    // 1. Install or update the plugin DLL in every discovered game (ETS2 and ATS).
+    for g in &games {
+        match plugin::state(g, &ours) {
+            Ok(plugin::State::Different | plugin::State::Missing) => {
+                log!("setup: auto_sync: updating w0rplay.dll for {}", g.name());
+                let _ = plugin::install(g, &ours);
+            }
+            _ => {}
+        }
+    }
+
+    // 2. Ensure w0rplay.scs is built and contains all layouts for all installed games.
+    if let Some(ours_docs) = places::w0rplay_documents() {
+        let scs_path = ours_docs.join(game_mod::FILE_NAME);
+        let mut needs_build = !scs_path.is_file();
+        if !needs_build {
+            if let Ok(archive) = w0rplay_mapdata::archive::Archive::open(&scs_path) {
+                // If the archive doesn't have the newest ATS layout, it's outdated and needs a rebuild
+                if !archive.contains("ui/dashboard/volvo_vnl2025_gps.sii") {
+                    needs_build = true;
+                }
+            } else {
+                needs_build = true;
+            }
+        }
+
+        if needs_build {
+            log!("setup: auto_sync: building multi-game w0rplay.scs");
+            if let Some(first_game) = games.first() {
+                if let Ok((bytes, built)) = build_mod(first_game) {
+                    log!("setup: auto_sync: successfully built w0rplay.scs ({} patched layouts)", built.patched.len());
+                    let _ = game_mod::install(&bytes, &ours_docs);
+                }
+            }
+        }
+    }
 }
 
 /// How installing the plugin went.

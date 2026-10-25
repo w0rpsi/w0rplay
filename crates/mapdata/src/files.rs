@@ -112,6 +112,10 @@ impl GameFiles {
         &self.mounts
     }
 
+    pub fn into_mounts(self) -> Vec<Mount> {
+        self.mounts
+    }
+
     /// Where a game path is read from (the latest mount that has it: an archive's path, or a folder's), so a
     /// file that can't be understood names the mod it came from.
     pub fn source(&self, path: &str) -> Option<&Path> {

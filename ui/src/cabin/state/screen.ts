@@ -14,6 +14,12 @@ export const SCREEN_LAYOUT_IDS = [
   'iveco-sway',
   'scania-2025-advanced',
   'volvo-fh',
+  'volvo-vnl-2025',
+  'volvo-vnl-2018',
+  'cascadia-2024',
+  'kenworth-t680-22',
+  'westernstar-5700',
+  'westernstar-57x',
 ] as const
 
 export type ScreenLayoutId = (typeof SCREEN_LAYOUT_IDS)[number]

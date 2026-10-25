@@ -1820,6 +1820,7 @@ enum PageMessage {
     /// A startup stage the page reached (the boot screens shown), for the startup log (`startup`).
     Startup { stage: String },
     /// Whether W0RPLAY is open on the truck's screen: posted as the page loads and whenever it changes.
+    #[serde(rename = "w0rplay", alias = "westplay")]
     Westplay { open: bool },
     /// The wallpaper chosen in the cab's Settings (an id: `wallpapers.ts`), to keep with the settings.
     Wallpaper { id: String },
