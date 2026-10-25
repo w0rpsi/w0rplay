@@ -62,6 +62,8 @@ pub struct Pointer {
     last_movement: Option<Instant>,
     /// While a button is held and the mouse hasn't dragged yet: how far it has travelled.
     slop_travel: Option<f32>,
+    last_sent_move: Option<Instant>,
+    pending_move: bool,
 }
 
 impl Pointer {
@@ -78,6 +80,8 @@ impl Pointer {
             buttons: 0,
             last_movement: None,
             slop_travel: None,
+            last_sent_move: None,
+            pending_move: false,
         }
     }
 
@@ -105,9 +109,46 @@ impl Pointer {
             wheel: block.wheel.swap(0, Ordering::AcqRel),
             buttons: if active { block.buttons.load(Ordering::Acquire) } else { 0 },
         };
-        for (kind, data) in self.step(input, Instant::now()) {
+        let now = Instant::now();
+        let events = self.step(input, now);
+        let has_click = events.iter().any(|(kind, _)| {
+            [
+                COREWEBVIEW2_MOUSE_EVENT_KIND_LEFT_BUTTON_DOWN,
+                COREWEBVIEW2_MOUSE_EVENT_KIND_LEFT_BUTTON_UP,
+                COREWEBVIEW2_MOUSE_EVENT_KIND_RIGHT_BUTTON_DOWN,
+                COREWEBVIEW2_MOUSE_EVENT_KIND_RIGHT_BUTTON_UP,
+                COREWEBVIEW2_MOUSE_EVENT_KIND_LEAVE,
+            ]
+            .contains(kind)
+        });
+
+        for (kind, data) in events {
+            if kind == COREWEBVIEW2_MOUSE_EVENT_KIND_MOVE {
+                self.pending_move = true;
+                let due = self.last_sent_move.map_or(true, |last| now.duration_since(last) >= Duration::from_millis(15));
+                if has_click || due {
+                    self.last_sent_move = Some(now);
+                    self.pending_move = false;
+                    let point = POINT { x: self.x as i32, y: self.y as i32 };
+                    let _ = webview.send_mouse(kind, self.virtual_keys(), data, point);
+                }
+            } else {
+                if has_click && self.pending_move {
+                    self.last_sent_move = Some(now);
+                    self.pending_move = false;
+                    let point = POINT { x: self.x as i32, y: self.y as i32 };
+                    let _ = webview.send_mouse(COREWEBVIEW2_MOUSE_EVENT_KIND_MOVE, self.virtual_keys(), 0, point);
+                }
+                let point = POINT { x: self.x as i32, y: self.y as i32 };
+                let _ = webview.send_mouse(kind, self.virtual_keys(), data, point);
+            }
+        }
+
+        if self.pending_move && self.last_sent_move.map_or(true, |last| now.duration_since(last) >= Duration::from_millis(15)) {
+            self.last_sent_move = Some(now);
+            self.pending_move = false;
             let point = POINT { x: self.x as i32, y: self.y as i32 };
-            let _ = webview.send_mouse(kind, self.virtual_keys(), data, point);
+            let _ = webview.send_mouse(COREWEBVIEW2_MOUSE_EVENT_KIND_MOVE, self.virtual_keys(), 0, point);
         }
     }
 

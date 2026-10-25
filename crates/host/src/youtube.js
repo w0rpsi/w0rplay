@@ -606,12 +606,14 @@
   const keepQuality = (p, video) => {
     const levels = (p.getAvailableQualityLevels?.() ?? []).filter((level) => QUALITIES.includes(level))
     if (!levels.length) return
-    const most = QUALITIES.indexOf(quality)
-    const target = quality === 'auto' ? 'auto' : (levels.find((level) => QUALITIES.indexOf(level) <= most) ?? levels.at(-1))
+    // Cap in-cabin YouTube stream to max 720p to preserve GPU bandwidth for the game and prevent stuttering
+    const maxAllowed = 'hd720'
+    const chosen = quality === 'auto' ? maxAllowed : quality
+    const most = Math.min(QUALITIES.indexOf(chosen), QUALITIES.indexOf(maxAllowed))
+    const target = (levels.find((level) => QUALITIES.indexOf(level) <= most) ?? levels.at(-1))
     const key = `${video}:${target}`
-    if (qualityKept === key || (target === 'auto' && !held)) return
+    if (qualityKept === key) return
     qualityKept = key
-    held = target !== 'auto'
     p.setPlaybackQualityRange(target, target)
   }
 

@@ -77,8 +77,10 @@ export function installDragScroll(): () => void {
     start: number
     samples: [number, number][]
     snap: string
+    target: number
   } | null = null
   let gliding = 0
+  let scrollRaf = 0
 
   const down = (event: PointerEvent) => {
     cancelAnimationFrame(gliding)
@@ -100,19 +102,30 @@ export function installDragScroll(): () => void {
       const snap = scroller.style.scrollSnapType
       scroller.style.scrollSnapType = 'none'
       const from = axis === 'x' ? press.x : press.y
-      drag = { scroller, axis, from, start: scrollOf(scroller, axis), samples: [], snap }
+      drag = { scroller, axis, from, start: scrollOf(scroller, axis), samples: [], snap, target: scrollOf(scroller, axis) }
     }
     const at = drag.axis === 'x' ? event.clientX : event.clientY
-    setScroll(drag.scroller, drag.axis, drag.start - (at - drag.from))
+    drag.target = drag.start - (at - drag.from)
     drag.samples.push([event.timeStamp, at])
     if (drag.samples.length > 32) drag.samples.shift()
+    if (!scrollRaf) {
+      scrollRaf = requestAnimationFrame(() => {
+        if (drag) setScroll(drag.scroller, drag.axis, drag.target)
+        scrollRaf = 0
+      })
+    }
   }
 
   const up = (event: PointerEvent) => {
     if (!press || event.pointerId !== press.pointer) return
     press = null
     if (!drag) return
-    const { scroller, axis, samples, snap } = drag
+    if (scrollRaf) {
+      cancelAnimationFrame(scrollRaf)
+      scrollRaf = 0
+    }
+    const { scroller, axis, samples, snap, target } = drag
+    setScroll(scroller, axis, target)
     drag = null
     // What it's let go over isn't clicked: the drag was the gesture.
     const swallow = (click: Event) => {

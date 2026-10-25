@@ -3,6 +3,14 @@
 What changed in each release of W0RPLAY. The newest release's notes are what the app shows when it offers the
 update.
 
+## 2.1.2 (2026-10-25)
+- Video oynatma ve fare etkileşiminde FPS çökmesi giderildi: 500-1000 Hz farelerin arka plan Chromium sürecini IPC/COM çağrılarıyla boğması engellendi; fare hareketleri 15 ms (~66 FPS) ile hız sınırlandırılmasına alındı, tıklamalar ise gecikmesiz olarak aktarılmaya devam ediyor.
+- YouTube video kalitesi optimizasyonu: Otomatik kalitenin 1080p60/1440p seçerek GPU video kod çözücüsünü (NVDEC) ve VRAM bant genişliğini doyurması engellendi, kabin içi ekranlar için 720p (hd720) tavanı getirildi.
+- Sıfır React render imleç mimarisi: Fare hareketinde tüm bileşeni yeniden render eden React state akışı kaldırıldı, imleç konumu doğrudan DOM üzerinde transform (translate3d) ve pasif event listener'lar ile güncelleniyor.
+- Senkron layout reflow temizliği: Video oynarken her fare hareketinde 5 katmanlı elementsFromPoint ve getComputedStyle sorgulayan arka plan kontrast algılama kodu kaldırıldı; yerine tüm yüzeylerde net görünen yüksek kontrastlı ikili dış hat CSS eklendi.
+- Akıcı sürükle-bırak kaydırma (drag-to-scroll): Tıklayıp sürükleme hareketleri requestAnimationFrame ile toplu işlenerek video oynatılırken yaşanan GPU/CPU takılmaları çözüldü.
+- Chromium başlatma bayrakları güncellendi: --enable-gpu-rasterization, --enable-zero-copy ve gereksiz yardımcı sistemleri devre dışı bırakan bayraklar eklendi.
+
 ## 2.1.1 (2026-10-25)
 - Mouse click & focus freeze fix: Restored disabled state on the offscreen host window to prevent WebView2 from stealing Windows mouse capture on click, eliminating the game stall and FPS drop when interacting with the cabin screen.
 - Smooth 60 FPS cabin stream: Restored cabin capture back to native 60 FPS, eliminating cursor stutter and choppy movement.
