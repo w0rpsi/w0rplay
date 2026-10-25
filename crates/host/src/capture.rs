@@ -27,7 +27,7 @@ use windows::core::{IInspectable, Interface, Result};
 use crate::gpu::{Gpu, Lock, SharedFrame};
 
 /// Frames per second published to the game. Chromium renders at the monitor's refresh rate.
-pub const MAX_FPS: u32 = 60;
+pub const MAX_FPS: u32 = 30;
 const FRAME_INTERVAL: Duration = Duration::from_micros(1_000_000 / MAX_FPS as u64);
 /// Tolerance for capture timing jitter.
 const FRAME_JITTER: Duration = Duration::from_micros(1_500);
@@ -291,7 +291,7 @@ mod tests {
                 published += 1;
             }
         }
-        assert!((58..=60).contains(&published), "{published} in a second");
+        assert!((28..=30).contains(&published), "{published} in a second");
         // Idle for a while: the next frame goes out at once, the one after a full interval later.
         let later = start + Duration::from_secs(3);
         mailbox.put(100);
