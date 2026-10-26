@@ -3,6 +3,10 @@
 What changed in each release of W0RPLAY. The newest release's notes are what the app shows when it offers the
 update.
 
+## 2.1.3 (2026-10-26)
+- Kabin ekranının 2-3 FPS'e kilitlenmesi kesin olarak giderildi: Chromium, pencere koordinatları -32000 olduğunda Windows tarafından simge durumuna küçültülmüş (SW_SHOWMINIMIZED) sayıldığı için render döngüsünü 1-2 FPS'e kısıyordu. Host penceresi masaüstü dışı pozitif koordinatlara (20000, 20000) taşındı, SW_SHOWNA ve WS_POPUP | WS_VISIBLE aktif edildi. Fare tıklamasında oyunun odağını çalmasını engelleyen EnableWindow(false) yapısı da eksiksiz korundu.
+- Arka plan video/medya ve timer kısıtlamaları kaldırıldı: Chromium başlatma parametrelerine --disable-background-media-suspend ve IntensiveWakeUpThrottling devre dışı bırakması eklendi.
+
 ## 2.1.2 (2026-10-25)
 - Video oynatma ve fare etkileşiminde FPS çökmesi giderildi: 500-1000 Hz farelerin arka plan Chromium sürecini IPC/COM çağrılarıyla boğması engellendi; fare hareketleri 15 ms (~66 FPS) ile hız sınırlandırılmasına alındı, tıklamalar ise gecikmesiz olarak aktarılmaya devam ediyor.
 - YouTube video kalitesi optimizasyonu: Otomatik kalitenin 1080p60/1440p seçerek GPU video kod çözücüsünü (NVDEC) ve VRAM bant genişliğini doyurması engellendi, kabin içi ekranlar için 720p (hd720) tavanı getirildi.
