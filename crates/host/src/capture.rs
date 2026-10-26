@@ -60,13 +60,14 @@ impl Capture {
         )?;
         let session = pool.CreateCaptureSession(&item)?;
         let _ = session.SetIsCursorCaptureEnabled(false);
+        let _ = session.SetIsBorderRequired(false);
 
         let mailbox = Arc::new(Mailbox::new(Instant::now()));
         pool.FrameArrived(&TypedEventHandler::<Direct3D11CaptureFramePool, IInspectable>::new({
             let mailbox = mailbox.clone();
             move |pool, _| {
                 let Some(pool) = pool.as_ref() else { return Ok(()) };
-                let frame = pool.TryGetNextFrame()?;
+                let Ok(frame) = pool.TryGetNextFrame() else { return Ok(()) };
                 // The frame it replaces goes back to the pool here, after the mailbox is let go.
                 drop(mailbox.put(frame));
                 Ok(())
@@ -224,6 +225,10 @@ fn publish(context: &ID3D11DeviceContext, frame: &ID3D11Texture2D, shared: &Shar
         context.CopySubresourceRegion(&shared.texture, 0, 0, 0, 0, frame, 0, Some(&region));
     }
     shared.unlock();
+    // SAFETY: submits pending commands on the immediate context to ensure GPU execution across processes.
+    unsafe {
+        context.Flush();
+    }
     Lock::Held
 }
 

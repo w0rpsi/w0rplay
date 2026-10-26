@@ -1,3 +1,4 @@
+import { useYouTubeMusic } from "./apps/youtubeMusic/youtubeMusic"
 import '@fontsource-variable/instrument-sans'
 import '@fontsource-variable/inter'
 // The YouTube app's type, as YouTube's own.
@@ -13,7 +14,7 @@ import './shell/apple.css'
 
 // Development builds expose the stores for console debugging and browser previews (`w0rplay.cabin`).
 if (import.meta.env.DEV) {
-  Object.assign(window, { w0rplay: { cabin: useCabin, live: useLive } })
+  Object.assign(window, { w0rplay: { cabin: useCabin, live: useLive, youtubeMusic: useYouTubeMusic } })
 }
 
 installDemo()

@@ -211,11 +211,10 @@ fn main() {
             std::thread::spawn(move || {
                 setup::auto_sync(&app_handle);
                 let deployed = w0rplay_setup::prism::deploy_all();
-                if deployed.is_empty() {
-                    if let Some(chosen) = w0rplay_setup::pick::folder(0, "Euro Truck Simulator 2 veya ATS Belgeler Klasörünü Seçin") {
+                if deployed.is_empty()
+                    && let Some(chosen) = w0rplay_setup::pick::folder(0, "Euro Truck Simulator 2 veya ATS Belgeler Klasörünü Seçin") {
                         let _ = w0rplay_setup::prism::install_into_custom(&chosen);
                     }
-                }
             });
             // A page that never says it's ready (it failed to load) still shows, rather than nothing at all.
             if let Some(window) = app.get_webview_window("main") {

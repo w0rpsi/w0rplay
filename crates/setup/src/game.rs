@@ -174,9 +174,11 @@ pub fn running_process() -> Option<&'static str> {
     use windows::Win32::System::Diagnostics::ToolHelp::{
         CreateToolhelp32Snapshot, PROCESSENTRY32W, Process32FirstW, Process32NextW, TH32CS_SNAPPROCESS,
     };
+    // SAFETY: takes a snapshot of running processes on the system.
     let Ok(snapshot) = (unsafe { CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0) }) else { return None };
     let mut entry = PROCESSENTRY32W { dwSize: size_of::<PROCESSENTRY32W>() as u32, ..Default::default() };
     let mut found = None;
+    // SAFETY: snapshot handle is valid; entry points to a properly sized struct.
     let mut more = unsafe { Process32FirstW(snapshot, &mut entry) }.is_ok();
     while more {
         let length = entry.szExeFile.iter().position(|&c| c == 0).unwrap_or(entry.szExeFile.len());
@@ -185,8 +187,10 @@ pub fn running_process() -> Option<&'static str> {
             found = Some(p);
             break;
         }
+        // SAFETY: snapshot handle is valid; entry points to a properly sized struct.
         more = unsafe { Process32NextW(snapshot, &mut entry) }.is_ok();
     }
+    // SAFETY: closes the process snapshot handle.
     unsafe { let _ = CloseHandle(snapshot); };
     found
 }
@@ -225,16 +229,19 @@ fn same_folder(a: &Path, b: &Path) -> bool {
 
 fn executable_version(path: &Path) -> Option<Version> {
     let wide: Vec<u16> = path.as_os_str().encode_wide().chain(std::iter::once(0)).collect();
+    // SAFETY: path is null-terminated wide string.
     let size = unsafe { GetFileVersionInfoSizeW(windows::core::PCWSTR(wide.as_ptr()), None) };
     if size == 0 {
         return None;
     }
     let mut data = vec![0u8; size as usize];
+    // SAFETY: wide is null-terminated and data buffer has length `size`.
     unsafe { GetFileVersionInfoW(windows::core::PCWSTR(wide.as_ptr()), None, size, data.as_mut_ptr().cast()) }
         .ok()?;
 
     let mut info_ptr: *mut VS_FIXEDFILEINFO = std::ptr::null_mut();
     let mut info_len = 0u32;
+    // SAFETY: data contains valid version info block; root block query returns a pointer to VS_FIXEDFILEINFO.
     unsafe {
         VerQueryValueW(
             data.as_ptr().cast(),
@@ -248,6 +255,7 @@ fn executable_version(path: &Path) -> Option<Version> {
     if info_ptr.is_null() || (info_len as usize) < size_of::<VS_FIXEDFILEINFO>() {
         return None;
     }
+    // SAFETY: info_ptr is non-null and points to a validated VS_FIXEDFILEINFO struct within data.
     let info = unsafe { &*info_ptr };
     Some(Version([
         (info.dwFileVersionMS >> 16) as u16,

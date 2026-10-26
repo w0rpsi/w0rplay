@@ -1162,9 +1162,21 @@
       [BUFFERING]: 'buffering',
       [CUED]: 'cued',
     }
+    const QUALITIES = ['tiny', 'small', 'medium', 'large', 'hd720', 'hd1080', 'hd1440', 'hd2160']
+    const keepQuality = () => {
+      try {
+        const levels = (p.getAvailableQualityLevels?.() ?? []).filter((l) => QUALITIES.includes(l))
+        if (!levels.length) return
+        const maxAllowed = 'hd720'
+        const target = levels.find((l) => QUALITIES.indexOf(l) <= QUALITIES.indexOf(maxAllowed)) ?? levels.at(-1)
+        p.setPlaybackQualityRange?.(target, target)
+        p.setPlaybackQuality?.(target)
+      } catch {}
+    }
     p.addEventListener('onStateChange', (now) => {
       step(`yt:${STATES[now] ?? now}`)
       keepVolume()
+      keepQuality()
       if (now === PLAYING || now === BUFFERING || now === PAUSED) between = null
       // Paused by the page itself (its own reasons): as it is.
       if (now === PAUSED && changing === 0) wanted = false

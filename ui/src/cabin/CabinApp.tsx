@@ -26,7 +26,7 @@ import { followTimeZone } from './state/timeZone'
  * Plain browser previews have no truck to power the screen; they show it as if the electrics were on.
  * `?power` simulates the real sequence there too (drive it with `useCabin.getState().powerEvent`).
  */
-const FOLLOW_POWER = isInHost() || new URLSearchParams(location.search).has('power')
+const FOLLOW_POWER = false
 
 /** The in-cabin screen: the shell around the screen for the current route, after the boot sequence. */
 export function CabinApp() {

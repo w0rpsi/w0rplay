@@ -295,7 +295,8 @@ fn read_waypoints(memory: &impl Memory, global: usize, navigator: usize) -> Opti
     if !memory.read(array, &mut raw) {
         return None;
     }
-    raw.chunks_exact(WAYPOINT_SIZE)
+    raw.as_chunks::<WAYPOINT_SIZE>().0
+        .iter()
         .map(|entry| {
             let pointer = u64::from_le_bytes(entry[WAYPOINT_NODE..WAYPOINT_NODE + 8].try_into().unwrap()) as usize;
             let mut map_node = [0u8; MAP_NODE_SIZE];
@@ -314,7 +315,7 @@ fn read_nodes(memory: &impl Memory, header: &Header) -> Option<(Vec<RouteNode>, 
     let mut nodes = Vec::new();
     // For each node in memory, the map node before which it lies.
     let mut before = Vec::with_capacity(header.count);
-    for node in raw.chunks_exact(NODE_SIZE) {
+    for node in raw.as_chunks::<NODE_SIZE>().0 {
         before.push(nodes.len());
         match u32::from_le_bytes(node[0..4].try_into().unwrap()) {
             0 => {

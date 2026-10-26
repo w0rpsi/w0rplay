@@ -41,8 +41,8 @@ impl Texture {
         }
         let mut rgba = Vec::with_capacity(row * height as usize);
         for y in 0..height as usize {
-            for pixel in data[y * pitch..y * pitch + row].chunks_exact(4) {
-                let [a, b, c, alpha] = pixel.try_into().unwrap();
+            for pixel in data[y * pitch..y * pitch + row].as_chunks::<4>().0 {
+                let &[a, b, c, alpha] = pixel;
                 rgba.extend(if bgra { [c, b, a, alpha] } else { [a, b, c, alpha] });
             }
         }

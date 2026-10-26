@@ -109,7 +109,7 @@ impl<'a> Reader<'a> {
     /// `count` 64-bit ids (item uids, tokens).
     pub fn u64s(&mut self, count: u32) -> Result<Vec<u64>> {
         let bytes = self.bytes((count as usize).saturating_mul(8))?;
-        Ok(bytes.chunks_exact(8).map(|c| u64::from_le_bytes(c.try_into().unwrap())).collect())
+        Ok(bytes.as_chunks::<8>().0.iter().map(|c| u64::from_le_bytes(*c)).collect())
     }
 }
 

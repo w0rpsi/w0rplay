@@ -29,3 +29,5 @@ dist/
 
 orjinalkod/
 release-w0rplay/
+dist_package/
+*.zip

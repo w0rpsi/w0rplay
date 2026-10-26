@@ -94,17 +94,17 @@ pub fn install_into_custom(chosen_dir: &Path) -> io::Result<Vec<PathBuf>> {
     let ets2 = chosen_dir.join("Euro Truck Simulator 2");
     let ats = chosen_dir.join("American Truck Simulator");
     let mut found_any = false;
-    if ets2.is_dir() {
-        if let Ok(paths) = install_into_documents(&ets2) {
-            installed.extend(paths);
-            found_any = true;
-        }
+    if ets2.is_dir()
+        && let Ok(paths) = install_into_documents(&ets2)
+    {
+        installed.extend(paths);
+        found_any = true;
     }
-    if ats.is_dir() {
-        if let Ok(paths) = install_into_documents(&ats) {
-            installed.extend(paths);
-            found_any = true;
-        }
+    if ats.is_dir()
+        && let Ok(paths) = install_into_documents(&ats)
+    {
+        installed.extend(paths);
+        found_any = true;
     }
     if !found_any {
         installed.extend(install_into_documents(chosen_dir)?);
@@ -119,12 +119,12 @@ pub fn deploy_all() -> Vec<PathBuf> {
     for folder_name in GAME_FOLDERS {
         for doc_root in crate::places::documents_folders() {
             let game_dir = doc_root.join(folder_name);
-            if game_dir.is_dir() {
-                if let Ok(paths) = install_into_documents(&game_dir) {
-                    for path in paths {
-                        if !deployed.contains(&path) {
-                            deployed.push(path);
-                        }
+            if game_dir.is_dir()
+                && let Ok(paths) = install_into_documents(&game_dir)
+            {
+                for path in paths {
+                    if !deployed.contains(&path) {
+                        deployed.push(path);
                     }
                 }
             }

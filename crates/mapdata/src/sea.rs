@@ -154,7 +154,7 @@ impl SeaGrid {
                 }
             }
             crossings.sort_by(f32::total_cmp);
-            for pair in crossings.chunks_exact(2) {
+            for pair in crossings.as_chunks::<2>().0 {
                 let start = (pair[0] - 0.5).ceil().max(0.0) as usize;
                 let end = ((pair[1] - 0.5).floor() as isize).min(self.width as isize - 1);
                 if end >= start as isize {

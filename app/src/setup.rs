@@ -339,13 +339,12 @@ pub async fn check_game(dir: PathBuf, store: State<'_, SetupStore>) -> Result<Ga
 fn build_mod(game: &Game) -> Result<(Vec<u8>, game_mod::Built), String> {
     let mut files = GameFiles::install(&game.dir).map_err(|e| e.to_string())?;
     for other in game::find() {
-        if other.dir != game.dir {
-            if let Ok(other_files) = GameFiles::install(&other.dir) {
+        if other.dir != game.dir
+            && let Ok(other_files) = GameFiles::install(&other.dir) {
                 for mount in other_files.into_mounts() {
                     files.mount(mount);
                 }
             }
-        }
     }
     game_mod::build(&files).map_err(|e| e.to_string())
 }
@@ -363,12 +362,9 @@ pub fn auto_sync(app: &AppHandle) {
 
     // 1. Install or update the plugin DLL in every discovered game (ETS2 and ATS).
     for g in &games {
-        match plugin::state(g, &ours) {
-            Ok(plugin::State::Different | plugin::State::Missing) => {
-                log!("setup: auto_sync: updating w0rplay.dll for {}", g.name());
-                let _ = plugin::install(g, &ours);
-            }
-            _ => {}
+        if let Ok(plugin::State::Different | plugin::State::Missing) = plugin::state(g, &ours) {
+            log!("setup: auto_sync: updating w0rplay.dll for {}", g.name());
+            let _ = plugin::install(g, &ours);
         }
     }
 
@@ -389,12 +385,11 @@ pub fn auto_sync(app: &AppHandle) {
 
         if needs_build {
             log!("setup: auto_sync: building multi-game w0rplay.scs");
-            if let Some(first_game) = games.first() {
-                if let Ok((bytes, built)) = build_mod(first_game) {
+            if let Some(first_game) = games.first()
+                && let Ok((bytes, built)) = build_mod(first_game) {
                     log!("setup: auto_sync: successfully built w0rplay.scs ({} patched layouts)", built.patched.len());
                     let _ = game_mod::install(&bytes, &ours_docs);
                 }
-            }
         }
     }
 }

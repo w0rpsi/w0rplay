@@ -125,7 +125,7 @@ impl Pointer {
         for (kind, data) in events {
             if kind == COREWEBVIEW2_MOUSE_EVENT_KIND_MOVE {
                 self.pending_move = true;
-                let due = self.last_sent_move.map_or(true, |last| now.duration_since(last) >= Duration::from_millis(15));
+                let due = self.last_sent_move.is_none_or(|last| now.duration_since(last) >= Duration::from_millis(15));
                 if has_click || due {
                     self.last_sent_move = Some(now);
                     self.pending_move = false;
@@ -144,7 +144,7 @@ impl Pointer {
             }
         }
 
-        if self.pending_move && self.last_sent_move.map_or(true, |last| now.duration_since(last) >= Duration::from_millis(15)) {
+        if self.pending_move && self.last_sent_move.is_none_or(|last| now.duration_since(last) >= Duration::from_millis(15)) {
             self.last_sent_move = Some(now);
             self.pending_move = false;
             let point = POINT { x: self.x as i32, y: self.y as i32 };

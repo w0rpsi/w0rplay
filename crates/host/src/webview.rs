@@ -26,15 +26,19 @@ use webview2_com::{
     ProcessFailedEventHandler, WebMessageReceivedEventHandler,
 };
 use windows::System::DispatcherQueueController;
+use windows::UI::Composition::Desktop::DesktopWindowTarget;
 use windows::UI::Composition::{Compositor, ContainerVisual, Visual};
-use windows::Win32::Foundation::{E_POINTER, HWND, POINT, RECT};
+use windows::Win32::Foundation::{COLORREF, E_POINTER, HWND, LPARAM, LRESULT, POINT, RECT, WPARAM};
 use windows::Win32::System::LibraryLoader::GetModuleHandleW;
+use windows::Win32::System::WinRT::Composition::ICompositorDesktopInterop;
 use windows::Win32::System::WinRT::{
     CreateDispatcherQueueController, DQTAT_COM_STA, DQTYPE_THREAD_CURRENT, DispatcherQueueOptions,
 };
 use windows::Win32::UI::Input::KeyboardAndMouse::EnableWindow;
 use windows::Win32::UI::WindowsAndMessaging::{
-    CreateWindowExW, DestroyWindow, ShowWindow, SW_SHOWNA, WS_EX_NOACTIVATE, WS_EX_TOOLWINDOW,
+    CreateWindowExW, DefWindowProcW, DestroyWindow, HWND_BOTTOM, LWA_ALPHA, RegisterClassExW,
+    SWP_NOACTIVATE, SWP_NOMOVE, SWP_NOSIZE, SW_SHOWNA, SetLayeredWindowAttributes, SetWindowPos,
+    ShowWindow, WNDCLASSEXW, WS_EX_LAYERED, WS_EX_NOACTIVATE, WS_EX_TOOLWINDOW, WS_EX_TRANSPARENT,
     WS_POPUP, WS_VISIBLE,
 };
 use windows::core::{HSTRING, Interface, PCWSTR, PWSTR, w};
@@ -42,9 +46,83 @@ use windows_numerics::Vector2;
 
 pub type Error = Box<dyn std::error::Error>;
 
-/// Where the WebViews' hidden host windows are (both coordinates): beyond any monitor's (Windows parks
-/// minimized windows there too).
-const OFF_THE_DESKTOP: i32 = 20000;
+static REGISTER_HOST_CLASS: std::sync::Once = std::sync::Once::new();
+const HOST_CLASS_NAME: PCWSTR = w!("w0rplay_offscreen_host");
+
+unsafe extern "system" fn offscreen_wnd_proc(
+    hwnd: HWND,
+    msg: u32,
+    wparam: WPARAM,
+    lparam: LPARAM,
+) -> LRESULT {
+    const WM_MOUSEACTIVATE: u32 = 0x0021;
+    const MA_NOACTIVATE: isize = 3;
+    const WM_NCHITTEST: u32 = 0x0084;
+    const HTTRANSPARENT: isize = -1;
+    match msg {
+        WM_MOUSEACTIVATE => LRESULT(MA_NOACTIVATE),
+        WM_NCHITTEST => LRESULT(HTTRANSPARENT),
+        // SAFETY: passes unhandled messages to default Windows window procedure.
+        _ => unsafe { DefWindowProcW(hwnd, msg, wparam, lparam) },
+    }
+}
+
+fn register_host_class() {
+    REGISTER_HOST_CLASS.call_once(|| {
+        // SAFETY: registers a unique Win32 window class for this process.
+        unsafe {
+            let class = WNDCLASSEXW {
+                cbSize: size_of::<WNDCLASSEXW>() as u32,
+                style: Default::default(),
+                lpfnWndProc: Some(offscreen_wnd_proc),
+                cbClsExtra: 0,
+                cbWndExtra: 0,
+                hInstance: GetModuleHandleW(None).unwrap_or_default().into(),
+                hIcon: Default::default(),
+                hCursor: Default::default(),
+                hbrBackground: Default::default(),
+                lpszMenuName: PCWSTR::null(),
+                lpszClassName: HOST_CLASS_NAME,
+                hIconSm: Default::default(),
+            };
+            let _ = RegisterClassExW(&class);
+        }
+    });
+}
+
+pub(crate) fn create_offscreen_host_window(width: u32, height: u32) -> Result<HWND, Error> {
+    register_host_class();
+    // SAFETY: creates a transparent, non-activating layered popup window on monitor 0.
+    unsafe {
+        let host = CreateWindowExW(
+            WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE | WS_EX_LAYERED | WS_EX_TRANSPARENT,
+            HOST_CLASS_NAME,
+            w!("w0rplay-offscreen-host"),
+            WS_POPUP | WS_VISIBLE,
+            0,
+            0,
+            width as i32,
+            height as i32,
+            None,
+            None,
+            Some(GetModuleHandleW(None)?.into()),
+            None,
+        )?;
+        let _ = SetLayeredWindowAttributes(host, COLORREF(0), 1, LWA_ALPHA);
+        let _ = SetWindowPos(
+            host,
+            Some(HWND_BOTTOM),
+            0,
+            0,
+            width as i32,
+            height as i32,
+            SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE,
+        );
+        let _ = ShowWindow(host, SW_SHOWNA);
+        let _ = EnableWindow(host, false);
+        Ok(host)
+    }
+}
 
 /// The browser argument naming the GPU every WebView2 of this process draws on (graphics.rs), set before
 /// the first is made: one browser shared by several WebViews takes one set of arguments.
@@ -104,6 +182,8 @@ pub struct Stage {
     /// frame where the page is taller ([`Stage::set_page_height`]).
     page: ContainerVisual,
     page_size: PageSize,
+    host: HWND,
+    _target: DesktopWindowTarget,
 }
 
 /// The page's size (width, height), as the stage has it now: the players keep their videos within it.
@@ -126,6 +206,12 @@ impl Stage {
         let page = compositor.CreateContainerVisual()?;
         page.SetSize(Vector2 { X: width as f32, Y: height as f32 })?;
         root.Children()?.InsertAtTop(&page)?;
+        let host = create_offscreen_host_window(width, height)?;
+        // SAFETY: host window and compositor are live on this thread with an active dispatcher queue.
+        let target = unsafe {
+            compositor.cast::<ICompositorDesktopInterop>()?.CreateDesktopWindowTarget(host, false)?
+        };
+        target.SetRoot(&root)?;
         Ok(Self {
             _dispatcher: dispatcher,
             compositor,
@@ -133,6 +219,8 @@ impl Stage {
             frame: (width, height),
             page,
             page_size: Rc::new(Cell::new((width, height))),
+            host,
+            _target: target,
         })
     }
 
@@ -170,6 +258,15 @@ impl Stage {
     }
 }
 
+impl Drop for Stage {
+    fn drop(&mut self) {
+        // SAFETY: destroys the stage's own offscreen host window when the stage is dropped.
+        unsafe {
+            let _ = DestroyWindow(self.host);
+        }
+    }
+}
+
 pub struct OffscreenWebView {
     /// The WebView2 environment it was made in: another WebView on its profile is made from it (a second
     /// environment on a profile in use is refused).
@@ -192,37 +289,7 @@ impl OffscreenWebView {
         let root = stage.compositor.CreateContainerVisual()?;
         root.SetSize(Vector2 { X: width as f32, Y: height as f32 })?;
 
-        // WebView2 needs a parent HWND for focus and DPI; it is never shown. Far off the desktop: WebView2 puts a
-        // window of its own over the host's client area and shows it, drawing nothing but taking the clicks
-        // there; at (0, 0) it covered the top left of the player's main screen, where the desktop's icons are
-        // (players' reports, reproduced by the owner 2026-10-21). The page's size and scale don't follow the
-        // host's place (`SetRasterizationScale` below, its input sent by W0RPLAY), and its rendering isn't
-        // paused for a window out of sight (`create_environment`: no occlusion).
-        // SAFETY: a window of the system's own `STATIC` class, its strings static; no parent or menu.
-        let host = unsafe {
-            CreateWindowExW(
-                WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE,
-                w!("STATIC"),
-                w!("w0rplay-offscreen-host"),
-                WS_POPUP | WS_VISIBLE,
-                OFF_THE_DESKTOP,
-                OFF_THE_DESKTOP,
-                width as i32,
-                height as i32,
-                None,
-                None,
-                Some(GetModuleHandleW(None)?.into()),
-                None,
-            )?
-        };
-        // The page takes input only from W0RPLAY (`send_mouse`). Disabled, the window and the WebView's own
-        // windows inside it get none of the real mouse: otherwise, once a click makes the WebView capture the
-        // mouse, the player's real clicks and the real cursor (wherever the game parked it) reach the page too.
-        // SAFETY: `host` was just created on this thread.
-        unsafe {
-            let _ = ShowWindow(host, SW_SHOWNA);
-            let _ = EnableWindow(host, false);
-        }
+        let host = create_offscreen_host_window(width, height)?;
 
         let environment = create_environment(user_data)?;
         // SAFETY: WebView2 writes a CoTaskMem string into `version`, read before it's dropped.

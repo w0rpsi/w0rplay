@@ -71,7 +71,7 @@ pub(crate) fn read_quad_grid(r: &mut Reader) -> Result<QuadGrid, OutOfBounds> {
     let quad_count = r.count()?;
     let bytes = r.bytes((quad_count as usize).saturating_mul(4))?;
     // The main material is the low nibble of each quad's first byte.
-    let quads = bytes.chunks_exact(4).map(|quad| quad[0] & 0x0f).collect();
+    let quads = bytes.as_chunks::<4>().0.iter().map(|quad| quad[0] & 0x0f).collect();
     let offset_count = r.count()?;
     let mut offsets = Vec::with_capacity((offset_count as usize).min(r.remaining() / 0x10));
     for _ in 0..offset_count {

@@ -2,7 +2,7 @@
   "name": "w0rplay-ui",
   "private": true,
   "license": "GPL-3.0-or-later",
-  "version": "2.0.1",
+  "version": "2.1.4",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -34,6 +34,7 @@
     "cross-env": "^10.1.0",
     "oxlint": "^1.81.0",
     "prettier": "^3.9.9",
+    "puppeteer-core": "^25.16.0",
     "typescript": "~6.0.2",
     "vite": "^8.3.0",
     "vitest": "^5.0.3"
