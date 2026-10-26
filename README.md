@@ -25,9 +25,9 @@
 <br>
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/images/home-dark.png">
-  <source media="(prefers-color-scheme: light)" srcset="docs/images/home-light.png">
-  <img alt="W0RPLAY's Home screen: Maps, Music, Spotify, YouTube and YouTube Music on the truck's screen" src="docs/images/home-dark.png" width="100%">
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/home-dark.png?v=2.1.4">
+  <source media="(prefers-color-scheme: light)" srcset="docs/images/home-light.png?v=2.1.4">
+  <img alt="W0RPLAY's Home screen: Maps, Music, Spotify, YouTube and YouTube Music on the truck's screen" src="docs/images/home-dark.png?v=2.1.4" width="100%">
 </picture>
 
 W0RPLAY puts a phone-style car screen on your truck's own dashboard display, inside the game. Your route on a
@@ -40,9 +40,9 @@ screen, used with the mouse while you hold a key.
   <tr>
     <td width="50%" valign="top">
       <picture>
-        <source media="(prefers-color-scheme: dark)" srcset="docs/images/maps-dark.png">
-        <source media="(prefers-color-scheme: light)" srcset="docs/images/maps-light.png">
-        <img alt="Maps, around Frankfurt am Main" src="docs/images/maps-dark.png" width="100%">
+        <source media="(prefers-color-scheme: dark)" srcset="docs/images/maps-dark.png?v=2.1.4">
+        <source media="(prefers-color-scheme: light)" srcset="docs/images/maps-light.png?v=2.1.4">
+        <img alt="Maps, around Frankfurt am Main" src="docs/images/maps-dark.png?v=2.1.4" width="100%">
       </picture>
       <h3>Maps from your own game</h3>
       Drawn from your game's map, map mods included (ProMods and others), with your route, turn-by-turn
@@ -50,9 +50,9 @@ screen, used with the mouse while you hold a key.
     </td>
     <td width="50%" valign="top">
       <picture>
-        <source media="(prefers-color-scheme: dark)" srcset="docs/images/dashboard-dark.png">
-        <source media="(prefers-color-scheme: light)" srcset="docs/images/dashboard-light.png">
-        <img alt="The Dashboard: the map beside what's playing" src="docs/images/dashboard-dark.png" width="100%">
+        <source media="(prefers-color-scheme: dark)" srcset="docs/images/dashboard-dark.png?v=2.1.4">
+        <source media="(prefers-color-scheme: light)" srcset="docs/images/dashboard-light.png?v=2.1.4">
+        <img alt="The Dashboard: the map beside what's playing" src="docs/images/dashboard-dark.png?v=2.1.4" width="100%">
       </picture>
       <h3>A Dashboard for the drive</h3>
       The map beside what's playing and where you're going, the weather on your drive, all on one screen.
@@ -60,16 +60,16 @@ screen, used with the mouse while you hold a key.
   </tr>
   <tr>
     <td width="50%" valign="top">
-      <img alt="YouTube Music's Now Playing" src="docs/images/youtube-music.png" width="100%">
+      <img alt="YouTube Music's Now Playing" src="docs/images/youtube-music.png?v=2.1.4" width="100%">
       <h3>Your music</h3>
       Apple Music, Spotify and YouTube Music, with Now Playing and lyrics. A song's music video plays right in
       Now Playing, and YouTube has its channels, playlists, captions and quality.
     </td>
     <td width="50%" valign="top">
       <picture>
-        <source media="(prefers-color-scheme: dark)" srcset="docs/images/looks-light.png">
-        <source media="(prefers-color-scheme: light)" srcset="docs/images/looks-dark.png">
-        <img alt="Home in its other look" src="docs/images/looks-light.png" width="100%">
+        <source media="(prefers-color-scheme: dark)" srcset="docs/images/looks-light.png?v=2.1.4">
+        <source media="(prefers-color-scheme: light)" srcset="docs/images/looks-dark.png?v=2.1.4">
+        <img alt="Home in its other look" src="docs/images/looks-light.png?v=2.1.4" width="100%">
       </picture>
       <h3>Light and dark, and your own look</h3>
       It turns dark at night or when you switch your headlights on, like a car's light sensor. Bring your own
