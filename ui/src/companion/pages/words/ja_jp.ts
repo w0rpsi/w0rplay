@@ -299,8 +299,8 @@ export const words: CompanionWords = {
   },
   support: {
     title: '応援する',
-    sub: 'W0RPLAY は無料です。ドライブが楽しくなったら、Kreosus で開発を応援できます（1 回だけでも、毎月でも）。',
-    button: 'Kreosus で応援する',
-    note: 'ブラウザで Kreosus が開きます。',
+    sub: 'W0RPLAY は無料です。ドライブが楽しくなったら、GitHub で開発を応援できます（1 回だけでも、毎月でも）。',
+    button: 'GitHub で応援する',
+    note: 'ブラウザで GitHub が開きます。',
   },
 }

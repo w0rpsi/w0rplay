@@ -114,10 +114,10 @@ fn apple_music_check(accounts: State<Accounts>) {
     accounts.0.apple_music.request(AccountAction::Check);
 }
 
-/// The maker's Kreosus page, where players support W0RPLAY's development.
-const SUPPORT_PAGE: &str = "https://kreosus.com/enes-less";
+/// W0RPLAY's GitHub page.
+const SUPPORT_PAGE: &str = "https://github.com/w0rpsi/w0rplay";
 
-/// Opens the support page (Support me) in the player's browser. The address is fixed here, so the companion
+/// Opens the project page in the player's browser. The address is fixed here, so the companion
 /// can't open any other.
 #[tauri::command]
 fn open_support_page() {

@@ -299,8 +299,8 @@ export const words: CompanionWords = {
   },
   support: {
     title: 'Apóiame',
-    sub: 'W0RPLAY é de balde. Se fai mellores as túas viaxes, podes apoiar o seu desenvolvemento en Kreosus, unha vez ou cada mes.',
-    button: 'Apoiar en Kreosus',
-    note: 'Abre Kreosus no teu navegador.',
+    sub: 'W0RPLAY é de balde. Se fai mellores as túas viaxes, podes apoiar o seu desenvolvemento en GitHub, unha vez ou cada mes.',
+    button: 'Apoiar en GitHub',
+    note: 'Abre GitHub no teu navegador.',
   },
 }

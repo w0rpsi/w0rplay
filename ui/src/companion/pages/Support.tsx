@@ -4,7 +4,7 @@ import { GLOW, useScreenAt } from '../room/screen'
 import type { PageProps } from './page'
 
 /**
- * Support me: W0RPLAY is free, and its development can be supported on its maker's Kreosus page, which opens
+ * Support me: W0RPLAY is free, and its development can be supported on its project's GitHub page, which opens
  * in the player's browser. On the room's screen, Home.
  */
 export function Support({ cw }: PageProps) {

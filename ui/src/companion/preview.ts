@@ -303,7 +303,7 @@ export function answer(command: string, args?: Record<string, unknown>): Promise
       signIn('appleMusic')
       return later(undefined)
     case 'open_support_page':
-      window.open('https://kreosus.com/enes-less', '_blank', 'noopener')
+      window.open('https://github.com/w0rpsi/w0rplay', '_blank', 'noopener')
       return later(undefined)
     case 'youtube_sign_out':
       setTimeout(() => {

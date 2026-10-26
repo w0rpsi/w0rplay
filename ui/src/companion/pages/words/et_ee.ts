@@ -294,8 +294,8 @@ export const words: CompanionWords = {
   },
   support: {
     title: 'Toeta mind',
-    sub: 'W0RPLAY on tasuta. Kui see teeb su sõidud paremaks, saad selle arendust toetada Kreosuses ühekordselt või igal kuul.',
-    button: 'Toeta Kreosuses',
-    note: 'Avab Kreosuse sinu brauseris.',
+    sub: 'W0RPLAY on tasuta. Kui see teeb su sõidud paremaks, saad selle arendust toetada GitHubis ühekordselt või igal kuul.',
+    button: 'Toeta GitHubis',
+    note: 'Avab GitHubi sinu brauseris.',
   },
 }

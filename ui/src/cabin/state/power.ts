@@ -27,7 +27,7 @@ export type PowerEvent = { type: 'electrics'; on: boolean; at: number } | { type
 export const SPLASH_MS = 2400
 export const CONNECTING_MS = 2600
 
-export const INITIAL_POWER: PowerState = { phase: 'on', since: 0, observed: true }
+export const INITIAL_POWER: PowerState = { phase: 'off', since: 0, observed: false }
 
 export function power(state: PowerState, event: PowerEvent): PowerState {
   switch (event.type) {

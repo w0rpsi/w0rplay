@@ -291,8 +291,8 @@ export const words: CompanionWords = {
   },
   support: {
     title: '支持我',
-    sub: 'W0RPLAY 是免費的。如果它讓你的駕駛更愉快，你可以在 Kreosus 上支持它的開發，一次或每月都可以。',
-    button: '在 Kreosus 上支持',
-    note: '會在你的瀏覽器中開啟 Kreosus。',
+    sub: 'W0RPLAY 是免費的。如果它讓你的駕駛更愉快，你可以在 GitHub 上支持它的開發，一次或每月都可以。',
+    button: '在 GitHub 上支持',
+    note: '會在你的瀏覽器中開啟 GitHub。',
   },
 }

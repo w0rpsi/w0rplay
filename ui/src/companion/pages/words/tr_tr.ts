@@ -290,8 +290,8 @@ export const words: CompanionWords = {
   },
   support: {
     title: 'Beni destekle',
-    sub: 'W0RPLAY ücretsiz. Sürüşlerini güzelleştiriyorsa geliştirilmesini Kreosus’ta bir kez ya da her ay destekleyebilirsin.',
-    button: 'Kreosus’ta destekle',
-    note: 'Kreosus tarayıcında açılır.',
+    sub: 'W0RPLAY ücretsiz. Sürüşlerini güzelleştiriyorsa geliştirilmesini GitHub’da bir kez ya da her ay destekleyebilirsin.',
+    button: 'GitHub’da destekle',
+    note: 'GitHub tarayıcında açılır.',
   },
 }

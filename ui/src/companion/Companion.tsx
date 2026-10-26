@@ -81,7 +81,6 @@ const SECTIONS: SectionId[][] = [
   ['screen', 'controls', 'customize'],
   ['accounts', 'map'],
   ['setup', 'about'],
-  ['support'],
 ]
 /** The sections in order: the tutorial's tour goes through them. */
 const TOUR = SECTIONS.flat()

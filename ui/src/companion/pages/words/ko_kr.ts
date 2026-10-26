@@ -294,8 +294,8 @@ export const words: CompanionWords = {
   },
   support: {
     title: '후원하기',
-    sub: 'W0RPLAY는 무료예요. 운전이 더 즐거워졌다면 Kreosus에서 개발을 후원할 수 있어요. 한 번만 해도, 매달 해도 돼요.',
-    button: 'Kreosus에서 후원하기',
-    note: '브라우저에서 Kreosus가 열려요.',
+    sub: 'W0RPLAY는 무료예요. 운전이 더 즐거워졌다면 GitHub에서 개발을 후원할 수 있어요. 한 번만 해도, 매달 해도 돼요.',
+    button: 'GitHub에서 후원하기',
+    note: '브라우저에서 GitHub가 열려요.',
   },
 }

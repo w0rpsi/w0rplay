@@ -188,7 +188,7 @@ export interface CompanionWords {
     banners: { updating: { title: string; text: string }; updated: { title: string; text: string } }
     finish: { title: string; text: string; button: string }
   }
-  /** Support me: W0RPLAY's development, supported on its maker's Kreosus page (opened in the browser). */
+  /** Support me: W0RPLAY's development, supported on its maker's GitHub page (opened in the browser). */
   support: {
     title: string
     sub: string

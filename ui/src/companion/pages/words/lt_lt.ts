@@ -295,8 +295,8 @@ export const words: CompanionWords = {
   },
   support: {
     title: 'Paremk mane',
-    sub: 'W0RPLAY nemokamas. Jei jis daro tavo keliones geresnes, gali paremti jo kūrimą „Kreosus“ vieną kartą arba kas mėnesį.',
-    button: 'Paremti „Kreosus“',
-    note: 'Atidaro „Kreosus“ tavo naršyklėje.',
+    sub: 'W0RPLAY nemokamas. Jei jis daro tavo keliones geresnes, gali paremti jo kūrimą „GitHub“ vieną kartą arba kas mėnesį.',
+    button: 'Paremti „GitHub“',
+    note: 'Atidaro „GitHub“ tavo naršyklėje.',
   },
 }

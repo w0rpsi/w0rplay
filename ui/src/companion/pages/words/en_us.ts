@@ -288,8 +288,8 @@ export const words: CompanionWords = {
   },
   support: {
     title: 'Support me',
-    sub: 'W0RPLAY is free. If it makes your drives better, you can support its development on Kreosus, once or every month.',
-    button: 'Support on Kreosus',
-    note: 'Opens Kreosus in your browser.',
+    sub: 'W0RPLAY is free. If it makes your drives better, you can support its development on GitHub, once or every month.',
+    button: 'Support on GitHub',
+    note: 'Opens GitHub in your browser.',
   },
 }

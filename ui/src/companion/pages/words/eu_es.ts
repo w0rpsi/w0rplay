@@ -296,8 +296,8 @@ export const words: CompanionWords = {
   },
   support: {
     title: 'Lagun iezadazu',
-    sub: 'W0RPLAY doakoa da. Zure bidaiak hobetzen baditu, haren garapena Kreosus-en lagun dezakezu, behin edo hilero.',
-    button: 'Lagundu Kreosus-en',
-    note: 'Kreosus zure arakatzailean irekitzen du.',
+    sub: 'W0RPLAY doakoa da. Zure bidaiak hobetzen baditu, haren garapena GitHub-en lagun dezakezu, behin edo hilero.',
+    button: 'Lagundu GitHub-en',
+    note: 'GitHub zure arakatzailean irekitzen du.',
   },
 }

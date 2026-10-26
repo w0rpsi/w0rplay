@@ -129,7 +129,7 @@ export function appleMusicSignOut(): Promise<void> {
   return call('apple_music_sign_out')
 }
 
-/** Opens the support page (Kreosus) in the player's browser. */
+/** Opens the project GitHub page in the player's browser. */
 export function openSupportPage(): Promise<void> {
   return call('open_support_page')
 }

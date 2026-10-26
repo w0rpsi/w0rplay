@@ -8,7 +8,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/enes-less/W0RPLAY/releases/latest"><img alt="Download for Windows" src="https://img.shields.io/badge/download-for%20Windows-409c42?style=for-the-badge"></a>
+  <a href="https://github.com/w0rpsi/w0rplay/releases/latest"><img alt="Download for Windows" src="https://img.shields.io/badge/download-for%20Windows-409c42?style=for-the-badge"></a>
   <img alt="Windows 10 and 11" src="https://img.shields.io/badge/Windows-10%20%7C%2011-2b2b2b?style=for-the-badge">
   <img alt="Euro Truck Simulator 2 1.61" src="https://img.shields.io/badge/ETS2-1.61-2b2b2b?style=for-the-badge">
   <a href="LICENSE"><img alt="Licence: GPL-3.0-or-later" src="https://img.shields.io/badge/licence-GPL--3.0-2b2b2b?style=for-the-badge"></a>
@@ -18,8 +18,7 @@
   <a href="#features">Features</a> ·
   <a href="#trucks">Trucks</a> ·
   <a href="#install">Install</a> ·
-  <a href="#privacy">Privacy</a> ·
-  <a href="#support">Support</a>
+  <a href="#privacy">Privacy</a>
 </p>
 
 <br>
@@ -108,7 +107,7 @@ A later release adds a tablet accessory, so W0RPLAY works in every truck and bus
 
 ## Install
 
-1. Download the installer from the [latest release](https://github.com/enes-less/W0RPLAY/releases/latest) and run it.
+1. Download the installer from the [latest release](https://github.com/w0rpsi/w0rplay/releases/latest) and run it.
 2. The companion opens and walks you through the rest: it finds your game, installs W0RPLAY's plugin and its
    screens mod, and builds your map.
 3. Start the game and get in a truck.
@@ -126,16 +125,7 @@ W0RPLAY has no servers, no accounts of its own and no analytics. It doesn't coll
 - You sign in to Apple Music, Spotify and YouTube on their own pages, in W0RPLAY's own browser profile on your PC,
   as you would in a browser. W0RPLAY keeps no account data of its own.
 - Your map is built from your game on your PC and stays there.
-- W0RPLAY talks to the services you use, to GitHub to look for updates, and to Kreosus only if you open
-  "Support me".
-
-## Support
-
-W0RPLAY is free. If it makes your drives better, you can support its development:
-
-<p>
-  <a href="https://kreosus.com/enes-less"><img alt="Support W0RPLAY on Kreosus" src="https://img.shields.io/badge/support%20on-Kreosus-409c42?style=for-the-badge"></a>
-</p>
+- W0RPLAY talks to the services you use, and to GitHub to look for updates.
 
 <details>
 <summary><b>Building from source</b></summary>

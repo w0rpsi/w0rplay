@@ -296,8 +296,8 @@ export const words: CompanionWords = {
   },
   support: {
     title: 'Wesprzyj mnie',
-    sub: 'W0RPLAY jest darmowy. Jeśli umila ci trasy, możesz wesprzeć jego rozwój na Kreosus, jednorazowo lub co miesiąc.',
-    button: 'Wesprzyj na Kreosus',
-    note: 'Otwiera Kreosus w przeglądarce.',
+    sub: 'W0RPLAY jest darmowy. Jeśli umila ci trasy, możesz wesprzeć jego rozwój na GitHub, jednorazowo lub co miesiąc.',
+    button: 'Wesprzyj na GitHub',
+    note: 'Otwiera GitHub w przeglądarce.',
   },
 }

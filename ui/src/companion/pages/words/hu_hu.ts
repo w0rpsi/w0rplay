@@ -297,8 +297,8 @@ export const words: CompanionWords = {
   },
   support: {
     title: 'Támogass engem',
-    sub: 'A W0RPLAY ingyenes. Ha jobbá teszi az utaidat, a Kreosuson támogathatod a fejlesztését, egyszer vagy havonta.',
-    button: 'Támogatás a Kreosuson',
-    note: 'Megnyitja a Kreosust a böngésződben.',
+    sub: 'A W0RPLAY ingyenes. Ha jobbá teszi az utaidat, a GitHubon támogathatod a fejlesztését, egyszer vagy havonta.',
+    button: 'Támogatás a GitHubon',
+    note: 'Megnyitja a GitHubt a böngésződben.',
   },
 }
