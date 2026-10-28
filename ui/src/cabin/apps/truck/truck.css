@@ -1,0 +1,285 @@
+.truck-app {
+  display: flex;
+  flex-direction: column;
+  padding: 14px 8px 0 20px;
+  color: var(--text);
+  --truck-accent: #76b5ff;
+  --truck-surface: #1c1c20;
+}
+.appearance-light .truck-app {
+  --truck-accent: #175ab2;
+  --truck-surface: #fff;
+}
+.truck-heading {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 0 12px 24px 0;
+}
+.truck-heading h1 {
+  font-size: calc(36px * var(--text-scale, 1));
+  line-height: 1.12;
+  letter-spacing: -0.025em;
+  margin: 0 0 8px;
+  font-weight: 700;
+}
+.truck-heading p {
+  margin: 0;
+  color: var(--text-dim);
+  font-size: calc(19px * var(--text-scale, 1));
+}
+.truck-app button {
+  color: var(--text);
+  background: var(--truck-surface);
+  border: 1px solid color-mix(in srgb, var(--text) 22%, transparent);
+  border-radius: 12px;
+  min-height: 52px;
+  padding: 10px 20px;
+  font: inherit;
+  font-size: calc(20px * var(--text-scale, 1));
+  cursor: pointer;
+}
+.truck-app button:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--truck-surface) 80%, var(--text));
+}
+.truck-app button:focus-visible {
+  outline: 3px solid var(--truck-accent);
+  outline-offset: 3px;
+}
+.truck-app button:disabled {
+  opacity: 0.42;
+  cursor: default;
+}
+.truck-app button[aria-pressed='true'],
+.truck-tabs button[aria-selected='true'] {
+  color: var(--app-background);
+  background: var(--truck-accent);
+  border-color: transparent;
+  font-weight: 650;
+}
+.truck-app .truck-primary {
+  color: var(--app-background);
+  background: var(--truck-accent);
+  border-color: transparent;
+}
+.truck-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+.truck-tabs button {
+  flex: 1;
+}
+.truck-scroll {
+  overflow: auto;
+  overscroll-behavior: contain;
+  min-height: 0;
+  padding: 0 14px 24px 2px;
+  scrollbar-color: var(--text-dim) transparent;
+  scrollbar-width: thin;
+}
+.truck-scroll h2 {
+  font-size: calc(28px * var(--text-scale, 1));
+  margin: 0 0 12px;
+  line-height: 1.22;
+  letter-spacing: -0.02em;
+}
+.truck-scroll h3 {
+  font-size: calc(22px * var(--text-scale, 1));
+  margin: 24px 0 12px;
+}
+.truck-description,
+.truck-note,
+.truck-empty p {
+  font-size: calc(19px * var(--text-scale, 1));
+  line-height: 1.5;
+  max-width: 68ch;
+  margin: 12px 0 20px;
+}
+.truck-note {
+  color: var(--text-dim);
+  font-size: calc(17px * var(--text-scale, 1));
+}
+.truck-status {
+  color: var(--truck-accent);
+  font-size: calc(19px * var(--text-scale, 1));
+  margin: 4px 0 14px;
+}
+.dispatch-route {
+  display: flex;
+  align-items: baseline;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+.dispatch-route span {
+  color: var(--text-dim);
+}
+.dispatch-cargo {
+  font-size: calc(23px * var(--text-scale, 1));
+  margin: 12px 0 20px;
+}
+.truck-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px 32px;
+  margin: 20px 0;
+  font-variant-numeric: tabular-nums;
+}
+.truck-facts div {
+  min-width: 160px;
+}
+.truck-facts dt {
+  font-size: calc(17px * var(--text-scale, 1));
+  color: var(--text-dim);
+  margin-bottom: 6px;
+}
+.truck-facts dd {
+  font-size: calc(23px * var(--text-scale, 1));
+  margin: 0;
+  font-weight: 600;
+}
+.truck-options {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.truck-empty {
+  padding: 32px 12px;
+  max-width: 700px;
+}
+.truck-empty svg {
+  width: 88px;
+  height: 88px;
+  color: var(--truck-accent);
+  margin-bottom: 24px;
+}
+.dispatch-history,
+.dispatch-messages {
+  list-style: none;
+  padding: 0;
+  margin: 24px 0;
+}
+.dispatch-history li,
+.dispatch-messages li {
+  padding: 24px 0;
+  border-top: 1px solid color-mix(in srgb, var(--text) 18%, transparent);
+}
+.dispatch-history li > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  font-size: calc(20px * var(--text-scale, 1));
+}
+.dispatch-history h3 {
+  margin: 16px 0 6px;
+}
+.dispatch-history p {
+  margin: 0;
+  font-size: calc(19px * var(--text-scale, 1));
+  color: var(--text-dim);
+}
+.dispatch-score {
+  color: var(--truck-accent);
+}
+.dispatch-messages p {
+  margin: 0 0 18px;
+  font-size: calc(21px * var(--text-scale, 1));
+  line-height: 1.4;
+}
+.dispatch-messages strong {
+  display: block;
+  font-size: calc(17px * var(--text-scale, 1));
+  color: var(--truck-accent);
+  margin-bottom: 6px;
+}
+.cabin-control {
+  padding: 24px 0 28px;
+  border-bottom: 1px solid color-mix(in srgb, var(--text) 18%, transparent);
+}
+.cabin-control:first-child {
+  padding-top: 4px;
+}
+.cabin-control-title {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+.cabin-control-title svg {
+  width: 52px;
+  height: 52px;
+  color: var(--truck-accent);
+  flex-shrink: 0;
+}
+.cabin-control-title h2 {
+  margin: 0 0 4px;
+}
+.cabin-control-title span {
+  font-size: calc(18px * var(--text-scale, 1));
+  color: var(--text-dim);
+}
+.cabin-channel {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 16px 18px;
+  border-radius: 12px;
+  background: var(--truck-surface);
+  font-size: calc(20px * var(--text-scale, 1));
+}
+.cabin-channel strong {
+  font-weight: 600;
+}
+.cabin-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.cabin-key-picker {
+  margin-top: 20px;
+  padding: 20px;
+  border-radius: 14px;
+  background: var(--truck-surface);
+}
+.cabin-key-picker p {
+  font-size: calc(19px * var(--text-scale, 1));
+  line-height: 1.45;
+  margin: 0 0 18px;
+  max-width: 65ch;
+}
+.cabin-keys {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(52px, 1fr));
+  gap: 8px;
+  margin-bottom: 18px;
+}
+.cabin-keys button {
+  padding: 8px;
+}
+.cabin-feedback {
+  min-height: 30px;
+  color: var(--truck-accent);
+  font-size: calc(20px * var(--text-scale, 1));
+  line-height: 1.4;
+}
+@media (max-width: 1000px) {
+  .truck-heading h1 {
+    font-size: calc(30px * var(--text-scale, 1));
+  }
+  .truck-app {
+    padding-left: 8px;
+  }
+  .truck-options button {
+    flex: 1 1 200px;
+  }
+}
+
+.truck-app button[aria-pressed='true']:hover:not(:disabled),
+.truck-tabs button[aria-selected='true']:hover:not(:disabled),
+.truck-app .truck-primary:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--truck-accent) 88%, var(--text));
+  color: var(--app-background);
+}
+
+.cabin-feedback:empty {
+  display: none;
+}

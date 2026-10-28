@@ -12,7 +12,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread::JoinHandle;
-use std::time::{Duration, Instant};
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use setup::SetupStore;
 use tauri::{AppHandle, Emitter, Manager, RunEvent, State, WebviewWindow};
@@ -149,11 +149,14 @@ fn update_settings(settings: Settings, store: State<SettingsStore>, app: AppHand
 fn main() {
     // Started as administrator only to copy the plugin into the game (setup asked for it): that, and done.
     let args: Vec<String> = std::env::args().collect();
+    // Desktop verification must not install plugins or modify the player's game folders.
+    let verify_ui = args.iter().any(|arg| arg == "--verify-ui");
     if let Some(code) = w0rplay_setup::plugin::run_as_administrator_copy(&args) {
         std::process::exit(code);
     }
     w0rplay_host::log::init();
     w0rplay_host::startup::mark("app: started");
+    w0rplay_host::log!("build: W0RPLAY {} / original WestPlay 2.0.1 core", env!("CARGO_PKG_VERSION"));
     // One W0RPLAY at a time: a second only says so (held until the app ends).
     let Some(_instance) = w0rplay_host::Instance::claim() else {
         w0rplay_host::tell_already_running();
@@ -161,6 +164,20 @@ fn main() {
     };
     let open_request = Arc::new(OpenRequest::default());
     let accounts = Arc::new(AccountRequests::default());
+    let mut context = tauri::generate_context!();
+    // Keep the cabin's existing profile (and media sign-ins), sharing its browser/GPU
+    // processes with the desktop. Each UI thread creates its own compatible environment.
+    if let Some(roaming) = std::env::var_os("APPDATA") {
+        let identifier = context.config().identifier.clone();
+        let settings = SettingsFile::in_dir(&PathBuf::from(roaming).join(&identifier)).load();
+        let arguments = w0rplay_host::shared_browser_arguments(&settings);
+        for window in &mut context.config_mut().app.windows {
+            // Config paths only support a restricted relative-path format. Build the
+            // window explicitly below to supply the cabin's absolute profile path.
+            window.create = false;
+            window.additional_browser_args = Some(arguments.clone());
+        }
+    }
     let app = tauri::Builder::default()
         .plugin(tauri_plugin_updater::Builder::new().build())
         .manage(update::Updates::default())
@@ -206,18 +223,47 @@ fn main() {
             setup::deploy_streamer_all
         ])
         .setup(move |app| {
+            let window_config = app
+                .config()
+                .app
+                .windows
+                .iter()
+                .find(|window| window.label == "main")
+                .ok_or("main window configuration missing")?;
+            if app.get_webview_window("main").is_none() {
+                tauri::WebviewWindowBuilder::from_config(app, window_config)?
+                    .data_directory(app.path().app_local_data_dir()?.join("webview2"))
+                    .build()?;
+            }
             w0rplay_host::startup::mark("app: window set up");
-            let app_handle = app.handle().clone();
-            std::thread::spawn(move || {
-                setup::auto_sync(&app_handle);
-                let deployed = w0rplay_setup::prism::deploy_all();
-                if deployed.is_empty()
-                    && let Some(chosen) = w0rplay_setup::pick::folder(0, "Euro Truck Simulator 2 veya ATS Belgeler Klasörünü Seçin") {
+            if !verify_ui {
+                let app_handle = app.handle().clone();
+                std::thread::spawn(move || {
+                    setup::auto_sync(&app_handle);
+                    let deployed = w0rplay_setup::prism::deploy_all();
+                    if deployed.is_empty()
+                        && let Some(chosen) =
+                            w0rplay_setup::pick::folder(0, "Euro Truck Simulator 2 veya ATS Belgeler Klasörünü Seçin")
+                    {
                         let _ = w0rplay_setup::prism::install_into_custom(&chosen);
                     }
-            });
+                });
+            } else {
+                w0rplay_host::log!("verification: automatic game deployment disabled");
+            }
             // A page that never says it's ready (it failed to load) still shows, rather than nothing at all.
             if let Some(window) = app.get_webview_window("main") {
+                let memory_window = window.clone();
+                window.on_window_event(move |event| {
+                    if let tauri::WindowEvent::Focused(focused) = event {
+                        let inactive = !*focused;
+                        let _ = memory_window.with_webview(move |view| {
+                            if let Err(error) = w0rplay_host::set_browser_inactive(&view.controller(), inactive) {
+                                w0rplay_host::log!("desktop browser memory target unavailable: {error}");
+                            }
+                        });
+                    }
+                });
                 std::thread::spawn(move || {
                     std::thread::sleep(SHOW_ANYWAY);
                     if !window.is_visible().unwrap_or(true) {
@@ -246,10 +292,12 @@ fn main() {
             app.manage(SettingsStore { file, shared });
             app.manage(setup);
             app.manage(std::sync::Mutex::new(host));
-            update::watch(app.handle());
+            if !verify_ui {
+                update::watch(app.handle());
+            }
             Ok(())
         })
-        .build(tauri::generate_context!())
+        .build(context)
         .expect("failed to build the W0RPLAY app");
 
     app.run(|app, event| {
@@ -291,8 +339,21 @@ enum Ended {
 const MAX_RESTARTS: usize = 5;
 const RESTART_WINDOW: Duration = Duration::from_secs(60);
 const RESTART_DELAY: Duration = Duration::from_secs(1);
-/// How long WebView2's browsers are waited for to go before the host starts on another GPU.
-const BROWSERS_GOING: Duration = Duration::from_secs(10);
+
+// A shared-browser failure restarts both views, hence the budget must survive the
+// app process. Keeping only timestamps preserves the existing recovery limit.
+fn allow_browser_restart(config_dir: &std::path::Path) -> bool {
+    let path = config_dir.join("browser-restarts.json");
+    let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_default().as_secs();
+    let mut attempts: Vec<u64> =
+        std::fs::read(&path).ok().and_then(|data| serde_json::from_slice(&data).ok()).unwrap_or_default();
+    attempts.retain(|at| now.saturating_sub(*at) < RESTART_WINDOW.as_secs());
+    if attempts.len() >= MAX_RESTARTS {
+        return false;
+    }
+    attempts.push(now);
+    serde_json::to_vec(&attempts).ok().is_some_and(|data| std::fs::write(path, data).is_ok())
+}
 
 fn start_host(
     app: &AppHandle,
@@ -312,7 +373,6 @@ fn start_host(
     // exits under it (w0rplay_host::BrowserGone): the cabin page comes back rather than staying blank. Not
     // endlessly: a browser failing again and again is reported instead.
     let thread = std::thread::Builder::new().name("w0rplay-host-supervisor".into()).spawn(move || {
-        let mut restarts: Vec<Instant> = Vec::new();
         loop {
             let (content, data_dir) = (content.clone(), data_dir.clone());
             let (open_request, settings, stop) = (open_request.clone(), settings.clone(), thread_stop.clone());
@@ -360,16 +420,16 @@ fn start_host(
                 // Started again on the other GPU once the browsers have gone (one still running would refuse
                 // the new arguments). Not counted as a failure.
                 Ended::GpuChanged => {
-                    w0rplay_host::wait_for_browsers(BROWSERS_GOING);
-                    continue;
+                    // The desktop now owns the same browser: both views must adopt the
+                    // new GPU options together, otherwise WebView2 rejects the environment.
+                    events.request_restart();
+                    return;
                 }
                 Ended::BrowserGone => {
-                    let now = Instant::now();
-                    restarts.retain(|&at| now.duration_since(at) < RESTART_WINDOW);
-                    restarts.push(now);
-                    if restarts.len() <= MAX_RESTARTS {
+                    if allow_browser_restart(&looks.config_dir) {
                         std::thread::sleep(RESTART_DELAY);
-                        continue;
+                        events.request_restart();
+                        return;
                     }
                     BrowserGone.to_string()
                 }

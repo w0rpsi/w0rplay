@@ -12,6 +12,8 @@ export const APP_IDS = [
   'phone',
   'messages',
   'weather',
+  'dispatch',
+  'cabin',
   'settings',
 ] as const
 
@@ -34,6 +36,8 @@ export const APPS: Record<AppId, AppDefinition> = {
   phone: { id: 'phone', icon: 'phone' },
   messages: { id: 'messages', icon: 'messages' },
   weather: { id: 'weather', icon: 'weather' },
+  dispatch: { id: 'dispatch', icon: 'dispatch' },
+  cabin: { id: 'cabin', icon: 'cabin' },
   settings: { id: 'settings', icon: 'settings' },
 }
 

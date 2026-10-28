@@ -512,6 +512,193 @@ impl Confirming {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    #[ignore = "manual Netflix sign-in/playback and normal capture compatibility test"]
+    fn netflix_playback_capture_probe() {
+        use std::sync::{Arc, Mutex};
+        use webview2_com::ExecuteScriptCompletedHandler;
+        use windows::Foundation::TypedEventHandler;
+        use windows::Graphics::Capture::{Direct3D11CaptureFramePool, GraphicsCaptureItem};
+        use windows::Graphics::DirectX::DirectXPixelFormat;
+        use windows::Win32::Graphics::Direct3D11::*;
+        use windows::Win32::System::Com::{COINIT_APARTMENTTHREADED, CoInitializeEx};
+        use windows::Win32::System::WinRT::Direct3D11::IDirect3DDxgiInterfaceAccess;
+        // SAFETY: this test owns its STA thread, pumps messages and retains all capture resources.
+        unsafe { CoInitializeEx(None, COINIT_APARTMENTTHREADED).ok().unwrap() };
+        let gpu = crate::gpu::Gpu::new(None).unwrap();
+        crate::webview::draw_on(Some(crate::graphics::browser_argument(gpu.luid)));
+        let stage = crate::webview::Stage::new(1280, 720).unwrap();
+        let data = std::path::PathBuf::from(std::env::var_os("LOCALAPPDATA").unwrap()).join("app.w0rplay.rebased");
+        let profile = std::env::var_os("W0RPLAY_NETFLIX_PROBE_PROFILE")
+            .map(std::path::PathBuf::from)
+            .unwrap_or_else(|| data.join("webview2"));
+        let view = crate::webview::OffscreenWebView::new(&stage, 1280, 720, &profile).unwrap();
+        stage.add(&view, true).unwrap();
+        let offscreen = std::env::var_os("W0RPLAY_NETFLIX_OFFSCREEN").is_some();
+        let promo_control = std::env::var_os("W0RPLAY_NETFLIX_PROMO_CONTROL").is_some();
+        const NETFLIX: super::Site = super::Site {
+            sign_in: "https://www.netflix.com/browse",
+            title: "Netflix temiz oturum testi - W0RPLAY",
+            home: "https://www.netflix.com/browse",
+            not_yet: None,
+            page_says: None,
+        };
+        let window = if offscreen {
+            view.navigate("https://www.netflix.com/browse").unwrap();
+            None
+        } else {
+            Some(super::SignInWindow::open(view.environment(), &NETFLIX).unwrap())
+        };
+        let visual: windows::UI::Composition::Visual =
+            if let Some(window) = &window { window.hosted.root.cast().unwrap() } else { stage.visual().unwrap() };
+        let item = GraphicsCaptureItem::CreateFromVisual(&visual).unwrap();
+        let pool = Direct3D11CaptureFramePool::CreateFreeThreaded(
+            &gpu.winrt_device,
+            DirectXPixelFormat::B8G8R8A8UIntNormalized,
+            3,
+            item.Size().unwrap(),
+        )
+        .unwrap();
+        let mailbox = Arc::new(Mutex::new(None));
+        let incoming = mailbox.clone();
+        pool.FrameArrived(&TypedEventHandler::<Direct3D11CaptureFramePool, windows::core::IInspectable>::new(
+            move |pool, _| {
+                if let Some(pool) = pool.as_ref() {
+                    *incoming.lock().unwrap() = Some(pool.TryGetNextFrame()?);
+                }
+                Ok(())
+            },
+        ))
+        .unwrap();
+        let session = pool.CreateCaptureSession(&item).unwrap();
+        let _ = session.SetIsCursorCaptureEnabled(false);
+        let mut capture_started = false;
+        let output = data.join("netflix-compatibility").join(if promo_control {
+            "promo"
+        } else if offscreen {
+            "offscreen"
+        } else {
+            "window"
+        });
+        std::fs::create_dir_all(&output).unwrap();
+        let report = Rc::new(RefCell::new(serde_json::Value::Null));
+        let mut last_query = Instant::now() - Duration::from_secs(5);
+        let until = Instant::now() + Duration::from_secs(if offscreen { 60 } else { 600 });
+        let mut play_requested = false;
+        let mut saved = 0;
+        let mut last_video_time = -10.0;
+        let mut last_status = String::new();
+        println!(
+            "Netflix test window ready. Sign-in and playback must be performed manually. No credentials or page text are collected."
+        );
+        while Instant::now() < until && window.as_ref().is_none_or(|w| !matches!(w.progress(), super::Progress::Closed))
+        {
+            crate::pump_messages();
+            if last_query.elapsed() >= Duration::from_secs(2) {
+                last_query = Instant::now();
+                if offscreen && !promo_control && !play_requested {
+                    // Use a play control from the loaded Netflix page; never enter credentials or alter DRM.
+                    let clicked = view.evaluate(r#"(()=>{const nodes=[...document.querySelectorAll('button,a,[role="button"]')];const b=nodes.find(e=>/^(Oynat|Play|İzle|Resume|İzlemeye Devam Et)$/i.test((e.innerText||e.getAttribute('aria-label')||'').trim()))||nodes.find(e=>e.tagName==='A'&&new URL(e.href,location.href).origin===location.origin&&/^\/watch\/\d+/.test(new URL(e.href,location.href).pathname));if(!b)return false;b.click();return true})()"#).unwrap_or_default();
+                    if clicked == "true" {
+                        play_requested = true;
+                        println!("Offscreen Netflix play control activated");
+                    }
+                }
+                let written = report.clone();
+                let handler = ExecuteScriptCompletedHandler::create(Box::new(move |error, json| {
+                    if error.is_ok() {
+                        *written.borrow_mut() = serde_json::from_str(&json).unwrap_or_default();
+                    }
+                    Ok(())
+                }));
+                // Only playback diagnostics: no URL, title, account fields or login contents.
+                let script = r#"(()=>{const v=document.querySelector('video');return {page:location.pathname.startsWith('/browse')?'browse':location.pathname.startsWith('/login')?'login':location.pathname.startsWith('/watch/')?'watch':'other',watch:location.pathname.startsWith('/watch/'),video:!!v,paused:v?.paused??true,time:v?Math.round(v.currentTime):0,ready:v?.readyState??0,width:v?.videoWidth??0,height:v?.videoHeight??0,keys:!!v?.mediaKeys,error:v?.error?.code??null}})()"#;
+                // SAFETY: the test window and callback are retained through the asynchronous call.
+                if let Some(window) = &window {
+                    unsafe {
+                        let _ = window.webview.ExecuteScript(&HSTRING::from(script), &handler);
+                    }
+                } else if let Ok(json) = view.evaluate(script) {
+                    *report.borrow_mut() = serde_json::from_str(&json).unwrap_or_default();
+                }
+            }
+            let status = report.borrow().clone();
+            let status_text = status.to_string();
+            if status_text != last_status {
+                println!("Netflix playback diagnostics: {status_text}");
+                last_status = status_text;
+            }
+            let time = status["time"].as_f64().unwrap_or(0.0);
+            if status["watch"] == !promo_control
+                && status["video"] == true
+                && status["paused"] == false
+                && status["ready"].as_u64().unwrap_or(0) >= 2
+                && time > 3.0
+                && time >= last_video_time + 3.0
+            {
+                if !capture_started {
+                    println!("Netflix playback began normally before capture: {status}");
+                    session.StartCapture().unwrap();
+                    capture_started = true;
+                    last_video_time = time;
+                    println!("Started normal WGC only after successful playback");
+                    continue;
+                }
+                if let Some(frame) = mailbox.lock().unwrap().take() {
+                    // SAFETY: read back a standard WGC frame on the owning D3D context.
+                    let (width, height, rgba) = unsafe {
+                        let texture: ID3D11Texture2D = frame
+                            .Surface()
+                            .unwrap()
+                            .cast::<IDirect3DDxgiInterfaceAccess>()
+                            .unwrap()
+                            .GetInterface()
+                            .unwrap();
+                        let mut desc = D3D11_TEXTURE2D_DESC::default();
+                        texture.GetDesc(&mut desc);
+                        desc.Usage = D3D11_USAGE_STAGING;
+                        desc.BindFlags = 0;
+                        desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ.0 as u32;
+                        desc.MiscFlags = 0;
+                        let mut staging = None;
+                        gpu.device.CreateTexture2D(&desc, None, Some(&mut staging)).unwrap();
+                        let staging = staging.unwrap();
+                        gpu.context.CopyResource(&staging, &texture);
+                        let mut mapped = D3D11_MAPPED_SUBRESOURCE::default();
+                        gpu.context.Map(&staging, 0, D3D11_MAP_READ, 0, Some(&mut mapped)).unwrap();
+                        let mut pixels = vec![0u8; (desc.Width * desc.Height * 4) as usize];
+                        for row in 0..desc.Height as usize {
+                            let source = std::slice::from_raw_parts(
+                                (mapped.pData as *const u8).add(row * mapped.RowPitch as usize),
+                                desc.Width as usize * 4,
+                            );
+                            let destination =
+                                &mut pixels[row * desc.Width as usize * 4..(row + 1) * desc.Width as usize * 4];
+                            for (src, dst) in source.chunks_exact(4).zip(destination.chunks_exact_mut(4)) {
+                                dst.copy_from_slice(&[src[2], src[1], src[0], 255]);
+                            }
+                        }
+                        gpu.context.Unmap(&staging, 0);
+                        (desc.Width, desc.Height, pixels)
+                    };
+                    saved += 1;
+                    let path = output.join(format!("capture-{saved}.png"));
+                    image::save_buffer(&path, &rgba, width, height, image::ColorType::Rgba8).unwrap();
+                    println!("Normal WGC capture saved: {}", path.display());
+                    last_video_time = time;
+                    if saved >= 3 {
+                        break;
+                    }
+                }
+            }
+            std::thread::sleep(Duration::from_millis(10));
+        }
+        let _ = session.Close();
+        let _ = pool.Close();
+        println!(
+            "Netflix probe ended; saved {saved} capture frames. Playback/capture success needs visual validation."
+        );
+    }
     use super::*;
 
     /// Signed in in its window, the sign-in goes on until the page says it's signed in: not as the page

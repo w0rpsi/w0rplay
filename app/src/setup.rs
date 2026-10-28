@@ -139,22 +139,10 @@ pub async fn setup_state(store: State<'_, SetupStore>) -> Result<SetupState, Str
             game: game.as_ref().map(GameInfo::from),
             found: found.iter().map(GameInfo::from).collect(),
             game_running: game::running(),
-            language: onboarding_language(),
+            language: Some("en_us".into()),
         })
     })
     .await
-}
-
-/// The onboarding speaks the game's language, as W0RPLAY does in the cab (its words, and the map's place
-/// names): the one the game was last set to (its `config.cfg`), or one set for trying it out
-/// (`WESTPLAY_LANGUAGE`). A player who never started the game has neither: the onboarding then follows
-/// Windows'.
-fn onboarding_language() -> Option<String> {
-    let set = std::env::var("WESTPLAY_LANGUAGE").ok().filter(|code| !code.is_empty());
-    set.or_else(|| {
-        let config = std::fs::read_to_string(places::game_documents()?.join("config.cfg")).ok()?;
-        w0rplay_mapdata::locale::game_language(&config)
-    })
 }
 
 #[tauri::command]
@@ -181,7 +169,6 @@ pub async fn choose_game_folder(window: WebviewWindow, title: String) -> Result<
     .await
 }
 
-
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct StreamerReport {
@@ -197,11 +184,12 @@ pub async fn choose_and_deploy_streamer(
     title: Option<String>,
 ) -> Result<Option<StreamerReport>, String> {
     let owner = window.hwnd().map(|hwnd| hwnd.0 as isize).unwrap_or(0);
-    let title = title.unwrap_or_else(|| "Euro Truck Simulator 2 veya American Truck Simulator Belgeler Klasörünü Seçin".into());
+    let title =
+        title.unwrap_or_else(|| "Euro Truck Simulator 2 veya American Truck Simulator Belgeler Klasörünü Seçin".into());
     blocking(move || {
         let Some(dir) = pick::folder(owner, &title) else { return Ok(None) };
-        let paths = w0rplay_setup::prism::install_into_custom(&dir)
-            .map_err(|e| format!("Doku yayıncısı aktarılamadı: {e}"))?;
+        let paths =
+            w0rplay_setup::prism::install_into_custom(&dir).map_err(|e| format!("Doku yayıncısı aktarılamadı: {e}"))?;
         let count = paths.len();
         let paths = paths.into_iter().map(|p| p.to_string_lossy().to_string()).collect();
         Ok(Some(StreamerReport { paths, count }))
@@ -337,14 +325,20 @@ pub async fn check_game(dir: PathBuf, store: State<'_, SetupStore>) -> Result<Ga
 }
 
 fn build_mod(game: &Game) -> Result<(Vec<u8>, game_mod::Built), String> {
-    let mut files = GameFiles::install(&game.dir).map_err(|e| e.to_string())?;
+    let selected = GameFiles::install(&game.dir).map_err(|e| e.to_string())?;
+    let mut files = GameFiles::new(Vec::new());
     for other in game::find() {
         if other.dir != game.dir
-            && let Ok(other_files) = GameFiles::install(&other.dir) {
-                for mount in other_files.into_mounts() {
-                    files.mount(mount);
-                }
+            && let Ok(other_files) = GameFiles::install(&other.dir)
+        {
+            for mount in other_files.into_mounts() {
+                files.mount(mount);
             }
+        }
+    }
+    // Other games provide missing truck layouts; the selected game's own files take precedence.
+    for mount in selected.into_mounts() {
+        files.mount(mount);
     }
     game_mod::build(&files).map_err(|e| e.to_string())
 }
@@ -362,7 +356,9 @@ pub fn auto_sync(app: &AppHandle) {
 
     // 1. Install or update the plugin DLL in every discovered game (ETS2 and ATS).
     for g in &games {
-        if let Ok(plugin::State::Different | plugin::State::Missing) = plugin::state(g, &ours) {
+        if matches!(plugin::state(g, &ours), Ok(plugin::State::Different | plugin::State::Missing))
+            || g.plugins_dir().join("westplay.dll").is_file()
+        {
             log!("setup: auto_sync: updating w0rplay.dll for {}", g.name());
             let _ = plugin::install(g, &ours);
         }
@@ -375,7 +371,9 @@ pub fn auto_sync(app: &AppHandle) {
         if !needs_build {
             if let Ok(archive) = w0rplay_mapdata::archive::Archive::open(&scs_path) {
                 // If the archive doesn't have the newest ATS layout, it's outdated and needs a rebuild
-                if !archive.contains("ui/dashboard/volvo_vnl2025_gps.sii") {
+                if !archive.contains("ui/dashboard/volvo_vnl2025_gps.sii")
+                    || !archive.contains("w0rplay/wolli_tv_mirror.dds")
+                {
                     needs_build = true;
                 }
             } else {
@@ -386,10 +384,11 @@ pub fn auto_sync(app: &AppHandle) {
         if needs_build {
             log!("setup: auto_sync: building multi-game w0rplay.scs");
             if let Some(first_game) = games.first()
-                && let Ok((bytes, built)) = build_mod(first_game) {
-                    log!("setup: auto_sync: successfully built w0rplay.scs ({} patched layouts)", built.patched.len());
-                    let _ = game_mod::install(&bytes, &ours_docs);
-                }
+                && let Ok((bytes, built)) = build_mod(first_game)
+            {
+                log!("setup: auto_sync: successfully built w0rplay.scs ({} patched layouts)", built.patched.len());
+                let _ = game_mod::install(&bytes, &ours_docs);
+            }
         }
     }
 }

@@ -4,12 +4,10 @@ use std::path::{Path, PathBuf};
 
 use windows::Win32::Foundation::ERROR_SUCCESS;
 use windows::Win32::System::Registry::{
-    HKEY, HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE, KEY_READ, RRF_RT_REG_SZ, RegCloseKey, RegEnumKeyExW,
-    RegGetValueW, RegOpenKeyExW,
+    HKEY, HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE, KEY_READ, RRF_RT_REG_SZ, RegCloseKey, RegEnumKeyExW, RegGetValueW,
+    RegOpenKeyExW,
 };
-use windows::Win32::UI::Shell::{
-    FOLDERID_Documents, FOLDERID_RoamingAppData, KF_FLAG_DEFAULT, SHGetKnownFolderPath,
-};
+use windows::Win32::UI::Shell::{FOLDERID_Documents, FOLDERID_RoamingAppData, KF_FLAG_DEFAULT, SHGetKnownFolderPath};
 use windows::core::{HSTRING, PCWSTR, PWSTR, w};
 
 use crate::vdf;
@@ -305,7 +303,10 @@ mod tests {
     #[test]
     fn finds_launch_homedir_in_options() {
         assert_eq!(homedir("-64bit -homedir D:\\ETS2 -nointro"), Some(PathBuf::from(r"D:\ETS2")));
-        assert_eq!(homedir(r#"-homedir "D:\Game Folders\ETS2" -nointro"#), Some(PathBuf::from(r"D:\Game Folders\ETS2")));
+        assert_eq!(
+            homedir(r#"-homedir "D:\Game Folders\ETS2" -nointro"#),
+            Some(PathBuf::from(r"D:\Game Folders\ETS2"))
+        );
         assert_eq!(homedir("-nointro"), None);
         assert_eq!(homedir("-homedir"), None);
         assert_eq!(homedir("-homedir -other"), None);

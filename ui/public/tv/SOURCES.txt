@@ -1,0 +1,3 @@
+Country playlists: https://github.com/iptv-org/iptv (Unlicense). Snapshot 2026-10-29.
+Country flags: https://github.com/lipis/flag-icons (MIT; see FLAG-ICONS-LICENSE.txt).
+Stream availability and geographic restrictions depend on each broadcaster.

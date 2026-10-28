@@ -112,6 +112,7 @@ impl GameFiles {
         &self.mounts
     }
 
+    /// Transfers the mounted archives so another game can provide fallback layouts.
     pub fn into_mounts(self) -> Vec<Mount> {
         self.mounts
     }

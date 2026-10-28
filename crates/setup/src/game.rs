@@ -191,7 +191,9 @@ pub fn running_process() -> Option<&'static str> {
         more = unsafe { Process32NextW(snapshot, &mut entry) }.is_ok();
     }
     // SAFETY: closes the process snapshot handle.
-    unsafe { let _ = CloseHandle(snapshot); };
+    unsafe {
+        let _ = CloseHandle(snapshot);
+    };
     found
 }
 
@@ -236,22 +238,14 @@ fn executable_version(path: &Path) -> Option<Version> {
     }
     let mut data = vec![0u8; size as usize];
     // SAFETY: wide is null-terminated and data buffer has length `size`.
-    unsafe { GetFileVersionInfoW(windows::core::PCWSTR(wide.as_ptr()), None, size, data.as_mut_ptr().cast()) }
-        .ok()?;
+    unsafe { GetFileVersionInfoW(windows::core::PCWSTR(wide.as_ptr()), None, size, data.as_mut_ptr().cast()) }.ok()?;
 
     let mut info_ptr: *mut VS_FIXEDFILEINFO = std::ptr::null_mut();
     let mut info_len = 0u32;
     // SAFETY: data contains valid version info block; root block query returns a pointer to VS_FIXEDFILEINFO.
-    unsafe {
-        VerQueryValueW(
-            data.as_ptr().cast(),
-            w!(r"\"),
-            (&raw mut info_ptr).cast(),
-            &raw mut info_len,
-        )
-    }
-    .as_bool()
-    .then_some(())?;
+    unsafe { VerQueryValueW(data.as_ptr().cast(), w!(r"\"), (&raw mut info_ptr).cast(), &raw mut info_len) }
+        .as_bool()
+        .then_some(())?;
     if info_ptr.is_null() || (info_len as usize) < size_of::<VS_FIXEDFILEINFO>() {
         return None;
     }
@@ -284,7 +278,8 @@ mod tests {
     fn reads_the_install_dir_from_a_manifest() {
         let manifest = "\"AppState\"\n{\n\t\"appid\"\t\t\"227300\"\n\t\"installdir\"\t\t\"Euro Truck Simulator 2\"\n}";
         assert_eq!(steam_install_dir(manifest).as_deref(), Some("Euro Truck Simulator 2"));
-        let ats_manifest = "\"AppState\"\n{\n\t\"appid\"\t\t\"270880\"\n\t\"installdir\"\t\t\"American Truck Simulator\"\n}";
+        let ats_manifest =
+            "\"AppState\"\n{\n\t\"appid\"\t\t\"270880\"\n\t\"installdir\"\t\t\"American Truck Simulator\"\n}";
         assert_eq!(steam_install_dir(ats_manifest).as_deref(), Some("American Truck Simulator"));
         assert_eq!(steam_install_dir("\"AppState\" { \"appid\" \"999999\" \"installdir\" \"OtherGame\" }"), None);
     }

@@ -470,10 +470,7 @@ fn unpack_stream(data: &[u8], zlib: bool, claimed: usize) -> Option<Vec<u8>> {
         match stream.decompress_vec(data.get(read..)?, &mut out, FlushDecompress::None).ok()? {
             Status::StreamEnd => return Some(out),
             // Room left to unpack into, and nothing more came: the stream stops short.
-            _ if stream.total_in() == before_in
-                && stream.total_out() == before_out
-                && out.len() < out.capacity() =>
-            {
+            _ if stream.total_in() == before_in && stream.total_out() == before_out && out.len() < out.capacity() => {
                 return None;
             }
             _ => {}

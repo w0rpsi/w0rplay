@@ -942,9 +942,9 @@ mod tests {
         // A signed-in profile to time full songs with (WESTPLAY_APPLE_MUSIC_PROFILE, the player's own: never
         // deleted), or a fresh one, signed out (previews), deleted after.
         let own = std::env::var_os("WESTPLAY_APPLE_MUSIC_PROFILE").map(std::path::PathBuf::from);
-        let user_data = own.clone().unwrap_or_else(|| {
-            std::env::temp_dir().join(format!("w0rplay-apple-music-timing-{}", std::process::id()))
-        });
+        let user_data = own
+            .clone()
+            .unwrap_or_else(|| std::env::temp_dir().join(format!("w0rplay-apple-music-timing-{}", std::process::id())));
         let stage = Stage::new(1280, 720).unwrap();
         let music = AppleMusic::start(&stage, 1280, 720, &user_data).unwrap();
         // Never heard: the WebView makes no sound (the page still makes it, and measures it).
@@ -1051,9 +1051,9 @@ mod tests {
         // SAFETY: COM on this test's own thread, once, before anything uses it.
         unsafe { CoInitializeEx(None, COINIT_APARTMENTTHREADED).ok().unwrap() };
         let own = std::env::var_os("WESTPLAY_APPLE_MUSIC_PROFILE").map(std::path::PathBuf::from);
-        let user_data = own.clone().unwrap_or_else(|| {
-            std::env::temp_dir().join(format!("w0rplay-apple-music-resume-{}", std::process::id()))
-        });
+        let user_data = own
+            .clone()
+            .unwrap_or_else(|| std::env::temp_dir().join(format!("w0rplay-apple-music-resume-{}", std::process::id())));
         let stage = Stage::new(1280, 720).unwrap();
         let music = AppleMusic::start(&stage, 1280, 720, &user_data).unwrap();
         // Never heard: the WebView makes no sound (the page still makes it, and measures it).

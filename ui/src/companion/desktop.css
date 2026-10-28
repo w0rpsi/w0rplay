@@ -1,0 +1,268 @@
+/* The everyday companion workspace. The onboarding keeps its own presentation. */
+.cp[data-phase='room'] {
+  --room: #141819;
+  --text: #f0f3f1;
+  --text-dim: #b0bcb6;
+  --text-faint: #9baaa2;
+  --fill: #1e2522;
+  --fill-strong: #29372e;
+  --hairline: #343d37;
+  --blue: #77d8a0;
+  --green: #6bdd98;
+  perspective: none;
+  background: var(--room);
+}
+
+.cp[data-phase='room'] .cp-list {
+  inset: 0 auto 0 0;
+  width: 208px;
+  padding: 28px 12px 20px;
+  gap: 26px;
+  background: #101413;
+  border-right: 1px solid #2a312d;
+}
+
+.cp[data-phase='room'] .cp-brand {
+  gap: 10px;
+  padding: 0 10px 14px;
+}
+
+.cp[data-phase='room'] .cp-brand img {
+  width: 36px;
+  height: 36px;
+  box-shadow: none;
+}
+
+.cp[data-phase='room'] .cp-brand b {
+  letter-spacing: 0.02em;
+}
+.cp[data-phase='room'] .cp-state {
+  font-size: 10.5px;
+}
+.cp[data-phase='room'] .cp-state i {
+  box-shadow: none;
+}
+.cp[data-phase='room'] .cp-lit {
+  display: none;
+}
+.cp[data-phase='room'] .cp-group {
+  gap: 5px;
+}
+
+.cp-nav-icon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.cp-row b {
+  flex: 1;
+  text-align: left;
+}
+.cp[data-phase='room'] .cp-row {
+  min-height: 44px;
+  height: auto;
+  padding: 12px 10px;
+  gap: 10px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition:
+    background 140ms ease,
+    color 140ms ease;
+}
+
+.cp[data-phase='room'] .cp-row span {
+  max-width: 48px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 10px;
+}
+
+.cp[data-phase='room'] .cp-row:hover {
+  background: #1d2520;
+  color: var(--text);
+}
+.cp[data-phase='room'] .cp-row[data-here] {
+  background: #24382c;
+  color: #9aefb8;
+}
+
+.cp-version {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: auto;
+  padding: 16px 10px 0;
+  color: var(--text-faint);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.cp[data-phase='room'] .ob-words[data-place='page'] {
+  inset: 40px 352px 24px 244px;
+  width: auto;
+}
+
+.cp[data-phase='room'] h1 {
+  font-size: 32px;
+  line-height: 1.15;
+  letter-spacing: -0.025em;
+}
+.cp[data-phase='room'] .ob-sub {
+  max-width: 52ch;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.cp[data-phase='room'] .ob-content {
+  margin-top: 26px;
+  gap: 16px;
+  scrollbar-width: thin;
+  scrollbar-color: #53645a transparent;
+  mask-image: none;
+}
+
+.cp[data-phase='room'] .ob-group,
+.cp[data-phase='room'] .ob-key {
+  background: var(--fill);
+  border-radius: 12px;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow: none;
+}
+
+.cp[data-phase='room'] .ob-group-title {
+  margin: 8px 0 -6px 2px;
+  color: var(--text-dim);
+  text-transform: none;
+  font-size: 12px;
+  letter-spacing: 0;
+}
+
+.cp[data-phase='room'] .ob-row {
+  min-height: 56px;
+  padding: 13px 16px;
+}
+.cp[data-phase='room'] .ob-row-text b {
+  white-space: normal;
+  font-size: 14px;
+  line-height: 1.4;
+}
+.cp[data-phase='room'] .ob-row-value {
+  max-width: 48%;
+  text-align: right;
+  font-size: 12px;
+}
+.cp[data-phase='room'] .ob-row + .ob-row::before {
+  left: 16px;
+  right: 16px;
+}
+.cp[data-phase='room'] .ob-key:hover {
+  background: #29362e;
+}
+.cp[data-phase='room'] .ob-note::before {
+  box-shadow: none;
+}
+
+.cp-preview-heading {
+  position: absolute;
+  top: 42px;
+  right: 28px;
+  width: 288px;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--text-dim);
+  font-size: 12px;
+}
+
+.cp-preview-heading strong {
+  color: var(--text);
+  font-weight: 500;
+}
+.cp-preview-heading span {
+  font-size: 10px;
+}
+.cp[data-phase='room'] .ts {
+  top: 86px;
+  right: 28px;
+  left: auto;
+  margin: 0;
+  transform: scale(0.45);
+  transform-origin: top right;
+  transition: opacity 240ms ease;
+}
+
+.cp[data-phase='room'] .ts-light {
+  display: none;
+}
+.cp[data-phase='room'] .ts-tilt {
+  transform: none;
+}
+.cp[data-phase='room'] .ts-bezel {
+  animation: none;
+  -webkit-box-reflect: unset;
+  background: #080b09;
+  box-shadow: 0 14px 30px rgb(0 0 0 / 0.25);
+}
+
+.cp[data-phase='room'] .ob-in,
+.cp[data-phase='room'] .ob-word span {
+  animation: none;
+}
+.cp[data-phase='room'] :is(button, input, select, a):focus-visible {
+  outline: 2px solid #9aefb8;
+  outline-offset: 3px;
+}
+.cp[data-phase='room'] ::selection {
+  background: #41654d;
+  color: #fff;
+}
+.cp[data-phase='room'] input {
+  caret-color: #9aefb8;
+}
+
+@media (max-width: 980px) {
+  .cp[data-phase='room'] .ts,
+  .cp-preview-heading {
+    display: none;
+  }
+  .cp[data-phase='room'] .ob-words[data-place='page'] {
+    right: 32px;
+  }
+}
+
+@media (max-width: 600px) {
+  .cp[data-phase='room'] .cp-list {
+    width: 176px;
+    padding-inline: 8px;
+  }
+  .cp[data-phase='room'] .cp-row span {
+    display: none;
+  }
+  .cp[data-phase='room'] .ob-words[data-place='page'] {
+    left: 196px;
+    right: 20px;
+  }
+  .cp[data-phase='room'] .cp-brand {
+    padding-inline: 4px;
+  }
+  .cp[data-phase='room'] .cp-state {
+    white-space: normal;
+  }
+  .cp[data-phase='room'] .ob-row {
+    flex-wrap: wrap;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cp *,
+  .cp *::before,
+  .cp *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}

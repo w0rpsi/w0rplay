@@ -42,6 +42,8 @@ pub struct Capture {
     shared: Arc<SharedFrame>,
     bridge: Arc<BridgeMapping>,
     pub frames: Arc<AtomicU64>,
+    /// Frames actually delivered by WGC, independent of shared-texture contention.
+    pub received: Arc<AtomicU64>,
     /// Times a frame couldn't go out because the game was copying the one before (it's tried again).
     pub dropped: Arc<AtomicU64>,
     /// Whether the shared texture's lock was abandoned (the game died holding it): the pipeline must be
@@ -60,14 +62,16 @@ impl Capture {
         )?;
         let session = pool.CreateCaptureSession(&item)?;
         let _ = session.SetIsCursorCaptureEnabled(false);
-        let _ = session.SetIsBorderRequired(false);
 
         let mailbox = Arc::new(Mailbox::new(Instant::now()));
+        let received = Arc::new(AtomicU64::new(0));
         pool.FrameArrived(&TypedEventHandler::<Direct3D11CaptureFramePool, IInspectable>::new({
             let mailbox = mailbox.clone();
+            let received = received.clone();
             move |pool, _| {
                 let Some(pool) = pool.as_ref() else { return Ok(()) };
-                let Ok(frame) = pool.TryGetNextFrame() else { return Ok(()) };
+                let frame = pool.TryGetNextFrame()?;
+                received.fetch_add(1, Ordering::Relaxed);
                 // The frame it replaces goes back to the pool here, after the mailbox is let go.
                 drop(mailbox.put(frame));
                 Ok(())
@@ -82,6 +86,7 @@ impl Capture {
             shared,
             bridge,
             frames: Arc::new(AtomicU64::new(0)),
+            received,
             dropped: Arc::new(AtomicU64::new(0)),
             abandoned: AtomicBool::new(false),
         })
@@ -204,7 +209,7 @@ fn flush<F>(mailbox: &Mailbox<F>, now: Instant, publish: impl FnOnce(&F) -> bool
 }
 
 /// Copies a frame into the shared texture, if its lock could be had ([`Lock::Held`]: copied).
-fn publish(context: &ID3D11DeviceContext, frame: &ID3D11Texture2D, shared: &SharedFrame) -> Lock {
+pub(super) fn publish(context: &ID3D11DeviceContext, frame: &ID3D11Texture2D, shared: &SharedFrame) -> Lock {
     let lock = shared.try_lock();
     if lock != Lock::Held {
         return lock;
@@ -225,10 +230,6 @@ fn publish(context: &ID3D11DeviceContext, frame: &ID3D11Texture2D, shared: &Shar
         context.CopySubresourceRegion(&shared.texture, 0, 0, 0, 0, frame, 0, Some(&region));
     }
     shared.unlock();
-    // SAFETY: submits pending commands on the immediate context to ensure GPU execution across processes.
-    unsafe {
-        context.Flush();
-    }
     Lock::Held
 }
 

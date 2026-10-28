@@ -115,6 +115,12 @@ fn remove_from(plugins: &Path) -> Result<(), InstallError> {
 }
 
 fn copy_into(ours: &Path, plugins: &Path) -> Result<PathBuf, InstallError> {
+    let legacy = plugins.join("westplay.dll");
+    // Both forks hook the same graphics/input calls and mount competing GPS scripts. Keep the old
+    // plugin as a reversible backup with no .dll extension, and never rename a loaded module.
+    if legacy.exists() {
+        std::fs::OpenOptions::new().write(true).open(&legacy)?;
+    }
     let target = plugins.join(FILE_NAME);
     // The game holds the plugin it loaded: tell that apart from a folder needing rights (moving over a
     // loaded file is refused as "access denied" too). Opening it to write, as nobody may while it's loaded,
@@ -129,6 +135,10 @@ fn copy_into(ours: &Path, plugins: &Path) -> Result<PathBuf, InstallError> {
     if let Err(error) = std::fs::rename(&partial, &target) {
         let _ = std::fs::remove_file(&partial);
         return Err(error.into());
+    }
+    if legacy.exists() {
+        let stamp = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_nanos();
+        std::fs::rename(&legacy, plugins.join(format!("westplay.dll.disabled-{stamp}")))?;
     }
     Ok(target)
 }
@@ -217,6 +227,27 @@ mod tests {
         std::fs::write(&ours, b"the plugin, version 2").unwrap();
         let game = Game { dir: root.join("game"), found_by: FoundBy::Chosen, version: None, dlcs: vec![] };
         (game, ours, root)
+    }
+
+    #[test]
+    fn installation_disables_and_preserves_the_legacy_fork_without_touching_other_plugins() {
+        let (game, ours, root) = setup("legacy-migration");
+        let plugins = game.plugins_dir();
+        std::fs::create_dir_all(&plugins).unwrap();
+        std::fs::write(plugins.join("westplay.dll"), b"legacy plugin").unwrap();
+        std::fs::write(plugins.join("other.dll"), b"unrelated plugin").unwrap();
+        install(&game, &ours).unwrap();
+        assert!(!plugins.join("westplay.dll").exists());
+        assert_eq!(std::fs::read(plugins.join("other.dll")).unwrap(), b"unrelated plugin");
+        let backup = std::fs::read_dir(&plugins)
+            .unwrap()
+            .flatten()
+            .find(|entry| entry.file_name().to_string_lossy().starts_with("westplay.dll.disabled-"))
+            .unwrap();
+        assert_eq!(std::fs::read(backup.path()).unwrap(), b"legacy plugin");
+        install(&game, &ours).unwrap();
+        assert_eq!(state(&game, &ours).unwrap(), State::Current);
+        let _ = std::fs::remove_dir_all(root);
     }
 
     #[test]

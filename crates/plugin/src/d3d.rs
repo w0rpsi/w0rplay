@@ -15,8 +15,8 @@ use std::sync::{LazyLock, Mutex};
 use windows::Win32::Foundation::{HMODULE, HWND};
 use windows::Win32::Graphics::Direct3D::D3D_DRIVER_TYPE_HARDWARE;
 use windows::Win32::Graphics::Direct3D11::{
-    D3D11_CREATE_DEVICE_FLAG, D3D11_SDK_VERSION, D3D11_SUBRESOURCE_DATA, D3D11_TEXTURE2D_DESC,
-    D3D11CreateDeviceAndSwapChain, ID3D11Device, ID3D11DeviceContext,
+    D3D11_CREATE_DEVICE_FLAG, D3D11_SDK_VERSION, D3D11_SHADER_RESOURCE_VIEW_DESC, D3D11_SUBRESOURCE_DATA,
+    D3D11_TEXTURE2D_DESC, D3D11_USAGE_DEFAULT, D3D11CreateDeviceAndSwapChain, ID3D11Device, ID3D11DeviceContext,
 };
 use windows::Win32::Graphics::Dxgi::Common::{DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_MODE_DESC, DXGI_SAMPLE_DESC};
 use windows::Win32::Graphics::Dxgi::{
@@ -32,6 +32,7 @@ use crate::{bridge, log, screens};
 
 // vtable slots (IUnknown = 0..2)
 const VTBL_DEVICE_CREATE_TEXTURE2D: usize = 5;
+const VTBL_DEVICE_CREATE_SHADER_RESOURCE_VIEW: usize = 7;
 const VTBL_CONTEXT_PS_SET_SHADER_RESOURCES: usize = 8;
 const VTBL_SWAPCHAIN_PRESENT: usize = 8;
 const VTBL_SWAPCHAIN1_PRESENT1: usize = 22;
@@ -45,6 +46,12 @@ type CreateTexture2DFn = unsafe extern "system" fn(
     *mut *mut c_void,
 ) -> HRESULT;
 type PSSetShaderResourcesFn = unsafe extern "system" fn(*mut c_void, u32, u32, *const *mut c_void);
+type CreateShaderResourceViewFn = unsafe extern "system" fn(
+    *mut c_void,
+    *mut c_void,
+    *const D3D11_SHADER_RESOURCE_VIEW_DESC,
+    *mut *mut c_void,
+) -> HRESULT;
 type PresentFn = unsafe extern "system" fn(*mut c_void, u32, u32) -> HRESULT;
 type Present1Fn = unsafe extern "system" fn(*mut c_void, u32, u32, *const DXGI_PRESENT_PARAMETERS) -> HRESULT;
 type OMSetRenderTargetsFn = unsafe extern "system" fn(*mut c_void, u32, *const *mut c_void, *mut c_void);
@@ -64,6 +71,7 @@ static ORIG_PS_SET_SHADER_RESOURCES: AtomicUsize = AtomicUsize::new(0);
 static ORIG_PRESENT: AtomicUsize = AtomicUsize::new(0);
 static ORIG_PRESENT1: AtomicUsize = AtomicUsize::new(0);
 static ORIG_OM_SET_RENDER_TARGETS: AtomicUsize = AtomicUsize::new(0);
+static ORIG_CREATE_SHADER_RESOURCE_VIEW: AtomicUsize = AtomicUsize::new(0);
 static ORIG_OM_SET_RENDER_TARGETS_AND_UAVS: AtomicUsize = AtomicUsize::new(0);
 
 static FRAME: AtomicU64 = AtomicU64::new(0);
@@ -112,6 +120,12 @@ pub unsafe fn install() -> Result<(), String> {
 
         hook(create_texture2d, create_texture2d_hook as *mut c_void, &ORIG_CREATE_TEXTURE2D, "CreateTexture2D")?;
         hook(
+            *device_vtbl.add(VTBL_DEVICE_CREATE_SHADER_RESOURCE_VIEW),
+            create_shader_resource_view_hook as *mut c_void,
+            &ORIG_CREATE_SHADER_RESOURCE_VIEW,
+            "CreateShaderResourceView (Wolli TV)",
+        )?;
+        hook(
             *context_vtbl.add(VTBL_CONTEXT_PS_SET_SHADER_RESOURCES),
             ps_set_shader_resources_hook as *mut c_void,
             &ORIG_PS_SET_SHADER_RESOURCES,
@@ -137,6 +151,8 @@ pub unsafe fn install() -> Result<(), String> {
 
 /// Diagnostics on unload (the hooks themselves are removed by `hooks::remove_all`).
 pub fn on_unload() {
+    crate::wolli_tv::reset();
+    crate::curtain::reset();
     dump_textures();
     screens::log_stats();
 }
@@ -248,9 +264,41 @@ unsafe extern "system" fn create_texture2d_hook(
     // looked at only when set.
     unsafe {
         let original: CreateTexture2DFn = std::mem::transmute(ORIG_CREATE_TEXTURE2D.load(Ordering::Acquire));
-        let result = original(this, desc, initial_data, texture);
+        let mirror = desc.as_ref().is_some_and(|desc| crate::wolli_tv::mirror_texture(desc, initial_data));
+        let curtain = desc.as_ref().is_some_and(|d| crate::curtain::matches(d, initial_data));
+        let writable =
+            desc.as_ref().map(|desc| D3D11_TEXTURE2D_DESC { Usage: D3D11_USAGE_DEFAULT, CPUAccessFlags: 0, ..*desc });
+        let passed = if mirror || curtain { writable.as_ref().map_or(desc, |d| d as *const _) } else { desc };
+        let result = original(this, passed, initial_data, texture);
         if let Some(desc) = desc.as_ref() {
             guarded(|| record_texture(desc, !initial_data.is_null()));
+        }
+        if curtain && result.is_ok() && !texture.is_null() {
+            guarded(|| crate::curtain::register_texture(*texture, !initial_data.is_null()));
+        }
+        if mirror && result.is_ok() && !texture.is_null() {
+            guarded(|| crate::wolli_tv::register_texture(*texture));
+        }
+        result
+    }
+}
+
+/// # Safety
+/// Called with the game's live CreateShaderResourceView arguments and exact COM signature.
+unsafe extern "system" fn create_shader_resource_view_hook(
+    this: *mut c_void,
+    resource: *mut c_void,
+    desc: *const D3D11_SHADER_RESOURCE_VIEW_DESC,
+    view: *mut *mut c_void,
+) -> HRESULT {
+    // SAFETY: the trampoline is initialized before enabling hooks; output is read only after success.
+    unsafe {
+        let original: CreateShaderResourceViewFn =
+            std::mem::transmute(ORIG_CREATE_SHADER_RESOURCE_VIEW.load(Ordering::Acquire));
+        let result = original(this, resource, desc, view);
+        if result.is_ok() && !view.is_null() {
+            guarded(|| crate::wolli_tv::register_view(resource, *view));
+            guarded(|| crate::curtain::register_view(resource, *view));
         }
         result
     }
@@ -268,7 +316,11 @@ unsafe extern "system" fn ps_set_shader_resources_hook(
     // the trampoline was stored before the hooks were switched on (`install`, then `enable_all`), so it's
     // the original function, called with the game's arguments as they came.
     unsafe {
-        guarded(|| screens::on_set_shader_resources(this, count, views));
+        guarded(|| {
+            crate::wolli_tv::on_bind(count, views);
+            crate::curtain::on_bind(count, views);
+            screens::on_set_shader_resources(this, count, views);
+        });
         let original: PSSetShaderResourcesFn =
             std::mem::transmute(ORIG_PS_SET_SHADER_RESOURCES.load(Ordering::Acquire));
         original(this, start_slot, count, views)
@@ -388,6 +440,8 @@ unsafe fn on_present(swapchain: *mut c_void) {
     unsafe {
         let frame = FRAME.fetch_add(1, Ordering::Relaxed) + 1;
         screens::on_frame(frame);
+        crate::wolli_tv::on_present(frame);
+        crate::curtain::on_present(frame);
         // The interaction key's toggle, then the keybinds (which may need it).
         crate::input::on_frame();
         crate::keybinds::on_frame();

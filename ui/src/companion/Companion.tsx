@@ -2,7 +2,7 @@ import { type CSSProperties, useEffect, useLayoutEffect, useRef, useState } from
 import { type SignedIn, useAskOnce, useSignedIn } from './accounts'
 import { appVersion, call, PREVIEW_TUTORIAL } from './bridge'
 import { Onboarding } from './onboarding/Onboarding'
-import { languageOf, percent, type Words, wordsFor } from './onboarding/words'
+import { percent, type Words, wordsFor } from './onboarding/words'
 import { About } from './pages/About'
 import { useHeldKey } from './pages/heldKey'
 import { Lesson, TouchLayer } from './pages/Lesson'
@@ -25,6 +25,7 @@ import { GLOW, type Screen, ScreenContext } from './room/screen'
 import { type Banner, GlassCursor, type Pose, TruckScreen } from './room/TruckScreen'
 import { useDemo } from './room/useDemo'
 import './companion.css'
+import './desktop.css'
 import { defaultMapAddress, type GameCheck, type SetupState, setupState } from './setup'
 import { FILES_BASE, useCustomizations } from './customize'
 import { type Offer, useUpdateOffer } from './update'
@@ -123,7 +124,7 @@ function Room({
   tutorial?: 'lesson' | 'launch' | null
   tutorialDone?: () => void
 }) {
-  const [code] = useState(() => setup.language ?? languageOf(navigator.languages))
+  const code = settings.settings?.language === 'tr' ? 'tr_tr' : 'en_us'
   const words = wordsFor(code)
   const cw = companionWords(code)
   const [section, setSection] = useState<SectionId>('screen')
@@ -144,7 +145,7 @@ function Room({
   const [check, setCheck] = useState<GameCheck | null>(null)
   // Who's signed in, known at once (what was last known), and asked as the companion opens if never known.
   const signedIn = useSignedIn(status)
-  useAskOnce()
+  useAskOnce(section === 'accounts')
   // The uninstall sheet over the room, and the room fading as W0RPLAY leaves.
   const [uninstalling, setUninstalling] = useState(false)
   const [leavingPc, setLeavingPc] = useState(false)
@@ -278,7 +279,7 @@ function Room({
       data-leaving-pc={leavingPc || undefined}
       data-phase={phase}
       style={{ '--section-glow': SECTION_GLOW[section] } as CSSProperties}
-      onPointerMove={tilt}
+      onPointerMove={phase === 'room' ? undefined : tilt}
     >
       <TruckScreen frame={demo.frame} ready={demo.ready} pose={pose} glow={glow} banner={banner} scanning={scanning}>
         <GlassCursor
@@ -289,6 +290,12 @@ function Room({
         />
         {phase === 'lesson' && <TouchLayer active={held} press={(at) => send({ type: 'press', ...at })} />}
       </TruckScreen>
+      {phase === 'room' && (
+        <aside className="cp-preview-heading" aria-label={`Demo · ${cw.sections.screen}`}>
+          <strong>{cw.sections.screen}</strong>
+          <span>Demo · W0RPLAY</span>
+        </aside>
+      )}
       <WordsContext.Provider value={{ words, code }}>
         <RoomText.Provider value={{ locale: words.locale, back: words.back }}>
           <ScreenContext.Provider value={screen}>
@@ -437,15 +444,47 @@ function SectionList({
               style={n(place++)}
               data-section={id}
               data-here={id === section || undefined}
+              aria-current={id === section ? 'page' : undefined}
               onClick={() => open(id)}
             >
+              <SectionGlyph section={id} />
               <b>{cw.sections[id]}</b>
               <span>{value[id]}</span>
             </button>
           ))}
         </div>
       ))}
+      <footer className="cp-version">
+        W0RPLAY <span>{version}</span>
+      </footer>
     </nav>
+  )
+}
+
+function SectionGlyph({ section }: { section: SectionId }) {
+  const paths: Record<SectionId, string> = {
+    screen: 'M4 5h16v12H4z M8 21h8 M12 17v4',
+    controls: 'M4 8h16v11H4z M8 5v3 M16 5v3 M8 12v3 M6.5 13.5h3 M15 12h.01 M18 15h.01',
+    customize: 'M12 3l9 9-9 9-9-9z M12 3v18 M3 12h18',
+    accounts: 'M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0 M4 21v-3a8 6 0 0 1 16 0v3',
+    map: 'M3 5l6-2 6 2 6-2v16l-6 2-6-2-6 2z M9 3v16 M15 5v16',
+    setup: 'M14 4a6 6 0 0 0-7 8L3 17a3 3 0 0 0 4 4l5-5a6 6 0 0 0 8-7l-4 4-4-4z',
+    about: 'M12 8h.01 M12 11v6 M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0',
+    support: 'M12 21S2 15 2 8a5 5 0 0 1 10-1A5 5 0 0 1 22 8c0 7-10 13-10 13z',
+  }
+  return (
+    <svg
+      className="cp-nav-icon"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d={paths[section]} />
+    </svg>
   )
 }
 

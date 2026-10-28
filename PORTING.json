@@ -1,0 +1,29 @@
+{
+  "version": "2.1.15",
+  "baseline": "WestPlay 2.0.1 original-base continuation",
+  "bridgeABI": 24,
+  "features": [
+    "Dark desktop companion panel",
+    "English default and persisted English/Turkish choice shared by desktop and CarPlay",
+    "Live TV: 76 flag-based country catalogues, search, bounded three-country cache and bundled fallbacks",
+    "Dispatch and cabin controls",
+    "Opt-in Wolli sleeper TV mirroring",
+    "Curtain pose-atlas controller with optional locally built Wolli compatibility patch",
+    "Media lifetime and memory management",
+    "Map virtual hosts registered before navigation"
+  ],
+  "validation": {
+    "uiTestsPassed": 430,
+    "hostTestsPassed": 167,
+    "latestReleaseBuild": "passed",
+    "countryCataloguePreview": "verified",
+    "allTVStreamsVerified": false,
+    "currentInGameValidation": "user verification required"
+  },
+  "excludedFromRepository": [
+    "Build binaries and local diagnostics",
+    "Game-extracted reference assets",
+    "Third-party toolchains",
+    "Wolli-derived curtain model and texture data"
+  ]
+}

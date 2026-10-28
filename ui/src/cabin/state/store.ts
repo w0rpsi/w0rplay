@@ -1,3 +1,5 @@
+import { useDispatch } from '../apps/truck/dispatch'
+import { useCabinControl } from '../apps/truck/cabinControl'
 import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
 import {
@@ -76,6 +78,8 @@ interface CabinState {
    * (Recommended, flat): kept with W0RPLAY's settings, the host sends them. */
   equalizer: Equalizer
   equalizerCustom: boolean
+  wolliTvMirror: boolean
+  setWolliTvMirror(enabled: boolean): void
   power: PowerState
   /**
    * The screen is handed back to the truck (its stock screen shows, with W0RPLAY's button to come back),
@@ -122,6 +126,11 @@ export const useCabin = create<CabinState>()(
       oemMode: 'auto',
       equalizer: FLAT,
       equalizerCustom: false,
+      wolliTvMirror: false,
+      setWolliTvMirror: (enabled) => {
+        // Host confirms and persists the choice; do not show a successful toggle before confirmation.
+        if (isInHost()) postToHost({ type: 'wolliTvMirror', enabled })
+      },
       power: INITIAL_POWER,
       navigate: (action) => set((state) => ({ navigation: navigate(state.navigation, action) })),
       setAppearanceMode: (appearanceMode) => set({ appearanceMode }),
@@ -229,6 +238,7 @@ export interface LiveState {
    * `null`: not (or not known yet). */
   hvtMap: { language: string | null } | null
   /** The game's language (its `g_lang_init`, e.g. `tr_tr`; `null` until the host has read it). */
+  uiLanguage: 'en' | 'tr'
   gameLanguage: string | null
   /** The player's profile has the game's time zones on (its `g_time_zones`): the clock is the time where
    * the truck is (state/timeZone.ts). */
@@ -265,6 +275,7 @@ export interface LiveState {
   nearby: Nearby | null
   /** The music's spectrum as the host last said it (Settings › Equalizer's, `HostMessage` `spectrum`). */
   spectrum: readonly number[]
+  wolliTvAvailable: boolean
 }
 
 /** TruckersMP's players around the player, from its SDK: its game server's id, the player's own number on it,
@@ -284,6 +295,7 @@ export const useLive = create<LiveState>()(() => ({
   ownedGarages: [],
   headquarters: null,
   hvtMap: null,
+  uiLanguage: 'en',
   gameLanguage: null,
   timeZones: false,
   clockShift: 0,
@@ -297,6 +309,7 @@ export const useLive = create<LiveState>()(() => ({
   truckersmp: false,
   nearby: null,
   spectrum: [],
+  wolliTvAvailable: false,
 }))
 
 /** Plain browser previews have no game to report the screen: `?layout=scania-2025` stands in for it. */
@@ -353,6 +366,20 @@ function receiveHostMessage(now: () => number): (message: HostMessage) => void {
       }
       case 'truck':
         useLive.setState({ truck: hasTruck(message.data) ? message.data : null })
+        break
+      case 'gameplay':
+        useDispatch.getState().receive(message.session, message.events)
+        break
+      case 'curtain':
+        useCabinControl.setState({
+          curtain: {
+            available: message.available === true,
+            progress: Number.isFinite(message.progress) ? Math.max(0, Math.min(1, message.progress)) : 0,
+          },
+        })
+        break
+      case 'cabinAction':
+        useCabinControl.getState().answer(message.id, message.state)
         break
       case 'job':
         useLive.setState({ job: message.data.active ? message.data : null })
@@ -430,7 +457,12 @@ function receiveHostMessage(now: () => number): (message: HostMessage) => void {
         // A layout this UI doesn't know yet (newer plugin) is treated like a screen without a profile.
         useLive.setState({ screenLayout: isScreenLayoutId(message.layout) ? message.layout : null })
         break
+      case 'wolliTv':
+        useLive.setState({ wolliTvAvailable: message.available === true })
+        break
       case 'settings': {
+        useLive.setState({ uiLanguage: message.language === 'tr' ? 'tr' : 'en' })
+        if (message.cabinBindings) useCabinControl.setState({ bindings: message.cabinBindings })
         const cabin = useCabin.getState()
         cabin.setOemMode(message.truckStrip === 'off' ? 'off' : 'auto')
         if (message.wallpaper) useCabin.setState({ wallpaperId: message.wallpaper })
@@ -439,6 +471,7 @@ function receiveHostMessage(now: () => number): (message: HostMessage) => void {
         useCabin.setState({
           equalizer: toEqualizer(message.equalizer),
           equalizerCustom: message.equalizerCustom === true,
+          wolliTvMirror: message.wolliTvMirror === true,
         })
         setIcons({
           iconSet: message.iconSet ?? null,
@@ -483,6 +516,7 @@ function receiveHostMessage(now: () => number): (message: HostMessage) => void {
         // the next game's first telemetry powers it on afresh.
         if (!message.running) {
           useLive.setState({ telemetry: null })
+          useCabinControl.setState({ curtain: { available: false, progress: 0 } })
           useCabin.getState().powerEvent({ type: 'electrics', on: false, at: now() })
         }
         break

@@ -1,11 +1,14 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import Hls from 'hls.js'
+import { TextField } from '../../keyboard/TextField'
 import { isInHost } from '../../../shared/host'
 import { useLive } from '../../state/store'
-import { useText } from '../../state/text'
+import { useLanguage, useText } from '../../state/text'
+import { COUNTRIES, countryFlag, countryName, loadCountry, savedCountry, saveCountry } from './catalog'
+import { TVGlyph } from './glyphs'
 import './tv.css'
 
-export type ChannelCategory = 'T├╝m├╝' | 'Ulusal' | 'Haber' | 'Spor' | 'M├╝zik' | 'Belgesel'
+export type ChannelCategory = 'Tümü' | 'Ulusal' | 'Haber' | 'Spor' | 'Müzik' | 'Belgesel'
 
 export interface Channel {
   id: string
@@ -22,7 +25,7 @@ const DEFAULT_CHANNELS: Channel[] = [
     id: 'trt1',
     name: 'TRT 1 HD',
     category: 'Ulusal',
-    subtitle: 'Dizi & K├╝lt├╝r',
+    subtitle: 'Dizi & Kültür',
     streamUrl: 'https://tv-trt1.medya.trt.com.tr/master.m3u8',
     badgeColor: '#e74c3c',
   },
@@ -38,15 +41,15 @@ const DEFAULT_CHANNELS: Channel[] = [
     id: 'trtspor',
     name: 'TRT Spor HD',
     category: 'Spor',
-    subtitle: 'Canl─▒ Ma├ğ & Spor',
+    subtitle: 'Canlı Maç & Spor',
     streamUrl: 'https://tv-trtspor1.medya.trt.com.tr/master.m3u8',
     badgeColor: '#27ae60',
   },
   {
     id: 'trtspor2',
-    name: 'TRT Spor Y─▒ld─▒z',
+    name: 'TRT Spor Yıldız',
     category: 'Spor',
-    subtitle: 'Olimpik & Bran┼ş Sporlar─▒',
+    subtitle: 'Olimpik & Branş Sporları',
     streamUrl: 'https://tv-trtspor2.medya.trt.com.tr/master.m3u8',
     badgeColor: '#2ecc71',
   },
@@ -54,7 +57,7 @@ const DEFAULT_CHANNELS: Channel[] = [
     id: 'aspor',
     name: 'A Spor HD',
     category: 'Spor',
-    subtitle: 'Canl─▒ Spor & Yorum',
+    subtitle: 'Canlı Spor & Yorum',
     streamUrl: 'https://rnttwmjcin.turknet.ercdn.net/lcpmvefbyo/aspor/aspor.m3u8',
     badgeColor: '#16a085',
   },
@@ -70,15 +73,15 @@ const DEFAULT_CHANNELS: Channel[] = [
     id: 'trthaber',
     name: 'TRT Haber HD',
     category: 'Haber',
-    subtitle: '24/7 S─▒cak G├╝ndem',
+    subtitle: '24/7 Sıcak Gündem',
     streamUrl: 'https://tv-trthaber.medya.trt.com.tr/master.m3u8',
     badgeColor: '#d35400',
   },
   {
     id: 'haberturk',
-    name: 'Habert├╝rk TV',
+    name: 'Habertürk TV',
     category: 'Haber',
-    subtitle: 'Canl─▒ Haber & Tart─▒┼şma',
+    subtitle: 'Canlı Haber & Tartışma',
     streamUrl: 'https://tv.ensonhaber.com/haberturk/haberturk.m3u8',
     badgeColor: '#c0392b',
   },
@@ -86,7 +89,7 @@ const DEFAULT_CHANNELS: Channel[] = [
     id: 'haberglobal',
     name: 'Haber Global',
     category: 'Haber',
-    subtitle: 'Analiz & D├╝nya',
+    subtitle: 'Analiz & Dünya',
     streamUrl: 'https://tv.ensonhaber.com/haberglobal/haberglobal.m3u8',
     badgeColor: '#8e44ad',
   },
@@ -94,31 +97,31 @@ const DEFAULT_CHANNELS: Channel[] = [
     id: 'ahaber',
     name: 'A Haber HD',
     category: 'Haber',
-    subtitle: 'G├╝n├╝n Geli┼şmeleri',
+    subtitle: 'Günün Gelişmeleri',
     streamUrl: 'https://rnttwmjcin.turknet.ercdn.net/lcpmvefbyo/ahaber/ahaber.m3u8',
     badgeColor: '#962d3e',
   },
   {
     id: 'powerturk',
-    name: 'PowerT├╝rk TV',
-    category: 'M├╝zik',
-    subtitle: 'T├╝rk├ğe Pop Hit',
+    name: 'PowerTürk TV',
+    category: 'Müzik',
+    subtitle: 'Türkçe Pop Hit',
     streamUrl: 'https://live.artidijitalmedya.com/artidijital_powerturktv/powerturktv/playlist.m3u8',
     badgeColor: '#e84393',
   },
   {
     id: 'powertv',
     name: 'Power TV HD',
-    category: 'M├╝zik',
-    subtitle: 'D├╝nya M├╝zi─şi & Pop',
+    category: 'Müzik',
+    subtitle: 'Dünya Müziği & Pop',
     streamUrl: 'https://livetv.powerapp.com.tr/powerTV/powerhd.smil/playlist.m3u8',
     badgeColor: '#6c5ce7',
   },
   {
     id: 'trtmuzik',
-    name: 'TRT M├╝zik HD',
-    category: 'M├╝zik',
-    subtitle: 'Klasik & Halk M├╝zi─şi',
+    name: 'TRT Müzik HD',
+    category: 'Müzik',
+    subtitle: 'Klasik & Halk Müziği',
     streamUrl: 'https://tv-trtmuzik.medya.trt.com.tr/master.m3u8',
     badgeColor: '#fd79a8',
   },
@@ -126,27 +129,85 @@ const DEFAULT_CHANNELS: Channel[] = [
     id: 'trtbelgesel',
     name: 'TRT Belgesel HD',
     category: 'Belgesel',
-    subtitle: 'Do─şa, Tarih & Macera',
+    subtitle: 'Doğa, Tarih & Macera',
     streamUrl: 'https://tv-trtbelgesel.medya.trt.com.tr/master.m3u8',
     badgeColor: '#00b894',
   },
   {
     id: 'trtcocuk',
-    name: 'TRT ├çocuk',
+    name: 'TRT Çocuk',
     category: 'Belgesel',
-    subtitle: '├çocuk & Animasyon',
+    subtitle: 'Çocuk & Animasyon',
     streamUrl: 'https://tv-trtcocuk.medya.trt.com.tr/master.m3u8',
     badgeColor: '#0984e3',
   },
 ]
 
-const CATEGORIES: ChannelCategory[] = ['T├╝m├╝', 'Ulusal', 'Haber', 'Spor', 'M├╝zik', 'Belgesel']
+const TV_EN: Record<string, string> = {
+  Tümü: 'All',
+  Ulusal: 'National',
+  Haber: 'News',
+  Spor: 'Sports',
+  Müzik: 'Music',
+  Belgesel: 'Documentary',
+  'Kanal Listesini Aç / Kapat': 'Toggle channel list',
+  'Kanal listesini kapat': 'Close channel list',
+  'Önceki Kanal': 'Previous channel',
+  'Sonraki Kanal': 'Next channel',
+  'Yayın Bağlanıyor...': 'Connecting to stream…',
+  'Yeniden Dene': 'Retry',
+  'Kanal Adı': 'Channel name',
+  'Örn: Özel TV HD': 'e.g. Custom TV HD',
+  İptal: 'Cancel',
+  'Yayını Başlat': 'Start stream',
+  'YouTube Canlı': 'YouTube Live',
+  'Özel HLS Akışı': 'Custom HLS stream',
+  'Dizi & Kültür': 'Drama & culture',
+  'Ulusal & Dizi': 'National TV & drama',
+  'Canlı Maç & Spor': 'Live matches & sports',
+  'Olimpik & Branş Sporları': 'Olympic & specialist sports',
+  'Canlı Spor & Yorum': 'Live sports & commentary',
+  'Motorspor & Aksiyon': 'Motorsports & action',
+  '24/7 Sıcak Gündem': '24/7 breaking news',
+  'Canlı Haber & Tartışma': 'Live news & debate',
+  'Analiz & Dünya': 'Analysis & world news',
+  'Günün Gelişmeleri': 'Today’s headlines',
+  'Türkçe Pop Hit': 'Turkish pop hits',
+  'Dünya Müziği & Pop': 'World music & pop',
+  'Klasik & Halk Müziği': 'Classical & folk music',
+  'Doğa, Tarih & Macera': 'Nature, history & adventure',
+  'Çocuk & Animasyon': 'Kids & animation',
+}
+
+const CATEGORIES: ChannelCategory[] = ['Tümü', 'Ulusal', 'Haber', 'Spor', 'Müzik', 'Belgesel']
 
 export function TVApp() {
   const text = useText()
-  const [channels, setChannels] = useState<Channel[]>(DEFAULT_CHANNELS)
+  const language = useLanguage()
+  const tr = language === 'tr'
+  const label = (value: string) => (tr ? value : (TV_EN[value] ?? value))
+  const [country, setCountry] = useState(savedCountry)
+  const [choosingCountry, setChoosingCountry] = useState(false)
+  const [countrySearch, setCountrySearch] = useState('')
+  const [channelSearch, setChannelSearch] = useState('')
+  const [visibleCount, setVisibleCount] = useState(60)
+  const [catalog, setCatalog] = useState<{ country: string; channels: Channel[] }>({
+    country: 'tr',
+    channels: DEFAULT_CHANNELS,
+  })
+  const [customChannels, setCustomChannels] = useState<(Channel & { country: string })[]>([])
+  const channels = useMemo(
+    () => [
+      ...customChannels.filter((c) => c.country === country),
+      ...(catalog.country === country ? catalog.channels : []),
+    ],
+    [catalog, country, customChannels],
+  )
+  const [catalogLoading, setCatalogLoading] = useState(false)
+  const [catalogError, setCatalogError] = useState(false)
+  const [catalogAttempt, setCatalogAttempt] = useState(0)
   const [selectedChannel, setSelectedChannel] = useState<Channel>(DEFAULT_CHANNELS[0])
-  const [activeCategory, setActiveCategory] = useState<ChannelCategory>('T├╝m├╝')
+  const [activeCategory, setActiveCategory] = useState<ChannelCategory>('Tümü')
   const [showChannelsDrawer, setShowChannelsDrawer] = useState(false)
   const [isCinema, setIsCinema] = useState(false)
   const [isMuted, setIsMuted] = useState(false)
@@ -164,6 +225,50 @@ export function TVApp() {
   const [customTitle, setCustomTitle] = useState('')
   const [showCustomModal, setShowCustomModal] = useState(false)
   const [controlsVisible, setControlsVisible] = useState(true)
+
+  useEffect(() => {
+    const controller = new AbortController()
+    setCatalogLoading(true)
+    setCatalogError(false)
+    loadCountry(country, controller.signal, catalogAttempt > 0)
+      .then((loaded) => {
+        if (controller.signal.aborted) return
+        const merged =
+          country === 'tr'
+            ? [...DEFAULT_CHANNELS, ...loaded.filter((c) => !DEFAULT_CHANNELS.some((d) => d.streamUrl === c.streamUrl))]
+            : loaded
+        setCatalog({ country, channels: merged })
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) setCatalogError(true)
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setCatalogLoading(false)
+      })
+    return () => controller.abort()
+  }, [country, catalogAttempt])
+
+  const pickCountry = (code: string) => {
+    setCountry(code)
+    saveCountry(code)
+    setChoosingCountry(false)
+    setCountrySearch('')
+    setChannelSearch('')
+    setActiveCategory('Tümü')
+    setVisibleCount(60)
+    setCatalogAttempt(0)
+  }
+  const countryOptions = useMemo(
+    () =>
+      COUNTRIES.map((c) => ({ ...c, name: countryName(c.code, language) }))
+        .filter((c) =>
+          `${c.name} ${c.code} ${countryName(c.code, 'en')}`
+            .toLocaleLowerCase(language)
+            .includes(countrySearch.toLocaleLowerCase(language)),
+        )
+        .sort((a, b) => a.name.localeCompare(b.name, language)),
+    [countrySearch, language],
+  )
 
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const hlsRef = useRef<Hls | null>(null)
@@ -205,10 +310,11 @@ export function TVApp() {
     if (!isInHost()) return
     return useLive.subscribe((live, before) => {
       const away = ((live.telemetry?.paused ?? false) && !live.menuGone) || !live.gameFocused || !live.telemetry
-      const wasAway = ((before.telemetry?.paused ?? false) && !before.menuGone) || !before.gameFocused || !before.telemetry
+      const wasAway =
+        ((before.telemetry?.paused ?? false) && !before.menuGone) || !before.gameFocused || !before.telemetry
 
-      const isStopped = live.telemetry ? (!live.telemetry.engineEnabled || !live.telemetry.electricEnabled) : false
-      const wasStopped = before.telemetry ? (!before.telemetry.engineEnabled || !before.telemetry.electricEnabled) : false
+      const isStopped = live.telemetry ? !live.telemetry.engineEnabled || !live.telemetry.electricEnabled : false
+      const wasStopped = before.telemetry ? !before.telemetry.engineEnabled || !before.telemetry.electricEnabled : false
 
       const video = videoRef.current
       if (!video) return
@@ -310,8 +416,15 @@ export function TVApp() {
         }
       })
 
+      let recoveries = 0
       hls.on(Hls.Events.ERROR, (_event, data) => {
         if (data.fatal) {
+          if (++recoveries > 2) {
+            setStreamError('streamUnavailable')
+            setIsLoading(false)
+            hls.destroy()
+            return
+          }
           switch (data.type) {
             case Hls.ErrorTypes.NETWORK_ERROR:
               console.warn('[TVApp] Network error, recovering...', data)
@@ -323,7 +436,7 @@ export function TVApp() {
               break
             default:
               console.error('[TVApp] Unrecoverable error:', data)
-              setStreamError('Yay─▒n ak─▒┼ş─▒ ge├ğici olarak y├╝klenemedi.')
+              setStreamError('streamUnavailable')
               setIsLoading(false)
               hls.destroy()
               break
@@ -337,7 +450,7 @@ export function TVApp() {
         if (isPlaying) video.play().catch(() => {})
       })
       video.addEventListener('error', () => {
-        setStreamError('Yay─▒n y├╝klenemedi.')
+        setStreamError('streamUnavailable')
         setIsLoading(false)
       })
     }
@@ -357,31 +470,32 @@ export function TVApp() {
 
   // Filter channels based on active category
   const filteredChannels = useMemo(() => {
-    if (activeCategory === 'T├╝m├╝') return channels
-    return channels.filter((c) => c.category === activeCategory)
-  }, [channels, activeCategory])
+    return channels.filter(
+      (c) =>
+        (activeCategory === 'Tümü' || c.category === activeCategory) &&
+        c.name.toLocaleLowerCase(language).includes(channelSearch.toLocaleLowerCase(language)),
+    )
+  }, [channels, activeCategory, channelSearch, language])
 
   const handleAddCustomStream = (e: React.FormEvent) => {
     e.preventDefault()
     const input = customInput.trim()
     if (!input) return
 
-    const title = customTitle.trim() || `├ûzel Kanal #${channels.length + 1}`
-    const ytMatch = input.match(
-      /(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/
-    )
+    const title = customTitle.trim() || `${tr ? 'Özel Kanal' : 'Custom Channel'} #${channels.length + 1}`
+    const ytMatch = input.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/)
 
     const newChan: Channel = {
       id: `custom-${Date.now()}`,
       name: title,
       category: 'Ulusal',
-      subtitle: ytMatch ? 'YouTube Canl─▒' : '├ûzel HLS Ak─▒┼ş─▒',
+      subtitle: ytMatch ? 'YouTube Canlı' : 'Özel HLS Akışı',
       streamUrl: ytMatch ? undefined : input,
       youtubeId: ytMatch ? ytMatch[1] : undefined,
       badgeColor: '#e67e22',
     }
 
-    setChannels((prev) => [newChan, ...prev])
+    setCustomChannels((prev) => [{ ...newChan, country }, ...prev])
     setSelectedChannel(newChan)
     setCustomInput('')
     setCustomTitle('')
@@ -390,14 +504,16 @@ export function TVApp() {
   }
 
   const handleNextChannel = () => {
+    if (!channels.length) return
     const currIdx = channels.findIndex((c) => c.id === selectedChannel.id)
     const nextIdx = (currIdx + 1) % channels.length
     setSelectedChannel(channels[nextIdx])
   }
 
   const handlePrevChannel = () => {
+    if (!channels.length) return
     const currIdx = channels.findIndex((c) => c.id === selectedChannel.id)
-    const prevIdx = (currIdx - 1 + channels.length) % channels.length
+    const prevIdx = currIdx < 0 ? channels.length - 1 : (currIdx - 1 + channels.length) % channels.length
     setSelectedChannel(channels[prevIdx])
   }
 
@@ -415,17 +531,29 @@ export function TVApp() {
             {text.tvApp.live}
           </div>
           <span className="tv-title">{selectedChannel.name}</span>
-          <span className="tv-chan-sub-badge">{selectedChannel.subtitle}</span>
+          <span className="tv-chan-sub-badge">{label(selectedChannel.subtitle)}</span>
         </div>
 
         <div className="tv-header-actions">
           <button
             type="button"
+            className="tv-action-btn tv-country-trigger"
+            aria-expanded={showChannelsDrawer && choosingCountry}
+            onClick={() => {
+              setShowChannelsDrawer(true)
+              setChoosingCountry(true)
+            }}
+          >
+            <img src={countryFlag(country)} alt="" width="24" height="18" />
+            <span>{countryName(country, language)}</span>
+          </button>
+          <button
+            type="button"
             className={`tv-action-btn ${showChannelsDrawer ? 'active' : ''}`}
             onClick={() => setShowChannelsDrawer((v) => !v)}
-            title="Kanal Listesini A├ğ / Kapat"
+            title={label('Kanal Listesini Aç / Kapat')}
           >
-            ­şô║ Kanallar ({channels.length})
+            <TVGlyph name="channels" /> {text.tvApp.channels} ({channels.length})
           </button>
           <button
             type="button"
@@ -433,7 +561,7 @@ export function TVApp() {
             onClick={() => setShowCustomModal(true)}
             title={text.tvApp.customStream}
           >
-            ÔŞò URL
+            <TVGlyph name="plus" /> URL
           </button>
           <button
             type="button"
@@ -441,7 +569,8 @@ export function TVApp() {
             onClick={() => setIsCinema((prev) => !prev)}
             title={isCinema ? text.tvApp.exitFullscreen : text.tvApp.cinemaMode}
           >
-            {isCinema ? 'ÔÅ╣´©Å ├ç─▒k─▒┼ş' : '­şÄ¼ Tam Ekran'}
+            <TVGlyph name={isCinema ? 'collapse' : 'expand'} />
+            {isCinema ? text.tvApp.exitFullscreen : text.tvApp.cinemaMode}
           </button>
         </div>
       </header>
@@ -452,75 +581,146 @@ export function TVApp() {
         {showChannelsDrawer && (
           <aside className="tv-channels-drawer">
             <div className="tv-drawer-top">
-              <span>{text.tvApp.channels}</span>
+              <button type="button" className="tv-country-heading" onClick={() => setChoosingCountry((v) => !v)}>
+                <img src={countryFlag(country)} alt="" width="24" height="18" />
+                <span>{choosingCountry ? (tr ? 'Ülkeler' : 'Countries') : countryName(country, language)}</span>
+                <span aria-hidden="true">{choosingCountry ? '−' : '+'}</span>
+              </button>
               <button
                 type="button"
                 className="tv-drawer-close"
                 onClick={() => setShowChannelsDrawer(false)}
+                aria-label={label('Kanal listesini kapat')}
               >
-                Ô£ò
+                <TVGlyph name="close" />
               </button>
             </div>
 
-            {/* Category Filter Pills */}
-            <div className="tv-category-bar">
-              {CATEGORIES.map((cat) => (
-                <button
-                  key={cat}
-                  type="button"
-                  className={`tv-category-pill ${activeCategory === cat ? 'active' : ''}`}
-                  onClick={() => setActiveCategory(cat)}
-                >
-                  {cat}
-                </button>
-              ))}
-            </div>
-
-            {/* Channels List */}
-            <div className="tv-channel-list">
-              {filteredChannels.map((chan) => {
-                const isActive = selectedChannel.id === chan.id
-                const globalIndex = channels.findIndex((c) => c.id === chan.id) + 1
-                return (
-                  <button
-                    key={chan.id}
-                    type="button"
-                    className={`tv-channel-item ${isActive ? 'active' : ''}`}
-                    onClick={() => {
-                      setSelectedChannel(chan)
-                      setIsPlaying(true)
-                      setShowChannelsDrawer(false)
-                    }}
-                  >
-                    <div
-                      className="tv-chan-badge"
-                      style={{ backgroundColor: chan.badgeColor }}
+            {choosingCountry ? (
+              <>
+                <CatalogSearch
+                  id="tv-country-search"
+                  label={tr ? 'Ülke ara' : 'Search countries'}
+                  value={countrySearch}
+                  onChange={setCountrySearch}
+                />
+                <div className="tv-country-list" aria-label={tr ? 'Ülkeler' : 'Countries'}>
+                  {countryOptions.map((c) => (
+                    <button
+                      type="button"
+                      className="tv-country-option"
+                      key={c.code}
+                      aria-pressed={country === c.code}
+                      onClick={() => pickCountry(c.code)}
                     >
-                      {globalIndex}
+                      <img src={countryFlag(c.code)} alt="" width="32" height="24" loading="lazy" />
+                      <span>{c.name}</span>
+                      <small>{c.code.toUpperCase()}</small>
+                    </button>
+                  ))}
+                  {!countryOptions.length && (
+                    <p className="tv-catalog-status">{tr ? 'Ülke bulunamadı.' : 'No countries found.'}</p>
+                  )}
+                </div>
+              </>
+            ) : (
+              <>
+                <CatalogSearch
+                  id="tv-channel-search"
+                  label={tr ? 'Kanal ara' : 'Search channels'}
+                  value={channelSearch}
+                  onChange={(value) => {
+                    setChannelSearch(value)
+                    setVisibleCount(60)
+                  }}
+                />
+                {/* Category Filter Pills */}
+                <div className="tv-category-bar">
+                  {CATEGORIES.map((cat) => (
+                    <button
+                      key={label(cat)}
+                      type="button"
+                      className={`tv-category-pill ${activeCategory === cat ? 'active' : ''}`}
+                      onClick={() => {
+                        setActiveCategory(cat)
+                        setVisibleCount(60)
+                      }}
+                    >
+                      {label(cat)}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Channels List */}
+                <div className="tv-channel-list">
+                  {catalogLoading && (
+                    <p className="tv-catalog-status" role="status">
+                      {tr ? 'Kanallar yükleniyor…' : 'Loading channels…'}
+                    </p>
+                  )}
+                  {catalogError && (
+                    <div className="tv-catalog-status" role="status">
+                      <p>{tr ? 'Güncel liste alınamadı.' : 'Unable to load the channel list.'}</p>
+                      <button type="button" onClick={() => setCatalogAttempt((n) => n + 1)}>
+                        {tr ? 'Tekrar dene' : 'Retry'}
+                      </button>
                     </div>
-                    <div className="tv-chan-info">
-                      <div className="tv-chan-name">{chan.name}</div>
-                      <div className="tv-chan-sub">{chan.subtitle}</div>
-                    </div>
-                    {isActive && (
-                      <div className="tv-chan-active-wave">
-                        <span />
-                        <span />
-                        <span />
-                      </div>
-                    )}
-                  </button>
-                )
-              })}
-            </div>
+                  )}
+                  {!catalogLoading && !catalogError && !filteredChannels.length && (
+                    <p className="tv-catalog-status">
+                      {tr ? 'Bu filtrede kanal yok.' : 'No channels match your filters.'}
+                    </p>
+                  )}
+                  {filteredChannels.slice(0, visibleCount).map((chan) => {
+                    const isActive = selectedChannel.id === chan.id
+                    const globalIndex = channels.findIndex((c) => c.id === chan.id) + 1
+                    return (
+                      <button
+                        key={chan.id}
+                        type="button"
+                        className={`tv-channel-item ${isActive ? 'active' : ''}`}
+                        onClick={() => {
+                          setSelectedChannel(chan)
+                          setIsPlaying(true)
+                          setShowChannelsDrawer(false)
+                        }}
+                      >
+                        <div className="tv-chan-badge" style={{ backgroundColor: chan.badgeColor }}>
+                          {globalIndex}
+                        </div>
+                        <div className="tv-chan-info">
+                          <div className="tv-chan-name">{chan.name}</div>
+                          <div className="tv-chan-sub">{label(chan.subtitle)}</div>
+                        </div>
+                        {isActive && (
+                          <div className="tv-chan-active-wave">
+                            <span />
+                            <span />
+                            <span />
+                          </div>
+                        )}
+                      </button>
+                    )
+                  })}
+                  {filteredChannels.length > visibleCount && (
+                    <button type="button" className="tv-load-more" onClick={() => setVisibleCount((n) => n + 60)}>
+                      {tr ? 'Daha fazla göster' : 'Show more'} ({filteredChannels.length - visibleCount})
+                    </button>
+                  )}
+                  <p className="tv-catalog-source">
+                    iptv-org ·{' '}
+                    {tr
+                      ? 'Yayın kullanılabilirliği bölgeye göre değişebilir.'
+                      : 'Stream availability may vary by region.'}
+                  </p>
+                </div>
+              </>
+            )}
           </aside>
         )}
 
         {/* Video Player Stage */}
-        <main
-          className="tv-player-stage"
-          onDoubleClick={() => setIsCinema((prev) => !prev)}
-        >
+        <main className="tv-player-stage" onDoubleClick={() => setIsCinema((prev) => !prev)}>
           {/* Native HTML5 Video Element for HLS Broadcast Streams */}
           <video
             ref={videoRef}
@@ -549,15 +749,19 @@ export function TVApp() {
           {isLoading && !streamError && (
             <div className="tv-buffering-overlay">
               <div className="tv-spinner" />
-              <span>Yay─▒n Ba─şlan─▒yor...</span>
+              <span>{label('Yayın Bağlanıyor...')}</span>
             </div>
           )}
 
           {/* Error Overlay */}
           {streamError && (
             <div className="tv-error-overlay">
-              <div className="tv-error-icon">ÔÜá´©Å</div>
-              <div className="tv-error-msg">{streamError}</div>
+              <div className="tv-error-icon">
+                <TVGlyph name="warning" />
+              </div>
+              <div className="tv-error-msg">
+                {tr ? 'Yayın yüklenemedi. Tekrar deneyin.' : 'Unable to load the stream. Please try again.'}
+              </div>
               <button
                 type="button"
                 className="tv-retry-btn"
@@ -570,7 +774,7 @@ export function TVApp() {
                   }
                 }}
               >
-                Yeniden Dene
+                {label('Yeniden Dene')}
               </button>
             </div>
           )}
@@ -579,7 +783,9 @@ export function TVApp() {
           <div className={`tv-osd-controls ${!controlsVisible ? 'tv-hidden' : ''}`}>
             <div className="tv-osd-info">
               <span className="tv-osd-channel-num">
-                CH {channels.findIndex((c) => c.id === selectedChannel.id) + 1}
+                {channels.some((c) => c.id === selectedChannel.id)
+                  ? `CH ${channels.findIndex((c) => c.id === selectedChannel.id) + 1}`
+                  : text.tvApp.live}
               </span>
               <span className="tv-osd-channel-name">{selectedChannel.name}</span>
             </div>
@@ -589,9 +795,11 @@ export function TVApp() {
                 type="button"
                 className="tv-osd-btn"
                 onClick={handlePrevChannel}
-                title="├ûnceki Kanal"
+                disabled={!channels.length}
+                title={label('Önceki Kanal')}
+                aria-label={label('Önceki Kanal')}
               >
-                ÔÅ«´©Å
+                <TVGlyph name="previous" />
               </button>
 
               <button
@@ -599,17 +807,20 @@ export function TVApp() {
                 className="tv-osd-btn tv-osd-play"
                 onClick={() => setIsPlaying((p) => !p)}
                 title={isPlaying ? text.tvApp.pause : text.tvApp.play}
+                aria-label={isPlaying ? text.tvApp.pause : text.tvApp.play}
               >
-                {isPlaying ? 'ÔÅ©´©Å' : 'ÔûÂ´©Å'}
+                <TVGlyph name={isPlaying ? 'pause' : 'play'} />
               </button>
 
               <button
                 type="button"
                 className="tv-osd-btn"
                 onClick={handleNextChannel}
-                title="Sonraki Kanal"
+                disabled={!channels.length}
+                title={label('Sonraki Kanal')}
+                aria-label={label('Sonraki Kanal')}
               >
-                ÔÅ¡´©Å
+                <TVGlyph name="next" />
               </button>
 
               <button
@@ -617,8 +828,9 @@ export function TVApp() {
                 className="tv-osd-btn"
                 onClick={() => setIsMuted((m) => !m)}
                 title={isMuted ? text.tvApp.unmute : text.tvApp.mute}
+                aria-label={isMuted ? text.tvApp.unmute : text.tvApp.mute}
               >
-                {isMuted ? '­şöç' : '­şöè'}
+                <TVGlyph name={isMuted ? 'muted' : 'volume'} />
               </button>
 
               <button
@@ -626,8 +838,9 @@ export function TVApp() {
                 className="tv-osd-btn tv-osd-cinema"
                 onClick={() => setIsCinema((c) => !c)}
                 title={isCinema ? text.tvApp.exitFullscreen : text.tvApp.cinemaMode}
+                aria-label={isCinema ? text.tvApp.exitFullscreen : text.tvApp.cinemaMode}
               >
-                {isCinema ? '­şùù' : 'ÔøÂ'}
+                <TVGlyph name={isCinema ? 'collapse' : 'expand'} />
               </button>
             </div>
           </div>
@@ -639,21 +852,25 @@ export function TVApp() {
         <div className="tv-modal-backdrop" onClick={() => setShowCustomModal(false)}>
           <div className="tv-modal-content" onClick={(e) => e.stopPropagation()}>
             <h3>{text.tvApp.customStream}</h3>
-            <p>Do─şrudan canl─▒ yay─▒n URL'si (.m3u8) veya YouTube canl─▒ linki ekleyin:</p>
+            <p>
+              {tr
+                ? 'Doğrudan canlı yayın URL’si (.m3u8) veya YouTube canlı linki ekleyin:'
+                : 'Add a direct live stream URL (.m3u8) or a YouTube live link:'}
+            </p>
             <form onSubmit={handleAddCustomStream}>
               <div className="tv-form-group">
-                <label>Kanal Ad─▒</label>
+                <label>{label('Kanal Adı')}</label>
                 <input
                   type="text"
                   className="tv-input"
-                  placeholder="├ûrn: ├ûzel TV HD"
+                  placeholder={label('Örn: Özel TV HD')}
                   value={customTitle}
                   onChange={(e) => setCustomTitle(e.target.value)}
                 />
               </div>
 
               <div className="tv-form-group">
-                <label>Yay─▒n URL'si (.m3u8 veya YouTube linki)</label>
+                <label>{tr ? 'Yayın URL’si (.m3u8 veya YouTube linki)' : 'Stream URL (.m3u8 or YouTube link)'}</label>
                 <input
                   type="text"
                   className="tv-input"
@@ -666,15 +883,11 @@ export function TVApp() {
               </div>
 
               <div className="tv-modal-actions">
-                <button
-                  type="button"
-                  className="tv-modal-cancel"
-                  onClick={() => setShowCustomModal(false)}
-                >
-                  ─░ptal
+                <button type="button" className="tv-modal-cancel" onClick={() => setShowCustomModal(false)}>
+                  {label('İptal')}
                 </button>
                 <button type="submit" className="tv-modal-submit">
-                  Yay─▒n─▒ Ba┼şlat
+                  {label('Yayını Başlat')}
                 </button>
               </div>
             </form>
@@ -682,5 +895,34 @@ export function TVApp() {
         </div>
       )}
     </section>
+  )
+}
+
+function CatalogSearch({
+  id,
+  label,
+  value,
+  onChange,
+}: {
+  id: string
+  label: string
+  value: string
+  onChange(value: string): void
+}) {
+  if (isInHost())
+    return (
+      <div className="tv-catalog-search tv-game-search">
+        <TextField id={id} label={label} hint={label + '…'} value={value} onChange={onChange} />
+      </div>
+    )
+  return (
+    <input
+      className="tv-catalog-search"
+      type="search"
+      aria-label={label}
+      placeholder={label + '…'}
+      value={value}
+      onChange={(event) => onChange(event.target.value)}
+    />
   )
 }

@@ -12,9 +12,9 @@ use w0rplay_shared::{FixedStr, JobInfo, Telemetry, TruckInfo};
 
 use crate::scs::{
     ChannelCallback, ConfigurationEvent, EventCallback, SCS_RESULT_OK, SCS_TELEMETRY_EVENT_CONFIGURATION,
-    SCS_TELEMETRY_EVENT_FRAME_END, SCS_TELEMETRY_EVENT_PAUSED, SCS_TELEMETRY_EVENT_STARTED, SCS_U32_NIL,
-    SCS_VALUE_TYPE_BOOL, SCS_VALUE_TYPE_DPLACEMENT, SCS_VALUE_TYPE_FLOAT, SCS_VALUE_TYPE_FPLACEMENT,
-    SCS_VALUE_TYPE_S32, SCS_VALUE_TYPE_U32, ScsValue, TelemetryInitParamsV100,
+    SCS_TELEMETRY_EVENT_FRAME_END, SCS_TELEMETRY_EVENT_GAMEPLAY, SCS_TELEMETRY_EVENT_PAUSED,
+    SCS_TELEMETRY_EVENT_STARTED, SCS_U32_NIL, SCS_VALUE_TYPE_BOOL, SCS_VALUE_TYPE_DPLACEMENT, SCS_VALUE_TYPE_FLOAT,
+    SCS_VALUE_TYPE_FPLACEMENT, SCS_VALUE_TYPE_S32, SCS_VALUE_TYPE_U32, ScsValue, TelemetryInitParamsV100,
 };
 use crate::{bridge, log};
 
@@ -52,6 +52,7 @@ static SNAPSHOT: Mutex<Telemetry> = Mutex::new(Telemetry {
     parking_brake: false,
     low_beam: false,
     high_beam: false,
+    beacon: false,
     left_blinker: false,
     right_blinker: false,
     paused: true,
@@ -101,6 +102,7 @@ enum Field {
     ParkingBrake,
     LowBeam,
     HighBeam,
+    Beacon,
     LeftBlinker,
     RightBlinker,
     HeadOffset,
@@ -128,6 +130,7 @@ const CHANNELS: &[(&str, u32, Field)] = &[
     ("truck.brake.parking", SCS_VALUE_TYPE_BOOL, Field::ParkingBrake),
     ("truck.light.beam.low", SCS_VALUE_TYPE_BOOL, Field::LowBeam),
     ("truck.light.beam.high", SCS_VALUE_TYPE_BOOL, Field::HighBeam),
+    ("truck.light.beacon", SCS_VALUE_TYPE_BOOL, Field::Beacon),
     ("truck.light.lblinker", SCS_VALUE_TYPE_BOOL, Field::LeftBlinker),
     ("truck.light.rblinker", SCS_VALUE_TYPE_BOOL, Field::RightBlinker),
     ("truck.head.offset", SCS_VALUE_TYPE_FPLACEMENT, Field::HeadOffset),
@@ -150,6 +153,7 @@ pub unsafe fn register(params: &TelemetryInitParamsV100) {
             SCS_TELEMETRY_EVENT_PAUSED,
             SCS_TELEMETRY_EVENT_STARTED,
             SCS_TELEMETRY_EVENT_CONFIGURATION,
+            SCS_TELEMETRY_EVENT_GAMEPLAY,
         ] {
             let result = register_event(event, on_event, std::ptr::null_mut());
             if result != SCS_RESULT_OK {
@@ -193,6 +197,13 @@ unsafe fn on_game_event(event: u32, info: *const c_void) {
     // SAFETY: a configuration event's `info` is the SDK's `ConfigurationEvent`, alive through the call; the
     // navigator is served on the game's main thread, where this is (`serve`'s contract).
     unsafe {
+        if event == SCS_TELEMETRY_EVENT_GAMEPLAY {
+            if let Some(gameplay) = (info as *const ConfigurationEvent).as_ref() {
+                let time = SNAPSHOT.lock().unwrap_or_else(|e| e.into_inner()).game_time;
+                crate::gameplay::record(gameplay, time);
+            }
+            return;
+        }
         if event == SCS_TELEMETRY_EVENT_CONFIGURATION {
             if let Some(configuration) = (info as *const ConfigurationEvent).as_ref() {
                 on_configuration(configuration);
@@ -310,6 +321,8 @@ unsafe fn on_truck(configuration: &ConfigurationEvent) {
             bridge.plugin.truck.write(&truck);
         }
         crate::screens::truck_changed();
+        crate::wolli_tv::truck_changed();
+        crate::curtain::truck_changed();
     }
 }
 
@@ -348,6 +361,9 @@ unsafe fn on_job(configuration: &ConfigurationEvent) {
             job.destination_city.as_str()
         );
         if let Some(bridge) = bridge::get() {
+            if job.active {
+                *crate::gameplay::LAST_JOB.lock().unwrap_or_else(|e| e.into_inner()) = Some(job);
+            }
             bridge.plugin.job.write(&job);
         }
     }
@@ -400,6 +416,7 @@ unsafe fn on_channel_value(value: *const ScsValue, context: *mut c_void) {
             Field::ParkingBrake => s.parking_brake = value.bool(),
             Field::LowBeam => s.low_beam = value.bool(),
             Field::HighBeam => s.high_beam = value.bool(),
+            Field::Beacon => s.beacon = value.bool(),
             Field::LeftBlinker => s.left_blinker = value.bool(),
             Field::RightBlinker => s.right_blinker = value.bool(),
             Field::HeadOffset => {
@@ -438,6 +455,7 @@ fn reset(s: &mut Telemetry, field: Field) {
         Field::ParkingBrake => s.parking_brake = d.parking_brake,
         Field::LowBeam => s.low_beam = d.low_beam,
         Field::HighBeam => s.high_beam = d.high_beam,
+        Field::Beacon => s.beacon = d.beacon,
         Field::LeftBlinker => s.left_blinker = d.left_blinker,
         Field::RightBlinker => s.right_blinker = d.right_blinker,
         Field::HeadOffset => {

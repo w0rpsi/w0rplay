@@ -19,14 +19,14 @@ import { showVolume } from './shell/volumeShown'
 import { type Route, routeKey } from './state/navigation'
 import { nextPhaseAt, type PowerPhase } from './state/power'
 import { connectHost, useCabin, useLive } from './state/store'
-import { languageOf } from './state/strings'
+import { useLanguage } from './state/text'
 import { followTimeZone } from './state/timeZone'
 
 /**
  * Plain browser previews have no truck to power the screen; they show it as if the electrics were on.
  * `?power` simulates the real sequence there too (drive it with `useCabin.getState().powerEvent`).
  */
-const FOLLOW_POWER = false
+const FOLLOW_POWER = isInHost() || new URLSearchParams(location.search).has('power')
 
 /** The in-cabin screen: the shell around the screen for the current route, after the boot sequence. */
 export function CabinApp() {
@@ -50,7 +50,7 @@ export function CabinApp() {
   // Lists follow a drag, as on a touch screen (the cab has a mouse).
   useEffect(() => installDragScroll(), [])
   // The page's language, so text set in capitals follows its rules (Turkish: i to İ, not I).
-  const language = languageOf(useLive((state) => state.gameLanguage))
+  const language = useLanguage()
   useEffect(() => {
     document.documentElement.lang = language
   }, [language])
@@ -60,6 +60,21 @@ export function CabinApp() {
   useEffect(() => postToHost({ type: 'startup', stage: `power ${phase}` }), [phase])
 
   const powered = !FOLLOW_POWER || phase === 'on'
+  const mediaView =
+    powered && route.kind === 'app'
+      ? route.app === 'music'
+        ? 'appleMusic'
+        : route.app === 'youtube' || route.app === 'spotify' || route.app === 'youtubeMusic'
+          ? route.app
+          : null
+      : null
+  useEffect(() => {
+    if (isInHost()) postToHost({ type: 'mediaView', app: mediaView })
+  }, [mediaView])
+
+  // The powered-off screen is black. Do not retain the hidden wallpaper, sidebar
+  // artwork and GPU layers behind that black cover while the game is closed.
+  if (FOLLOW_POWER && phase === 'off') return <BootScreen phase="off" />
 
   return (
     <Shell
@@ -113,7 +128,9 @@ function usePowerOnEntry(phase: PowerPhase): boolean {
   return entering
 }
 
-/** Advances timed power phases (splash, connecting) when their time is up. */
+/** Advances timed power phases (splash, connecting) when their time is up. A timer may fire a little early
+ * (browsers round its delay down to whole milliseconds), so its tick says the moment it was set for, at the
+ * earliest: a tick that didn't advance the phase would leave it there, with no timer left to try again. */
 function usePowerClock() {
   const power = useCabin((state) => state.power)
   const powerEvent = useCabin((state) => state.powerEvent)
@@ -130,7 +147,10 @@ function usePowerClock() {
 const SWITCH_MS = 420
 
 /**
- * The screen for the route. Home and the Dashboard trade places live.
+ * The screen for the route. Home and the Dashboard trade places live: the old one stays a moment, moving
+ * and fading out while the new one comes in (shell/transitions.css). Any other change swaps at once; app
+ * launches are animated by View Transitions (state/launch.ts). A press during a switch starts the next one
+ * from wherever things are.
  */
 function Screens({ route }: { route: Route }) {
   const [shown, setShown] = useState(route)
@@ -143,6 +163,9 @@ function Screens({ route }: { route: Route }) {
     setShown(route)
   }
 
+  // The switch ends when its animation does: it starts on the first frame after the change, which a busy
+  // page draws late (the Dashboard starting its map), so a timer from the change would cut it off before
+  // its end. The timer is there only for an animation that never runs.
   useEffect(() => {
     if (!leaving) return
     const timer = setTimeout(() => setLeaving(null), SWITCH_MS * 3)
@@ -160,6 +183,7 @@ function Screens({ route }: { route: Route }) {
       <div
         key={routeKey(shown)}
         className={leaving ? `screen-slot entering${switching}` : 'screen-slot'}
+        // Its own animation, not one of its icons' (theirs bubble up here too).
         onAnimationEnd={(event) => {
           if (leaving && event.target === event.currentTarget) setLeaving(null)
         }}

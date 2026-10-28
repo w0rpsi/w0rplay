@@ -60,7 +60,7 @@ let settings: Settings = {
     playPause: { key: 0x32, withInteractionKey: true },
     volumeUp: { key: 0x33, withInteractionKey: true },
   },
-  screen: { truckStrip: 'auto' },
+  screen: { truckStrip: 'auto', wolliTvMirror: false },
   look: { wallpaper: null, iconSet: null, iconStyle: 'auto' },
   graphics: { gpu: null },
 }

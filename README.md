@@ -33,6 +33,14 @@ W0RPLAY puts a phone-style car screen on your truck's own dashboard display, ins
 map made from your own game, your music, YouTube, the weather on your drive: right where a real truck has its
 screen, used with the mouse while you hold a key.
 
+## Current source: 2.1.15
+
+- **English and Turkish:** English by default; choose during first setup or later in desktop Setup / CarPlay Settings. Both screens share the saved choice.
+- **Live TV countries:** select a flag to browse 76 countries, then choose a channel. Country/channel search, last-country recall and bundled fallback catalogues are included. Stream availability depends on the broadcaster and region.
+- **Cabin and media:** dark desktop panel, dispatch, cabin controls, opt-in Wolli TV mirroring and the curtain pose controller.
+
+The repository root is the current Cargo/npm workspace. See [BUILD.md](BUILD.md) for build instructions and [PORTING.json](PORTING.json) for scope and validation limits. Optional Wolli curtain assets require your own Wolli installation and a local compatibility build; third-party meshes/textures are not included.
+
 ## Features
 
 <table>

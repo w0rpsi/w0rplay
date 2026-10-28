@@ -1,7 +1,5 @@
 import { type CSSProperties, useEffect, useState } from 'react'
-import { useLive } from '../../state/store'
-import { languageOf } from '../../state/strings'
-import { useText } from '../../state/text'
+import { useLanguage, useText } from '../../state/text'
 import {
   AddGlyph,
   CloseGlyph,
@@ -745,7 +743,7 @@ function CollectionPage({ uri }: { uri: string }) {
 
 function ArtistPage({ uri }: { uri: string }) {
   const text = useText()
-  const language = languageOf(useLive((state) => state.gameLanguage))
+  const language = useLanguage()
   const asked = useAsked({ ask: 'artist', uri })
   const page = asked.answer
   const following = useSaved(uri, page?.item.saved)

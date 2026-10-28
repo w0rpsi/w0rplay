@@ -206,6 +206,7 @@ pub fn build(game: &GameFiles) -> Result<(Vec<u8>, Built), BuildError> {
         ("manifest.sii".into(), manifest().into_bytes()),
         ("description.txt".into(), b"W0RPLAY screens. Requires the W0RPLAY app and plugin.\n".to_vec()),
     ];
+    files.extend(wolli_tv_files());
     let mut built = Built::default();
     for (index, layout) in screen_layouts().iter().enumerate() {
         let texture = texture_name(layout);
@@ -256,6 +257,33 @@ pub fn build(game: &GameFiles) -> Result<(Vec<u8>, Built), BuildError> {
     }
     files.sort_by(|a, b| a.0.cmp(&b.0));
     Ok((zip(&files), built))
+}
+
+/// This path is used only by Wolli's sleeper TV. With the addon absent, or no TV fitted, the game
+/// never loads/draws the signed texture, so the plugin never advertises the mirror control.
+fn wolli_tv_files() -> Vec<(String, Vec<u8>)> {
+    use w0rplay_shared::{SCREEN_HEIGHT, WOLLI_TV_MAGIC, WOLLI_TV_WIDTH};
+    let mut dds = transparent_dds(WOLLI_TV_WIDTH, SCREEN_HEIGHT);
+    for alpha in dds[148..].iter_mut().skip(3).step_by(4) {
+        *alpha = 255;
+    }
+    dds[148..156].copy_from_slice(&WOLLI_TV_MAGIC);
+    let material = r#"effect : "eut2.dif.lum.lvcol.rfx" {
+    texture : "texture_base" { source : "/w0rplay/wolli_tv_mirror.tobj" }
+    diffuse : {0.129412, 0.129412, 0.129412}
+    specular : {0.00784314, 0.00784314, 0.00784314}
+    shininess : 210
+    additional_ambient : 0
+    luminance_night : 10
+    luminance_output : 2000
+    reflection : 0
+}
+"#;
+    vec![
+        ("vehicle/truck/upgrade/interior_decors/toybed/materials/screen.mat".into(), material.as_bytes().to_vec()),
+        ("w0rplay/wolli_tv_mirror.tobj".into(), tobj("/w0rplay/wolli_tv_mirror.dds")),
+        ("w0rplay/wolli_tv_mirror.dds".into(), dds),
+    ]
 }
 
 /// Writes the mod into `mod_dir` (W0RPLAY's own folder), replacing the one there whole: written beside it
@@ -494,6 +522,17 @@ fn zip(files: &[(String, Vec<u8>)]) -> Vec<u8> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn wolli_compatibility_has_only_its_tv_material_and_a_signed_opaque_texture() {
+        let files = wolli_tv_files();
+        assert_eq!(files.len(), 3);
+        let dds = &files.iter().find(|(p, _)| p.ends_with(".dds")).unwrap().1;
+        assert_eq!(&dds[148..156], &w0rplay_shared::WOLLI_TV_MAGIC);
+        assert_eq!(u32::from_le_bytes(dds[16..20].try_into().unwrap()), w0rplay_shared::WOLLI_TV_WIDTH);
+        assert!(dds[148..].iter().skip(3).step_by(4).all(|alpha| *alpha == 255));
+        assert!(!files.iter().any(|(p, _)| p.contains("nintendo") || p.ends_with(".pmd")));
+    }
 
     #[test]
     fn installs_the_mod_whole_and_says_which_step_failed_where() {

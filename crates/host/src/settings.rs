@@ -22,6 +22,8 @@ pub const SETTINGS_VERSION: u32 = 2;
 #[serde(rename_all = "camelCase", default)]
 pub struct Settings {
     #[serde(deserialize_with = "lenient")]
+    pub language: Language,
+    #[serde(deserialize_with = "lenient")]
     pub interaction: InteractionSettings,
     #[serde(deserialize_with = "lenient")]
     pub keybinds: Keybinds,
@@ -33,6 +35,28 @@ pub struct Settings {
     pub graphics: GraphicsSettings,
     #[serde(deserialize_with = "lenient")]
     pub sound: SoundSettings,
+    #[serde(deserialize_with = "lenient")]
+    pub cabin: CabinSettings,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Language {
+    #[default]
+    En,
+    Tr,
+}
+
+/// Explicit game/mod bindings. Unassigned until the player configures them.
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct CabinSettings {
+    #[serde(deserialize_with = "lenient")]
+    pub light_key: Option<u16>,
+    #[serde(deserialize_with = "lenient")]
+    pub curtain_key: Option<u16>,
+    #[serde(deserialize_with = "lenient")]
+    pub curtain_closed: bool,
 }
 
 /// The sound the players play: its tone (the cab's Settings › Equalizer), the same in every truck. As iOS's
@@ -259,6 +283,8 @@ pub struct Binding {
 pub struct ScreenSettings {
     #[serde(deserialize_with = "lenient")]
     pub truck_strip: TruckStrip,
+    #[serde(deserialize_with = "lenient")]
+    pub wolli_tv_mirror: bool,
 }
 
 /// The truck's own strip beside W0RPLAY (the Scania Smart Dash's, the DAF's status bar): kept where the
@@ -421,6 +447,16 @@ mod tests {
     use super::*;
 
     #[test]
+    fn tv_mirror_is_opt_in_and_saved_without_losing_other_screen_choices() {
+        let mut settings = Settings::default();
+        assert!(!settings.screen.wolli_tv_mirror);
+        settings.screen.wolli_tv_mirror = true;
+        settings.screen.truck_strip = TruckStrip::Off;
+        assert_eq!(parse(&to_json(&settings)).unwrap(), settings);
+        assert!(!parse(r#"{"screen":{"wolliTvMirror":"yes"}}"#).unwrap().screen.wolli_tv_mirror);
+    }
+
+    #[test]
     fn keys_have_windows_names_and_mouse_buttons_none() {
         // The names are the keyboard layout's, so only that there's one.
         assert!(KeyCode::name(0x31).is_some_and(|name| !name.is_empty()));
@@ -431,6 +467,7 @@ mod tests {
     #[test]
     fn round_trips_through_the_file_format() {
         let settings = Settings {
+            language: Language::Tr,
             interaction: InteractionSettings {
                 key: KeyCode::new(0x05).unwrap(),
                 mode: InteractionMode::Toggle,
@@ -440,12 +477,13 @@ mod tests {
                 volume_up: Binding { key: KeyCode::new(0x6b).unwrap(), with_interaction_key: false },
                 ..Keybinds::default()
             },
-            screen: ScreenSettings { truck_strip: TruckStrip::Off },
+            screen: ScreenSettings { truck_strip: TruckStrip::Off, wolli_tv_mirror: true },
             look: LookSettings {
                 wallpaper: Some("custom:Dusk".into()),
                 icon_set: Some("Retro".into()),
                 icon_style: IconStyle::Dark,
             },
+            cabin: CabinSettings { light_key: Some(0x4f), curtain_key: None, curtain_closed: false },
             graphics: GraphicsSettings { gpu: Some("10de:2702:00000000:161".into()) },
             sound: SoundSettings {
                 equalizer: crate::speakers::Equalizer { bass: -3, mid: 1, treble: 2 },
@@ -458,6 +496,15 @@ mod tests {
         assert!(json.contains("\"mode\": \"toggle\""), "{json}");
         assert!(json.contains("\"truckStrip\": \"off\""), "{json}");
         assert_eq!(parse(&json).unwrap(), settings);
+    }
+
+    #[test]
+    fn ui_language_defaults_to_english_and_survives_restart() {
+        assert_eq!(parse(r#"{"version":2}"#).unwrap().language, Language::En);
+        assert_eq!(parse(r#"{"language":"invalid"}"#).unwrap().language, Language::En);
+        let mut settings = Settings::default();
+        settings.language = Language::Tr;
+        assert_eq!(parse(&to_json(&settings)).unwrap().language, Language::Tr);
     }
 
     #[test]
@@ -548,6 +595,7 @@ mod tests {
         assert!(dir.join("settings.json.bad").exists());
 
         let settings = Settings {
+            language: Language::Tr,
             interaction: InteractionSettings {
                 key: KeyCode::new(0xa3).unwrap(),
                 sensitivity: Sensitivity::new(2.0),

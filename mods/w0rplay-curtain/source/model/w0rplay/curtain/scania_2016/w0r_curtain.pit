@@ -1,0 +1,126 @@
+# Look Names:
+#	default
+#
+# Variant Names:
+#	default
+#
+Header {
+    FormatVersion: 1
+    Source: "Blender 3.6.23 (hash: e467db79ca8c), SCS Blender Tools: 2.4.aeadde03"
+    Type: "Trait"
+    Name: "w0r_curtain"
+}
+Global {
+    LookCount: 1
+    VariantCount: 1
+    PartCount: 1
+    MaterialCount: 3
+}
+Look {
+    Name: "default"
+    Material {
+        Alias: "curtain_panel"
+        Effect: "eut2.dif.spec.a"
+        Flags: 0
+        AttributeCount: 4
+        TextureCount: 1
+        Attribute {
+            Format: FLOAT3
+            Tag: "diffuse"
+            Value: ( 1.0 1.0 1.0 )
+        }
+        Attribute {
+            Format: FLOAT3
+            Tag: "specular"
+            Value: ( 0.03500000014901161 0.03500000014901161 0.03500000014901161 )
+        }
+        Attribute {
+            Format: FLOAT
+            Tag: "shininess"
+            Value: ( 12.0 )
+        }
+        Attribute {
+            Format: FLOAT
+            Tag: "add_ambient"
+            Value: ( 0.0 )
+        }
+        Texture {
+            Tag: "texture[0]:texture_base"
+            Value: "/material/w0rplay/curtain/mask"
+        }
+    }
+    Material {
+        Alias: "gathered_cloth"
+        Effect: "eut2.dif.spec"
+        Flags: 0
+        AttributeCount: 4
+        TextureCount: 1
+        Attribute {
+            Format: FLOAT3
+            Tag: "diffuse"
+            Value: ( 1.0 1.0 1.0 )
+        }
+        Attribute {
+            Format: FLOAT3
+            Tag: "specular"
+            Value: ( 0.03500000014901161 0.03500000014901161 0.03500000014901161 )
+        }
+        Attribute {
+            Format: FLOAT
+            Tag: "shininess"
+            Value: ( 12.0 )
+        }
+        Attribute {
+            Format: FLOAT
+            Tag: "add_ambient"
+            Value: ( 0.0 )
+        }
+        Texture {
+            Tag: "texture[0]:texture_base"
+            Value: "/material/w0rplay/curtain/cloth"
+        }
+    }
+    Material {
+        Alias: "rail"
+        Effect: "eut2.dif.spec"
+        Flags: 0
+        AttributeCount: 4
+        TextureCount: 1
+        Attribute {
+            Format: FLOAT3
+            Tag: "diffuse"
+            Value: ( 0.10000000149011612 0.10000000149011612 0.10999999940395355 )
+        }
+        Attribute {
+            Format: FLOAT3
+            Tag: "specular"
+            Value: ( 0.03500000014901161 0.03500000014901161 0.03500000014901161 )
+        }
+        Attribute {
+            Format: FLOAT
+            Tag: "shininess"
+            Value: ( 12.0 )
+        }
+        Attribute {
+            Format: FLOAT
+            Tag: "add_ambient"
+            Value: ( 0.0 )
+        }
+        Texture {
+            Tag: "texture[0]:texture_base"
+            Value: "/material/w0rplay/curtain/cloth"
+        }
+    }
+}
+Variant {
+    Name: "default"
+    Part {
+        Name: "defaultpart"
+        AttributeCount: 1
+        Attribute {
+            Format: INT
+            Tag: "visible"
+            Value: ( 1 )
+        }
+    }
+}

@@ -1,9 +1,9 @@
-// WestPlay: the truck's own speakers, for a page's sound (youtube.js's video, apple_music.js's music): loaded
-// before the page's own script, which makes one with `window.westplayCabSound(media, say)` (`media`: the
+// W0RPLAY: the truck's own speakers, for a page's sound (youtube.js's video, apple_music.js's music): loaded
+// before the page's own script, which makes one with `window.w0rplayCabSound(media, say)` (`media`: the
 // element its sound comes from now, or none; `say`: its way to the host, for the spectrum it measures) and
 // tells it the speakers, the driver's head and the camera as the host says them. Until there are speakers to
 // play it (and a head to hear them), or a cab's walls to come through, the sound is the page's own.
-window.westplayCabSound = (media, say) => {
+window.w0rplayCabSound = (media, say) => {
   // The truck's own speakers: the video's sound split as a car's system splits it (each side's tweeter the
   // highs, its door woofer the rest above the bass, the bass units the bass of both sides), each played from
   // where it sits in the cab, heard from the driver's head (the browser's 3D sound, HRTF). The cab's space

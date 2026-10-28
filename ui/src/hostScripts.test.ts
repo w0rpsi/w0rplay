@@ -20,6 +20,14 @@ const AS_RUN: Record<string, string[]> = {
 }
 
 describe("the players' page scripts", () => {
+  it('connects every player to the rebranded cabin sound bridge', () => {
+    expect(cabSound).toContain('window.w0rplayCabSound')
+    for (const script of [youtube, appleMusic, spotify, youtubeMusic]) {
+      expect(script).toContain('window.w0rplayCabSound')
+      expect(script).not.toContain('window.westplayCabSound')
+    }
+  })
+
   for (const [player, parts] of Object.entries(AS_RUN)) {
     it(`compile for ${player}`, () => {
       expect(() => new Function(parts.join('\n'))).not.toThrow()

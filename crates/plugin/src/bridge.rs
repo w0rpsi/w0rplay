@@ -27,10 +27,7 @@ pub fn get() -> Option<&'static Bridge> {
         static TOLD: std::sync::Once = std::sync::Once::new();
         TOLD.call_once(|| {
             let theirs = mapping.bridge().version.load(Ordering::Relaxed);
-            log!(
-                "bridge: the app's version {theirs} isn't this plugin's {}: not used",
-                w0rplay_shared::BRIDGE_VERSION
-            );
+            log!("bridge: the app's version {theirs} isn't this plugin's {}: not used", w0rplay_shared::BRIDGE_VERSION);
         });
         return None;
     }
@@ -61,6 +58,8 @@ pub fn host_alive() -> bool {
 /// truck is one W0RPLAY supports.
 pub fn screen_on() -> bool {
     host_alive()
-        && crate::screens::on_supported_truck()
+        && (crate::screens::on_supported_truck()
+            || (crate::wolli_tv::visible()
+                && get().is_some_and(|b| b.host.wolli_tv_mirror.load(Ordering::Acquire) == 1)))
         && get().is_some_and(|bridge| bridge.host.screen_enabled.load(Ordering::Acquire) == 1)
 }

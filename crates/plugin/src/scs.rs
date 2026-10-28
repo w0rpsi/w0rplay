@@ -56,6 +56,7 @@ pub const SCS_TELEMETRY_EVENT_FRAME_END: u32 = 2;
 pub const SCS_TELEMETRY_EVENT_PAUSED: u32 = 3;
 pub const SCS_TELEMETRY_EVENT_STARTED: u32 = 4;
 pub const SCS_TELEMETRY_EVENT_CONFIGURATION: u32 = 5;
+pub const SCS_TELEMETRY_EVENT_GAMEPLAY: u32 = 6;
 
 pub const SCS_VALUE_TYPE_BOOL: u32 = 1;
 pub const SCS_VALUE_TYPE_S32: u32 = 2;
@@ -65,6 +66,7 @@ pub const SCS_VALUE_TYPE_FVECTOR: u32 = 7;
 pub const SCS_VALUE_TYPE_FPLACEMENT: u32 = 10;
 pub const SCS_VALUE_TYPE_DPLACEMENT: u32 = 11;
 pub const SCS_VALUE_TYPE_STRING: u32 = 12;
+pub const SCS_VALUE_TYPE_S64: u32 = 13;
 
 pub type EventCallback = unsafe extern "system" fn(event: u32, event_info: *const c_void, context: *mut c_void);
 pub type ChannelCallback =
@@ -206,5 +208,15 @@ impl ConfigurationEvent {
             next = unsafe { next.add(1) };
             Some(attribute)
         })
+    }
+}
+
+#[cfg(test)]
+pub fn named_fixture(name: Option<&std::ffi::CStr>, value_type: u32, bits: u64) -> ScsNamedValue {
+    ScsNamedValue {
+        name: name.map_or(std::ptr::null(), |n| n.as_ptr()),
+        index: 0,
+        _padding: 0,
+        value: ScsValue { value_type, _padding: 0, data: [bits, 0, 0, 0, 0] },
     }
 }

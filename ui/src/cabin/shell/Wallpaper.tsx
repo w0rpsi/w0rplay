@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { useWallpapers } from '../state/looks'
-import { allWallpaperSources, prepareWallpaper } from '../wallpapers'
+import { prepareWallpaper } from '../wallpapers'
 
 /** Must match --motion-duration in shell.css: how long the outgoing wallpaper stays under the incoming one. */
 const TRANSITION_MS = 650
@@ -13,11 +12,11 @@ interface Layer {
 /**
  * The wallpaper behind everything. A change of image crossfades: the incoming layer fades in on top of
  * the outgoing one, which is removed once the fade is over. Every wallpaper is prepared as a screen-sized
- * bitmap up front so the fade never stutters.
+ * bitmap when used, retaining only the two layers of an active crossfade.
  */
 export function Wallpaper({ src }: { src: string }) {
   const [layers, setLayers] = useState<Layer[]>([{ src, key: 0 }])
-  const prepared = usePreparedWallpapers()
+  const prepared = usePreparedWallpapers(layers.map((layer) => layer.src))
 
   // A new image starts a crossfade. Adjusting state while rendering (instead of in an effect) is React's
   // pattern for state that follows a prop: the new layer is there in the very first render with it.
@@ -41,37 +40,44 @@ export function Wallpaper({ src }: { src: string }) {
   )
 }
 
-/** Screen-sized bitmaps of every wallpaper image, by source; filled in as they become ready (each once, the
- * player's own too, as they're added). */
-function usePreparedWallpapers(): Record<string, string> {
-  const wallpapers = useWallpapers()
+/** Prepare only displayed layers; release their bitmaps once the crossfade no longer uses them. */
+function usePreparedWallpapers(sources: string[]): Record<string, string> {
   const [prepared, setPrepared] = useState<Record<string, string>>({})
-  const started = useRef(new Set<string>())
-  const urls = useRef<string[]>([])
-  const alive = useRef(true)
-  const sources = allWallpaperSources(wallpapers)
+  const urls = useRef(new Map<string, string>())
   const key = sources.join('\n')
 
   useEffect(() => {
+    let cancelled = false
+    for (const [source, url] of urls.current) {
+      if (!sources.includes(source)) {
+        URL.revokeObjectURL(url)
+        urls.current.delete(source)
+      }
+    }
+    setPrepared(Object.fromEntries(urls.current))
     for (const source of sources) {
-      if (started.current.has(source)) continue
-      started.current.add(source)
+      if (urls.current.has(source)) continue
       prepareWallpaper(source, window.innerWidth, window.innerHeight)
         .then((url) => {
-          urls.current.push(url)
-          if (alive.current) setPrepared((current) => ({ ...current, [source]: url }))
+          if (cancelled) {
+            URL.revokeObjectURL(url)
+            return
+          }
+          urls.current.set(source, url)
+          setPrepared(Object.fromEntries(urls.current))
         })
         .catch((error: unknown) => console.warn(`cannot prepare wallpaper ${source}`, error))
     }
-    // Keyed by the sources themselves: each is prepared once, whatever came before it.
+    return () => {
+      cancelled = true
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key])
   useEffect(() => {
-    alive.current = true
     const made = urls.current
     return () => {
-      alive.current = false
       made.forEach((url) => URL.revokeObjectURL(url))
+      made.clear()
     }
   }, [])
   return prepared

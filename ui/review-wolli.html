@@ -1,0 +1,19 @@
+<!doctype html><html><head><meta charset="UTF-8"><title>Wolli TV settings review fixture</title></head><body><div id="root"></div><script type="module">
+import React from 'react';
+import {createRoot} from 'react-dom/client';
+import '@fontsource-variable/instrument-sans';
+import '@fontsource-variable/inter';
+import './src/cabin/shell/shell.css';
+import './src/cabin/shell/apple.css';
+import './src/cabin/apps/apps.css';
+import {SettingsApp} from './src/cabin/apps/settings/SettingsApp';
+import {Shell} from './src/cabin/shell/Shell';
+import {useCabin,useLive,connectHost} from './src/cabin/state/store';
+// Local review fixture: mocked native host replies exercise the real settings/message components.
+const listeners = new Set();
+window.chrome = {webview:{addEventListener:(_,fn)=>listeners.add(fn), removeEventListener:(_,fn)=>listeners.delete(fn), postMessage(message){if(message.type==='wolliTvMirror') for(const fn of listeners) fn({data:{type:'settings',truckStrip:'auto',wolliTvMirror:message.enabled}})}}};
+connectHost();
+useLive.setState({gameLanguage:'tr_tr',wolliTvAvailable:new URLSearchParams(location.search).get('tv')==='1'});
+useCabin.setState({appearanceMode:'dark'});
+createRoot(document.getElementById('root')).render(React.createElement(Shell,null,React.createElement("div",{className:"screen app-window"},React.createElement(SettingsApp))));
+</script></body></html>

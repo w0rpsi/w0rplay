@@ -1,3 +1,4 @@
+import { LanguageSelector } from '../LanguageSelector'
 import { useEffect, useState } from 'react'
 import { Button, Checking, Group, Note, Panel, Row, Status, Tick } from '../room/parts'
 import { banner, explain, gameSummary, useGameRunning, useWords } from '../room/room'
@@ -14,6 +15,7 @@ export function Setup(props: PageProps) {
   const { setup, cw, check, checked, uninstall, tutorial } = props
   const screen = useScreen()
   const words = useWords()
+  const tr = words.locale.startsWith('tr')
   const w = cw.setup
   const error = useGameCheck(props)
   const running = useGameRunning()
@@ -28,7 +30,11 @@ export function Setup(props: PageProps) {
     try {
       const res = await chooseAndDeployStreamer()
       if (res && res.count > 0) {
-        setStreamerStatus(`W0rpsiTextureStreamer başarıyla aktarıldı (${res.count} klasör)`)
+        setStreamerStatus(
+          tr
+            ? `W0rpsiTextureStreamer aktarıldı (${res.count} klasör)`
+            : `W0rpsiTextureStreamer deployed (${res.count} folders)`,
+        )
       }
     } catch (e) {
       setStreamerStatus(String(e))
@@ -92,6 +98,7 @@ export function Setup(props: PageProps) {
         )
       }
     >
+      <LanguageSelector state={props.settings} />
       {game && (
         <Group title={w.game} place={4}>
           <Row title={w.folder} detail={game.dir} />
@@ -154,13 +161,22 @@ export function Setup(props: PageProps) {
         </Note>
       )}
       {(installError ?? error) && <Note tone="bad">{installError ?? error}</Note>}
-      <Group title="Kabin Doku Yayıncısı (W0rpsiTextureStreamer)" place={5}>
+      <Group
+        title={tr ? 'Kabin Doku Yayıncısı (W0rpsiTextureStreamer)' : 'Cabin Texture Streamer (W0rpsiTextureStreamer)'}
+        place={5}
+      >
         <Row
-          title="W0rpsiTextureStreamer / GPS & Gösterge Dokuları"
-          detail="Oyun içi kabin ekranları için DDS ve TOBJ dokularını belgeler dizinine otomatik aktarır."
+          title={
+            tr ? 'W0rpsiTextureStreamer / GPS & Gösterge Dokuları' : 'W0rpsiTextureStreamer / GPS & Dashboard Textures'
+          }
+          detail={
+            tr
+              ? 'Oyun içi kabin ekranları için DDS ve TOBJ dokularını belgeler dizinine otomatik aktarır.'
+              : 'Deploys DDS and TOBJ textures for in-game cabin screens to your Documents folder.'
+          }
           accessory={
             <Button glass onClick={handleChooseStreamerDir} busy={streamerBusy}>
-              Dizin Seç ve Aktar
+              {tr ? 'Dizin Seç ve Aktar' : 'Choose Folder and Deploy'}
             </Button>
           }
         />

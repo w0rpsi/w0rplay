@@ -1,0 +1,382 @@
+[
+  {
+    "code": "tr",
+    "playlistCode": "tr",
+    "availableStreamsAtBuild": 158
+  },
+  {
+    "code": "de",
+    "playlistCode": "de",
+    "availableStreamsAtBuild": 255
+  },
+  {
+    "code": "gb",
+    "playlistCode": "uk",
+    "availableStreamsAtBuild": 215
+  },
+  {
+    "code": "fr",
+    "playlistCode": "fr",
+    "availableStreamsAtBuild": 161
+  },
+  {
+    "code": "it",
+    "playlistCode": "it",
+    "availableStreamsAtBuild": 286
+  },
+  {
+    "code": "es",
+    "playlistCode": "es",
+    "availableStreamsAtBuild": 295
+  },
+  {
+    "code": "pt",
+    "playlistCode": "pt",
+    "availableStreamsAtBuild": 45
+  },
+  {
+    "code": "nl",
+    "playlistCode": "nl",
+    "availableStreamsAtBuild": 154
+  },
+  {
+    "code": "be",
+    "playlistCode": "be",
+    "availableStreamsAtBuild": 45
+  },
+  {
+    "code": "at",
+    "playlistCode": "at",
+    "availableStreamsAtBuild": 100
+  },
+  {
+    "code": "ch",
+    "playlistCode": "ch",
+    "availableStreamsAtBuild": 116
+  },
+  {
+    "code": "pl",
+    "playlistCode": "pl",
+    "availableStreamsAtBuild": 67
+  },
+  {
+    "code": "cz",
+    "playlistCode": "cz",
+    "availableStreamsAtBuild": 29
+  },
+  {
+    "code": "sk",
+    "playlistCode": "sk",
+    "availableStreamsAtBuild": 26
+  },
+  {
+    "code": "hu",
+    "playlistCode": "hu",
+    "availableStreamsAtBuild": 59
+  },
+  {
+    "code": "ro",
+    "playlistCode": "ro",
+    "availableStreamsAtBuild": 156
+  },
+  {
+    "code": "bg",
+    "playlistCode": "bg",
+    "availableStreamsAtBuild": 24
+  },
+  {
+    "code": "gr",
+    "playlistCode": "gr",
+    "availableStreamsAtBuild": 53
+  },
+  {
+    "code": "ua",
+    "playlistCode": "ua",
+    "availableStreamsAtBuild": 69
+  },
+  {
+    "code": "rs",
+    "playlistCode": "rs",
+    "availableStreamsAtBuild": 37
+  },
+  {
+    "code": "hr",
+    "playlistCode": "hr",
+    "availableStreamsAtBuild": 16
+  },
+  {
+    "code": "ba",
+    "playlistCode": "ba",
+    "availableStreamsAtBuild": 15
+  },
+  {
+    "code": "al",
+    "playlistCode": "al",
+    "availableStreamsAtBuild": 15
+  },
+  {
+    "code": "mk",
+    "playlistCode": "mk",
+    "availableStreamsAtBuild": 19
+  },
+  {
+    "code": "me",
+    "playlistCode": "me",
+    "availableStreamsAtBuild": 6
+  },
+  {
+    "code": "si",
+    "playlistCode": "si",
+    "availableStreamsAtBuild": 18
+  },
+  {
+    "code": "se",
+    "playlistCode": "se",
+    "availableStreamsAtBuild": 137
+  },
+  {
+    "code": "no",
+    "playlistCode": "no",
+    "availableStreamsAtBuild": 116
+  },
+  {
+    "code": "dk",
+    "playlistCode": "dk",
+    "availableStreamsAtBuild": 149
+  },
+  {
+    "code": "fi",
+    "playlistCode": "fi",
+    "availableStreamsAtBuild": 24
+  },
+  {
+    "code": "is",
+    "playlistCode": "is",
+    "availableStreamsAtBuild": 6
+  },
+  {
+    "code": "ie",
+    "playlistCode": "ie",
+    "availableStreamsAtBuild": 51
+  },
+  {
+    "code": "us",
+    "playlistCode": "us",
+    "availableStreamsAtBuild": 1336
+  },
+  {
+    "code": "ca",
+    "playlistCode": "ca",
+    "availableStreamsAtBuild": 235
+  },
+  {
+    "code": "mx",
+    "playlistCode": "mx",
+    "availableStreamsAtBuild": 143
+  },
+  {
+    "code": "br",
+    "playlistCode": "br",
+    "availableStreamsAtBuild": 299
+  },
+  {
+    "code": "ar",
+    "playlistCode": "ar",
+    "availableStreamsAtBuild": 155
+  },
+  {
+    "code": "cl",
+    "playlistCode": "cl",
+    "availableStreamsAtBuild": 212
+  },
+  {
+    "code": "co",
+    "playlistCode": "co",
+    "availableStreamsAtBuild": 91
+  },
+  {
+    "code": "pe",
+    "playlistCode": "pe",
+    "availableStreamsAtBuild": 146
+  },
+  {
+    "code": "ve",
+    "playlistCode": "ve",
+    "availableStreamsAtBuild": 66
+  },
+  {
+    "code": "uy",
+    "playlistCode": "uy",
+    "availableStreamsAtBuild": 26
+  },
+  {
+    "code": "ec",
+    "playlistCode": "ec",
+    "availableStreamsAtBuild": 74
+  },
+  {
+    "code": "au",
+    "playlistCode": "au",
+    "availableStreamsAtBuild": 72
+  },
+  {
+    "code": "nz",
+    "playlistCode": "nz",
+    "availableStreamsAtBuild": 25
+  },
+  {
+    "code": "jp",
+    "playlistCode": "jp",
+    "availableStreamsAtBuild": 5
+  },
+  {
+    "code": "kr",
+    "playlistCode": "kr",
+    "availableStreamsAtBuild": 46
+  },
+  {
+    "code": "cn",
+    "playlistCode": "cn",
+    "availableStreamsAtBuild": 39
+  },
+  {
+    "code": "tw",
+    "playlistCode": "tw",
+    "availableStreamsAtBuild": 10
+  },
+  {
+    "code": "hk",
+    "playlistCode": "hk",
+    "availableStreamsAtBuild": 9
+  },
+  {
+    "code": "in",
+    "playlistCode": "in",
+    "availableStreamsAtBuild": 749
+  },
+  {
+    "code": "pk",
+    "playlistCode": "pk",
+    "availableStreamsAtBuild": 55
+  },
+  {
+    "code": "bd",
+    "playlistCode": "bd",
+    "availableStreamsAtBuild": 25
+  },
+  {
+    "code": "id",
+    "playlistCode": "id",
+    "availableStreamsAtBuild": 133
+  },
+  {
+    "code": "my",
+    "playlistCode": "my",
+    "availableStreamsAtBuild": 14
+  },
+  {
+    "code": "sg",
+    "playlistCode": "sg",
+    "availableStreamsAtBuild": 6
+  },
+  {
+    "code": "th",
+    "playlistCode": "th",
+    "availableStreamsAtBuild": 60
+  },
+  {
+    "code": "vn",
+    "playlistCode": "vn",
+    "availableStreamsAtBuild": 86
+  },
+  {
+    "code": "ph",
+    "playlistCode": "ph",
+    "availableStreamsAtBuild": 15
+  },
+  {
+    "code": "za",
+    "playlistCode": "za",
+    "availableStreamsAtBuild": 21
+  },
+  {
+    "code": "eg",
+    "playlistCode": "eg",
+    "availableStreamsAtBuild": 16
+  },
+  {
+    "code": "ma",
+    "playlistCode": "ma",
+    "availableStreamsAtBuild": 9
+  },
+  {
+    "code": "dz",
+    "playlistCode": "dz",
+    "availableStreamsAtBuild": 5
+  },
+  {
+    "code": "tn",
+    "playlistCode": "tn",
+    "availableStreamsAtBuild": 4
+  },
+  {
+    "code": "sa",
+    "playlistCode": "sa",
+    "availableStreamsAtBuild": 50
+  },
+  {
+    "code": "ae",
+    "playlistCode": "ae",
+    "availableStreamsAtBuild": 19
+  },
+  {
+    "code": "qa",
+    "playlistCode": "qa",
+    "availableStreamsAtBuild": 9
+  },
+  {
+    "code": "kw",
+    "playlistCode": "kw",
+    "availableStreamsAtBuild": 11
+  },
+  {
+    "code": "il",
+    "playlistCode": "il",
+    "availableStreamsAtBuild": 16
+  },
+  {
+    "code": "jo",
+    "playlistCode": "jo",
+    "availableStreamsAtBuild": 13
+  },
+  {
+    "code": "lb",
+    "playlistCode": "lb",
+    "availableStreamsAtBuild": 25
+  },
+  {
+    "code": "iq",
+    "playlistCode": "iq",
+    "availableStreamsAtBuild": 50
+  },
+  {
+    "code": "az",
+    "playlistCode": "az",
+    "availableStreamsAtBuild": 17
+  },
+  {
+    "code": "ge",
+    "playlistCode": "ge",
+    "availableStreamsAtBuild": 12
+  },
+  {
+    "code": "kz",
+    "playlistCode": "kz",
+    "availableStreamsAtBuild": 40
+  },
+  {
+    "code": "uz",
+    "playlistCode": "uz",
+    "availableStreamsAtBuild": 33
+  }
+]

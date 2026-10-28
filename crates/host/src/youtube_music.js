@@ -1,5 +1,5 @@
-// WestPlay, in YouTube Music's web player (youtube_music.rs): YouTube Music's own page, run hidden under the cab.
-// The YouTube Music app the player sees is WestPlay's own; this answers its questions and plays as it asks,
+// W0RPLAY, in YouTube Music's web player (youtube_music.rs): YouTube Music's own page, run hidden under the cab.
+// The YouTube Music app the player sees is W0RPLAY's own; this answers its questions and plays as it asks,
 // through the page's own player:
 //
 // - Questions (Home, Explore, a page, a search, an album's, playlist's or artist's page, the Library, a song's
@@ -1103,7 +1103,7 @@
 
   // The truck's own speakers (cab_sound.js, loaded first): the player's media element, told the speakers, the
   // head and the camera by the host.
-  const cab = window.westplayCabSound?.(() => media(), post)
+  const cab = window.w0rplayCabSound?.(() => media(), post)
   if (cab) setInterval(() => cab.tick(), 250)
   const CAB = {
     speakers: (data) => cab?.speakers(data.speakers),
@@ -1162,21 +1162,9 @@
       [BUFFERING]: 'buffering',
       [CUED]: 'cued',
     }
-    const QUALITIES = ['tiny', 'small', 'medium', 'large', 'hd720', 'hd1080', 'hd1440', 'hd2160']
-    const keepQuality = () => {
-      try {
-        const levels = (p.getAvailableQualityLevels?.() ?? []).filter((l) => QUALITIES.includes(l))
-        if (!levels.length) return
-        const maxAllowed = 'hd720'
-        const target = levels.find((l) => QUALITIES.indexOf(l) <= QUALITIES.indexOf(maxAllowed)) ?? levels.at(-1)
-        p.setPlaybackQualityRange?.(target, target)
-        p.setPlaybackQuality?.(target)
-      } catch {}
-    }
     p.addEventListener('onStateChange', (now) => {
       step(`yt:${STATES[now] ?? now}`)
       keepVolume()
-      keepQuality()
       if (now === PLAYING || now === BUFFERING || now === PAUSED) between = null
       // Paused by the page itself (its own reasons): as it is.
       if (now === PAUSED && changing === 0) wanted = false

@@ -1,5 +1,5 @@
-// WestPlay, in Apple Music's web player (apple_music.rs): Apple's own page, run hidden under the cab. The Music
-// app the player sees is WestPlay's own; this answers its questions and plays as it asks, through the page's
+// W0RPLAY, in Apple Music's web player (apple_music.rs): Apple's own page, run hidden under the cab. The Music
+// app the player sees is W0RPLAY's own; this answers its questions and plays as it asks, through the page's
 // own player (MusicKit, which the page runs and configures itself):
 //
 // - Questions (Home, New, Radio, the Library, a search, an album's, playlist's or artist's page) are asked of
@@ -1089,7 +1089,7 @@
       const [type, key] = split(id)
       await api('/v1/me/library', { [`ids[${type}]`]: key }, 'POST')
     },
-    // Signing out: MusicKit forgets the account (its token, kept in the page's storage), then WestPlay
+    // Signing out: MusicKit forgets the account (its token, kept in the page's storage), then W0RPLAY
     // forgets Apple's cookies and loads the page again.
     signOut: async () => {
       const music = await ready
@@ -1199,7 +1199,7 @@
 
   // The truck's own speakers (cab_sound.js, loaded first): Apple's audio element (not the muted videos of
   // its moving covers), told the speakers, the head and the camera by the host, kept on the element there is.
-  const cab = window.westplayCabSound?.(() => {
+  const cab = window.w0rplayCabSound?.(() => {
     const audio = [...document.querySelectorAll('audio')]
     return audio.find((each) => !each.paused) ?? audio.at(-1) ?? null
   }, post)

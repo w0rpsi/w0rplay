@@ -31,3 +31,24 @@ orjinalkod/
 release-w0rplay/
 dist_package/
 *.zip
+
+# Local interface verification captures
+/.impeccable/review/
+
+# Local 3D toolchain and personal game reference assets
+/rebased-w0rplay/tools/vendor/
+
+# Local continuation workspace and generated investigation/build artifacts
+/rebased-w0rplay/
+/diagnostics/
+/tools/vendor/
+/.impeccable/
+/tools/port-original.ps1
+*.exe
+*.dll
+*.scs
+*.blend1
+__pycache__/
+*.pyc
+/mods/w0rplay-wolli-curtains/source/
+/mods/*/build-report.json

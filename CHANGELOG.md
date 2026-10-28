@@ -3,6 +3,25 @@
 What changed in each release of W0RPLAY. The newest release's notes are what the app shows when it offers the
 update.
 
+## 2.1.15 (2026-10-29)
+
+- Add a flag-based Live TV selector for 76 countries, localized country names and country/channel search.
+- Remember the selected country, load catalogues on demand, cache at most three, and bundle fallback playlists and MIT-licensed SVG flags.
+- Bound dead-stream recovery and paginate long channel lists.
+
+## 2.1.14 (2026-10-29)
+
+- Default desktop and CarPlay to English, with a shared persisted English/Turkish setting.
+- Add the choice to first-run setup and both settings surfaces, independent of the game locale.
+- Translate remaining TV and texture-streamer setup controls.
+
+## 2.1.5–2.1.13 continuation
+
+- Rebase W0RPLAY features and the dark companion panel on the original WestPlay implementation.
+- Add Wolli TV mirroring, dispatch, cabin controls and an optional full-glass curtain compatibility controller.
+- Improve media lifetime/memory handling and register local map virtual hosts before navigation.
+- Keep local diagnostics, executable backups and third-party game/mod reference assets outside Git.
+
 ## 2.1.4 (2026-10-26)
 - ETS2 tam ekrandayken kabin ekranının donması ve Alt-Tab yapınca düzelmesi çözüldü: Önceki sürümde pencere (20000, 20000) koordinatlarına taşınmıştı ancak bu koordinatlar Windows sanal ekran sınırları dışında kaldığı için oyun tam ekran/kenarlıksız moda geçtiğinde DWM (DirectFlip / Independent Flip) bu pencerenin çizimini tamamen durduruyordu. Host penceresi görünmez ve tıklama geçirgen (WS_EX_TRANSPARENT | WS_EX_LAYERED, alpha 1, HWND_BOTTOM) olarak ana ekranın (0, 0) koordinatlarına alındı. WinRT görsel ağacı CreateDesktopWindowTarget ile doğrudan masaüstü pencere hedefine bağlandı, böylece oyun odaktayken DWM kare akışını asla askıya almıyor.
 - Tıklamalarda oyunun donması, DirectInput odak kaybı ve FPS çökmesi giderildi: Varsayılan pencere prosedürü WM_MOUSEACTIVATE mesajına MA_ACTIVATE döndüğü için fare tıklandığında Windows pasif durumdaki host penceresini öne getirmeye çalışıyor, bu da ETS2'nin fare odağını düşürerek anlık donmaya yol açıyordu. Özel w0rplay_offscreen_host sınıfı yazılarak WM_MOUSEACTIVATE mesajına doğrudan MA_NOACTIVATE (-3) ve WM_NCHITTEST mesajına HTTRANSPARENT dönüldü; oyun içi tıklamalarda odak kesinlikle bozulmuyor.

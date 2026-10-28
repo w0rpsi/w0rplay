@@ -1,6 +1,7 @@
 import type { CSSProperties } from 'react'
 import { flushSync } from 'react-dom'
 import { create } from 'zustand'
+import { isInHost } from '../../shared/host'
 import type { AppId } from './apps'
 import type { Route } from './navigation'
 
@@ -120,7 +121,9 @@ export function whenTransitionEnds(next: () => void): void {
  * it begins from the current screen.
  */
 export function animateNavigation(launch: Launch | null, update: () => void): void {
-  if (typeof document.startViewTransition !== 'function') {
+  // Native snapshots can stall the embedded compositor while ETS2 owns the foreground.
+  // Both the dashboard and TV use that compositor, so apply host navigation directly.
+  if (isInHost() || typeof document.startViewTransition !== 'function') {
     update()
     return
   }
@@ -173,7 +176,11 @@ function intoSidebar(root: HTMLElement): void {
  */
 export function animateAppearance(update: () => void): void {
   const root = document.documentElement
-  if (typeof document.startViewTransition !== 'function' || (running && root.dataset.transition !== 'appearance')) {
+  if (
+    isInHost() ||
+    typeof document.startViewTransition !== 'function' ||
+    (running && root.dataset.transition !== 'appearance')
+  ) {
     update()
     return
   }

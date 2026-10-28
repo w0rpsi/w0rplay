@@ -25,7 +25,22 @@ pub fn bridge_name() -> String {
     format!("Local\\W0RPLAY.Bridge.v{BRIDGE_VERSION}")
 }
 pub const BRIDGE_MAGIC: u32 = u32::from_le_bytes(*b"WPB7");
-pub const BRIDGE_VERSION: u32 = 21;
+/// Optional Wolli sleeper-TV compatibility texture: unique dimensions and opaque pixel signature.
+pub const CURTAIN_WIDTH: u32 = 1028;
+pub const CURTAIN_HEIGHT: u32 = 8;
+pub const CURTAIN_MAGIC: [u8; 8] = [0x57, 0x30, 0x43, 255, 0x55, 0x52, 0x54, 255];
+/// Private whole-pose atlas for the optional local Wolli side-curtain compatibility patch.
+pub const CURTAIN_POSE_COUNT: u32 = 16;
+pub const CURTAIN_POSE_COLUMNS: u32 = 4;
+pub const CURTAIN_POSE_TILE: u32 = 256;
+pub const CURTAIN_POSE_WIDTH: u32 = 1032;
+pub const CURTAIN_POSE_HEIGHT: u32 = 1032;
+pub const CURTAIN_POSE_MAGIC: [u8; 8] = [0x57, 0x30, 0x50, 255, 0x4f, 0x53, 0x45, 255];
+
+pub const WOLLI_TV_WIDTH: u32 = SCREEN_WIDTH + 1;
+pub const WOLLI_TV_MAGIC: [u8; 8] = [0x57, 0x30, 0x54, 255, 0x56, 0x30, 0x31, 255];
+
+pub const BRIDGE_VERSION: u32 = 24;
 
 /// Size of the app's frames, and the base size of the screen textures in the mod (`w0rplay_setup::game_mod`
 /// builds them from these).
@@ -78,21 +93,24 @@ pub fn screen_layout_for_texture(width: u32, height: u32) -> Option<usize> {
 /// The trucks W0RPLAY shows in on a layout that trucks it doesn't support share (SDK model ids, without the
 /// `vehicle.` prefix): most trucks' interiors name the stock GPS screen (`generic`, `ui/gps.sii`), and of
 /// those only the Scania S and R are W0RPLAY's. The other layouts are their own trucks' scripts.
-const SHARED_LAYOUT_TRUCKS: &[(&str, &[&str])] = &[("generic", &[
-    "scania.s_2016",
-    "scania.r_2016",
-    "kenworth.w900",
-    "kenworth.t680",
-    "peterbilt.389",
-    "peterbilt.579",
-    "international.lonestar",
-    "international.lt",
-    "international.9900i",
-    "mack.anthem",
-    "mack.pinnacle",
-    "westernstar.49x",
-    "volvo.vnl",
-])];
+const SHARED_LAYOUT_TRUCKS: &[(&str, &[&str])] = &[(
+    "generic",
+    &[
+        "scania.s_2016",
+        "scania.r_2016",
+        "kenworth.w900",
+        "kenworth.t680",
+        "peterbilt.389",
+        "peterbilt.579",
+        "international.lonestar",
+        "international.lt",
+        "international.9900i",
+        "mack.anthem",
+        "mack.pinnacle",
+        "westernstar.49x",
+        "volvo.vnl",
+    ],
+)];
 
 /// Whether W0RPLAY shows on the layout at `index` (in [`screen_layouts`]) in the truck `truck_id` (the SDK's
 /// id, with or without its `vehicle.` prefix): every other truck keeps the game's own screen.
@@ -147,13 +165,20 @@ pub struct PluginBlock {
     /// Layout of the most recently drawn W0RPLAY screen: its index in [`screen_layouts`] plus one, or 0
     /// when none has been drawn yet.
     pub screen_layout: AtomicU32,
-    /// Game frame (`heartbeat` value) in which a W0RPLAY screen was last drawn.
+    /// Game frame (`heartbeat` value) in which the dashboard screen was last drawn.
+    /// The host uses this for interior/exterior audio; mirrors must not update it.
     pub screen_frame: AtomicU64,
+    /// A positively identified Wolli TV was drawn in this truck configuration.
+    pub wolli_tv_available: AtomicU32,
+    pub curtain_available: AtomicU32,
+    /// Applied reveal width, 0=open, CURTAIN_WIDTH=closed.
+    pub curtain_progress: AtomicU32,
     pub telemetry: SeqLock<Telemetry>,
     /// The truck the player is driving (empty strings when there is none).
     pub truck: SeqLock<TruckInfo>,
     /// The player's job (`active` false when there is none).
     pub job: SeqLock<JobInfo>,
+    pub gameplay: SeqLock<GameplayBatch>,
     /// Mouse input for the W0RPLAY screen while the player holds the interaction key.
     pub pointer: PointerBlock,
     /// Under TruckersMP: the players around the player, from TruckersMP's SDK (the plugin's `truckersmp`).
@@ -161,6 +186,35 @@ pub struct PluginBlock {
     /// Each [`Keybind`]'s presses so far: the plugin counts them, the app acts on each new one.
     pub keybind_presses: [AtomicU32; KEYBIND_COUNT],
 }
+
+/// SDK delivery/cancellation/fine events, retained across page reloads (last 32).
+#[repr(C)]
+#[derive(Clone, Copy, Debug, Default)]
+pub struct GameplayBatch {
+    pub session: u64,
+    pub sequence: u64,
+    pub events: [GameplayEvent; 32],
+}
+#[repr(C)]
+#[derive(Clone, Copy, Debug, Default)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
+#[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
+pub struct GameplayEvent {
+    pub sequence: u64,
+    pub job: JobInfo,
+    /// 1 delivered, 2 cancelled, 3 fine.
+    pub kind: u32,
+    pub game_time: u32,
+    pub amount: i64,
+    pub damage: f32,
+    pub distance_km: f32,
+    pub xp: i32,
+    pub autopark: bool,
+    /// Available fields: amount=1, damage=2, distance=4, xp=8, autopark=16.
+    pub provided: u32,
+}
+// SAFETY: only bytewise-valid scalar fields and a fixed array of them.
+unsafe impl Plain for GameplayBatch {}
 
 /// The most of TruckersMP's players around the player the bridge carries (its streaming range holds far fewer).
 pub const NEARBY_MAX: usize = 128;
@@ -276,6 +330,9 @@ pub struct HostBlock {
     pub frame_seq: AtomicU64,
     /// 1 while W0RPLAY should cover the truck's screen; 0 shows the game's original screen.
     pub screen_enabled: AtomicU32,
+    /// Explicit opt-in to copy CarPlay to the Wolli sleeper TV. Zero means TV off.
+    pub wolli_tv_mirror: AtomicU32,
+    pub curtain_closed: AtomicU32,
     /// The key the player holds to use the screen (a Windows virtual-key code, from the app's settings);
     /// 0 until the app has set it, meaning [`DEFAULT_INTERACTION_KEY`].
     pub interaction_key: AtomicU32,
@@ -484,6 +541,7 @@ pub struct Telemetry {
     pub parking_brake: bool,
     pub low_beam: bool,
     pub high_beam: bool,
+    pub beacon: bool,
     pub left_blinker: bool,
     pub right_blinker: bool,
     pub paused: bool,

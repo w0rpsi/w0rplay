@@ -7,7 +7,7 @@ import { pickVariant, prepareWallpaper } from '../../wallpapers'
 import { type Appearance, resolveAppearance } from '../../state/appearance'
 import { useLook, useScreenProfile } from '../../state/hooks'
 import { DASHBOARD_WIDGETS, type DashboardWidget, useCabin, useLive } from '../../state/store'
-import { useText } from '../../state/text'
+import { useLanguage, useText } from '../../state/text'
 import { TEXT_SIZES } from '../../state/textSize'
 import {
   AppearanceGlyph,
@@ -46,6 +46,8 @@ export function SettingsApp() {
 
 function PageContent({ page }: { page: SettingsPage }) {
   switch (page) {
+    case 'language':
+      return <LanguagePage />
     case 'list':
       return <ListPage />
     case 'appearance':
@@ -74,12 +76,28 @@ function useWantedAppearance(): Appearance {
 }
 
 function ListPage() {
+  const language = useLanguage()
   const text = useText()
   const open = useSettings((state) => state.open)
   const mode = useCabin((state) => state.appearanceMode)
   const wanted = useWantedAppearance()
+  const tvAvailable = useLive((state) => state.wolliTvAvailable)
+  const mirror = useCabin((state) => state.wolliTvMirror)
+  const setMirror = useCabin((state) => state.setWolliTvMirror)
   return (
     <Page title={text.apps.settings} list>
+      <Group>
+        <NavRow
+          label={language === 'tr' ? 'Dil' : 'Language'}
+          value={language === 'tr' ? 'Türkçe' : 'English'}
+          onOpen={() => open('language')}
+        />
+      </Group>
+      {tvAvailable && (
+        <Group footer={text.settings.wolliTvMirrorFooter}>
+          <SwitchRow label={text.settings.wolliTvMirror} on={mirror} onToggle={setMirror} />
+        </Group>
+      )}
       <Group>
         <NavRow
           tile="var(--apple-blue)"
@@ -116,6 +134,22 @@ function ListPage() {
           label={text.settings.sound}
           onOpen={() => open('sound')}
         />
+      </Group>
+    </Page>
+  )
+}
+
+function LanguagePage() {
+  const language = useLanguage()
+  const choose = (next: 'en' | 'tr') => {
+    if (!isInHost()) useLive.setState({ uiLanguage: next })
+    else postToHost({ type: 'language', language: next })
+  }
+  return (
+    <Page title={language === 'tr' ? 'Dil' : 'Language'}>
+      <Group footer={language === 'tr' ? 'Uygulama ve CarPlay için ortak dil.' : 'Shared by the app and CarPlay.'}>
+        <CheckRow label="English" on={language === 'en'} onPick={() => choose('en')} />
+        <CheckRow label="Türkçe" on={language === 'tr'} onPick={() => choose('tr')} />
       </Group>
     </Page>
   )

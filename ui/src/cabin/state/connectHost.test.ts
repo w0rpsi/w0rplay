@@ -180,4 +180,112 @@ describe('connectHost', () => {
     expect(useKeyboard.getState().physical).toBe('paused')
     disconnect()
   })
+  it('offers mirroring only for a detected TV and waits for the host to confirm the saved switch', async () => {
+    const webview = fakeWebView()
+    vi.stubGlobal('window', { chrome: { webview: webview.bridge } })
+    const { connectHost, useCabin, useLive } = await import('./store')
+    const disconnect = connectHost(() => 0)
+    expect(useLive.getState().wolliTvAvailable).toBe(false)
+    expect(useCabin.getState().wolliTvMirror).toBe(false)
+    webview.send({ type: 'wolliTv', available: true })
+    expect(useLive.getState().wolliTvAvailable).toBe(true)
+    useCabin.getState().setWolliTvMirror(true)
+    expect(webview.posted.at(-1)).toEqual({ type: 'wolliTvMirror', enabled: true })
+    expect(useCabin.getState().wolliTvMirror).toBe(false)
+    webview.send({ type: 'settings', truckStrip: 'auto', wolliTvMirror: true })
+    expect(useCabin.getState().wolliTvMirror).toBe(true)
+    useCabin.getState().setWolliTvMirror(false)
+    expect(webview.posted.at(-1)).toEqual({ type: 'wolliTvMirror', enabled: false })
+    webview.send({ type: 'settings', truckStrip: 'auto', wolliTvMirror: false })
+    expect(useCabin.getState().wolliTvMirror).toBe(false)
+    webview.send({ type: 'wolliTv', available: false })
+    expect(useLive.getState().wolliTvAvailable).toBe(false)
+    disconnect()
+  })
+  it('records only SDK outcomes and applies cabin bindings only after a host reply', async () => {
+    const webview = fakeWebView()
+    vi.stubGlobal('window', { chrome: { webview: webview.bridge } })
+    const { connectHost } = await import('./store')
+    const { useDispatch } = await import('../apps/truck/dispatch')
+    const { useCabinControl } = await import('../apps/truck/cabinControl')
+    useDispatch.getState().clear()
+    const disconnect = connectHost(() => 0)
+    const job = {
+      active: true,
+      cargoLoaded: true,
+      special: false,
+      cargo: 'Glass',
+      cargoMass: 1000,
+      sourceCity: 'Berlin',
+      sourceCompany: 'A',
+      destinationCity: 'Prague',
+      destinationCompany: 'B',
+      deliveryTime: 1200,
+      plannedDistanceKm: 350,
+      income: 5000,
+    }
+    webview.send({ type: 'job', data: job })
+    webview.send({ type: 'job', data: { ...job, active: false } })
+    expect(useDispatch.getState().history).toHaveLength(0)
+    const event = {
+      sequence: 1,
+      kind: 1,
+      gameTime: 1100,
+      job,
+      amount: 5000,
+      damage: 0,
+      distanceKm: 350,
+      xp: 100,
+      autopark: false,
+      provided: 31,
+    }
+    webview.send({ type: 'gameplay', session: 'test', events: [event] })
+    webview.send({ type: 'gameplay', session: 'test', events: [event] })
+    expect(useDispatch.getState().history).toHaveLength(1)
+    useCabinControl.getState().bind('light', 79)
+    expect(webview.posted.at(-1)).toEqual({ type: 'cabinBinding', control: 'light', key: 79 })
+    expect(useCabinControl.getState().bindings.lightKey).toBeNull()
+    webview.send({ type: 'settings', truckStrip: 'auto', cabinBindings: { lightKey: 79, curtainKey: null } })
+    expect(useCabinControl.getState().bindings.lightKey).toBe(79)
+    useCabinControl.getState().press('light')
+    const id = useCabinControl.getState().pending!.id
+    webview.send({ type: 'cabinAction', id, state: 'sent' })
+    expect(useCabinControl.getState().pending?.state).toBe('sent')
+    disconnect()
+  })
+  it('waits for actual curtain state and forgets availability when the game exits', async () => {
+    const webview = fakeWebView()
+    vi.stubGlobal('window', { chrome: { webview: webview.bridge } })
+    const { connectHost } = await import('./store')
+    const { useCabinControl } = await import('../apps/truck/cabinControl')
+    const disconnect = connectHost(() => 0)
+    webview.send({ type: 'curtain', available: true, progress: 0 })
+    useCabinControl.getState().setCurtain(true)
+    expect(webview.posted.at(-1)).toEqual({ type: 'curtain', closed: true })
+    expect(useCabinControl.getState().curtain.progress).toBe(0)
+    webview.send({ type: 'curtain', available: true, progress: 1 })
+    expect(useCabinControl.getState().curtain.progress).toBe(1)
+    webview.send({ type: 'game', running: false })
+    expect(useCabinControl.getState().curtain).toEqual({ available: false, progress: 0 })
+    disconnect()
+  })
+})
+
+describe('shared UI language', () => {
+  it('defaults to English, accepts persisted choices and ignores game locale changes', async () => {
+    const webview = fakeWebView()
+    vi.stubGlobal('window', { chrome: { webview: webview.bridge } })
+    const { connectHost, useLive } = await import('./store')
+    const stop = connectHost(() => 0)
+    expect(useLive.getState().uiLanguage).toBe('en')
+    webview.send({ type: 'mapBlock', hvt: false, language: 'tr_tr' })
+    expect(useLive.getState().uiLanguage).toBe('en')
+    webview.send({ type: 'settings', truckStrip: 'auto', language: 'tr' })
+    expect(useLive.getState().uiLanguage).toBe('tr')
+    webview.send({ type: 'mapBlock', hvt: false, language: 'en_us' })
+    expect(useLive.getState().uiLanguage).toBe('tr')
+    webview.send({ type: 'settings', truckStrip: 'auto', language: 'en' })
+    expect(useLive.getState().uiLanguage).toBe('en')
+    stop()
+  })
 })

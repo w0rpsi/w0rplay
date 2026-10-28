@@ -170,7 +170,7 @@
       inset: 0 !important; width: 100vw !important; height: 100vh !important; left: 0 !important; top: 0 !important;
       object-fit: contain !important; }
     /* Filling a box of another shape (the Dashboard's Now Playing): cropped, no bars. */
-    html.westplay-crop #movie_player video.html5-main-video { object-fit: cover !important; }
+    html.w0rplay-crop #movie_player video.html5-main-video { object-fit: cover !important; }
   `
   const addStyle = () => {
     const parent = document.head || document.documentElement
@@ -543,7 +543,7 @@
   }
 
   // Whether this page is signed in, and the picture for the player, told once it's loaded: nothing else of
-  // the account (WestPlay neither asks nor keeps).
+  // the account (W0RPLAY neither asks nor keeps).
   let accountTold = false
   const tellAccount = async () => {
     accountTold = true
@@ -606,14 +606,12 @@
   const keepQuality = (p, video) => {
     const levels = (p.getAvailableQualityLevels?.() ?? []).filter((level) => QUALITIES.includes(level))
     if (!levels.length) return
-    // Cap in-cabin YouTube stream to max 720p to preserve GPU bandwidth for the game and prevent stuttering
-    const maxAllowed = 'hd720'
-    const chosen = quality === 'auto' ? maxAllowed : quality
-    const most = Math.min(QUALITIES.indexOf(chosen), QUALITIES.indexOf(maxAllowed))
-    const target = (levels.find((level) => QUALITIES.indexOf(level) <= most) ?? levels.at(-1))
+    const most = QUALITIES.indexOf(quality)
+    const target = quality === 'auto' ? 'auto' : (levels.find((level) => QUALITIES.indexOf(level) <= most) ?? levels.at(-1))
     const key = `${video}:${target}`
-    if (qualityKept === key) return
+    if (qualityKept === key || (target === 'auto' && !held)) return
     qualityKept = key
+    held = target !== 'auto'
     p.setPlaybackQualityRange(target, target)
   }
 
@@ -634,7 +632,7 @@
       .filter(Boolean)
 
   // The truck's own speakers (cab_sound.js), playing the video's sound.
-  const cab = window.westplayCabSound(() => document.querySelector('#movie_player video.html5-main-video'), (message) =>
+  const cab = window.w0rplayCabSound(() => document.querySelector('#movie_player video.html5-main-video'), (message) =>
     window.chrome?.webview?.postMessage(message),
   )
 
@@ -648,7 +646,7 @@
       return
     }
     if (command.action === 'crop') {
-      document.documentElement.classList.toggle('westplay-crop', command.on)
+      document.documentElement.classList.toggle('w0rplay-crop', command.on)
       return
     }
     if (command.action === 'captions') {

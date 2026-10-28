@@ -1,6 +1,6 @@
 # Third-party notices
 
-W0RPLAY uses or follows the work below. Each notice is reproduced as its licence requires.
+WestPlay uses or follows the work below. Each notice is reproduced as its licence requires.
 
 ## ts-map
 
@@ -224,3 +224,10 @@ under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
 CONDITIONS OF ANY KIND, either express or implied. See the License for the
 specific language governing permissions and limitations under the License.
 ```
+
+
+## Country flags (flag-icons)
+
+MIT licensed flag SVGs from https://github.com/lipis/flag-icons.
+Full license: ui/tv/FLAG-ICONS-LICENSE.txt in the distribution.
+TV country catalogues: https://github.com/iptv-org/iptv (Unlicense).

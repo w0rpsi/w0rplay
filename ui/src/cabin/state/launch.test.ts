@@ -1,11 +1,39 @@
-import { describe, expect, it } from 'vitest'
-import { carriesLaunch, type Launch, launchFor, transitionKind } from './launch'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import {
+  afterRunningTransition,
+  animateAppearance,
+  animateNavigation,
+  carriesLaunch,
+  type Launch,
+  launchFor,
+  transitionKind,
+  whenTransitionEnds,
+} from './launch'
 import type { Route } from './navigation'
 
 const home: Route = { kind: 'home' }
 const dashboard: Route = { kind: 'dashboard' }
 const music: Route = { kind: 'app', app: 'music' }
 const maps: Route = { kind: 'app', app: 'maps' }
+
+describe('embedded compositor navigation', () => {
+  afterEach(() => vi.unstubAllGlobals())
+
+  it('applies navigation and appearance without acquiring native snapshots or blocking follow-up input', () => {
+    const snapshot = vi.fn(() => {
+      throw new Error('Embedded snapshots must not start')
+    })
+    vi.stubGlobal('window', { chrome: { webview: {} } })
+    vi.stubGlobal('document', { startViewTransition: snapshot, documentElement: { dataset: {} } })
+    const applied: string[] = []
+    animateNavigation({ app: 'music', origin: 'home', direction: 'open' }, () => applied.push('music'))
+    animateAppearance(() => applied.push('appearance'))
+    afterRunningTransition(() => applied.push('next input'))
+    whenTransitionEnds(() => applied.push('ready'))
+    expect(applied).toEqual(['music', 'appearance', 'next input', 'ready'])
+    expect(snapshot).not.toHaveBeenCalled()
+  })
+})
 
 describe('launchFor', () => {
   it('opens an app out of the icon that was clicked', () => {

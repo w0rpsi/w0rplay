@@ -6,8 +6,10 @@
 
 mod bridge;
 mod camera;
+mod curtain;
 mod d3d;
 mod frame;
+mod gameplay;
 mod hooks;
 mod input;
 mod keybinds;
@@ -20,6 +22,7 @@ mod scs;
 mod telemetry;
 mod truckersmp;
 mod typing;
+mod wolli_tv;
 
 use std::ffi::{CStr, CString};
 

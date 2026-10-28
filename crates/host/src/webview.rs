@@ -26,103 +26,39 @@ use webview2_com::{
     ProcessFailedEventHandler, WebMessageReceivedEventHandler,
 };
 use windows::System::DispatcherQueueController;
-use windows::UI::Composition::Desktop::DesktopWindowTarget;
 use windows::UI::Composition::{Compositor, ContainerVisual, Visual};
-use windows::Win32::Foundation::{COLORREF, E_POINTER, HWND, LPARAM, LRESULT, POINT, RECT, WPARAM};
+use windows::Win32::Foundation::{E_POINTER, HWND, POINT, RECT};
 use windows::Win32::System::LibraryLoader::GetModuleHandleW;
-use windows::Win32::System::WinRT::Composition::ICompositorDesktopInterop;
 use windows::Win32::System::WinRT::{
     CreateDispatcherQueueController, DQTAT_COM_STA, DQTYPE_THREAD_CURRENT, DispatcherQueueOptions,
 };
 use windows::Win32::UI::Input::KeyboardAndMouse::EnableWindow;
-use windows::Win32::UI::WindowsAndMessaging::{
-    CreateWindowExW, DefWindowProcW, DestroyWindow, HWND_BOTTOM, LWA_ALPHA, RegisterClassExW,
-    SWP_NOACTIVATE, SWP_NOMOVE, SWP_NOSIZE, SW_SHOWNA, SetLayeredWindowAttributes, SetWindowPos,
-    ShowWindow, WNDCLASSEXW, WS_EX_LAYERED, WS_EX_NOACTIVATE, WS_EX_TOOLWINDOW, WS_EX_TRANSPARENT,
-    WS_POPUP, WS_VISIBLE,
-};
+use windows::Win32::UI::WindowsAndMessaging::{CreateWindowExW, DestroyWindow, WINDOW_EX_STYLE, WS_OVERLAPPEDWINDOW};
 use windows::core::{HSTRING, Interface, PCWSTR, PWSTR, w};
 use windows_numerics::Vector2;
 
 pub type Error = Box<dyn std::error::Error>;
 
-static REGISTER_HOST_CLASS: std::sync::Once = std::sync::Once::new();
-const HOST_CLASS_NAME: PCWSTR = w!("w0rplay_offscreen_host");
-
-unsafe extern "system" fn offscreen_wnd_proc(
-    hwnd: HWND,
-    msg: u32,
-    wparam: WPARAM,
-    lparam: LPARAM,
-) -> LRESULT {
-    const WM_MOUSEACTIVATE: u32 = 0x0021;
-    const MA_NOACTIVATE: isize = 3;
-    const WM_NCHITTEST: u32 = 0x0084;
-    const HTTRANSPARENT: isize = -1;
-    match msg {
-        WM_MOUSEACTIVATE => LRESULT(MA_NOACTIVATE),
-        WM_NCHITTEST => LRESULT(HTTRANSPARENT),
-        // SAFETY: passes unhandled messages to default Windows window procedure.
-        _ => unsafe { DefWindowProcW(hwnd, msg, wparam, lparam) },
-    }
-}
-
-fn register_host_class() {
-    REGISTER_HOST_CLASS.call_once(|| {
-        // SAFETY: registers a unique Win32 window class for this process.
-        unsafe {
-            let class = WNDCLASSEXW {
-                cbSize: size_of::<WNDCLASSEXW>() as u32,
-                style: Default::default(),
-                lpfnWndProc: Some(offscreen_wnd_proc),
-                cbClsExtra: 0,
-                cbWndExtra: 0,
-                hInstance: GetModuleHandleW(None).unwrap_or_default().into(),
-                hIcon: Default::default(),
-                hCursor: Default::default(),
-                hbrBackground: Default::default(),
-                lpszMenuName: PCWSTR::null(),
-                lpszClassName: HOST_CLASS_NAME,
-                hIconSm: Default::default(),
-            };
-            let _ = RegisterClassExW(&class);
-        }
-    });
-}
-
-pub(crate) fn create_offscreen_host_window(width: u32, height: u32) -> Result<HWND, Error> {
-    register_host_class();
-    // SAFETY: creates a transparent, non-activating layered popup window on monitor 0.
+/// Reduces an inactive browser's memory target without stopping scripts or audio.
+/// Restore the normal target before the view is used again.
+pub fn set_browser_inactive(controller: &ICoreWebView2Controller, inactive: bool) -> windows::core::Result<()> {
+    use webview2_com::Microsoft::Web::WebView2::Win32::{
+        COREWEBVIEW2_MEMORY_USAGE_TARGET_LEVEL_LOW, COREWEBVIEW2_MEMORY_USAGE_TARGET_LEVEL_NORMAL, ICoreWebView2_19,
+    };
+    // SAFETY: called on the controller's owning UI thread; the controller and its WebView are alive.
     unsafe {
-        let host = CreateWindowExW(
-            WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE | WS_EX_LAYERED | WS_EX_TRANSPARENT,
-            HOST_CLASS_NAME,
-            w!("w0rplay-offscreen-host"),
-            WS_POPUP | WS_VISIBLE,
-            0,
-            0,
-            width as i32,
-            height as i32,
-            None,
-            None,
-            Some(GetModuleHandleW(None)?.into()),
-            None,
-        )?;
-        let _ = SetLayeredWindowAttributes(host, COLORREF(0), 1, LWA_ALPHA);
-        let _ = SetWindowPos(
-            host,
-            Some(HWND_BOTTOM),
-            0,
-            0,
-            width as i32,
-            height as i32,
-            SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE,
-        );
-        let _ = ShowWindow(host, SW_SHOWNA);
-        let _ = EnableWindow(host, false);
-        Ok(host)
+        let view: ICoreWebView2_19 = controller.CoreWebView2()?.cast()?;
+        view.SetMemoryUsageTargetLevel(if inactive {
+            COREWEBVIEW2_MEMORY_USAGE_TARGET_LEVEL_LOW
+        } else {
+            COREWEBVIEW2_MEMORY_USAGE_TARGET_LEVEL_NORMAL
+        })
     }
 }
+
+/// Where the WebViews' hidden host windows are (both coordinates): beyond any monitor's (Windows parks
+/// minimized windows there too).
+const OFF_THE_DESKTOP: i32 = -32000;
 
 /// The browser argument naming the GPU every WebView2 of this process draws on (graphics.rs), set before
 /// the first is made: one browser shared by several WebViews takes one set of arguments.
@@ -182,8 +118,6 @@ pub struct Stage {
     /// frame where the page is taller ([`Stage::set_page_height`]).
     page: ContainerVisual,
     page_size: PageSize,
-    host: HWND,
-    _target: DesktopWindowTarget,
 }
 
 /// The page's size (width, height), as the stage has it now: the players keep their videos within it.
@@ -206,12 +140,6 @@ impl Stage {
         let page = compositor.CreateContainerVisual()?;
         page.SetSize(Vector2 { X: width as f32, Y: height as f32 })?;
         root.Children()?.InsertAtTop(&page)?;
-        let host = create_offscreen_host_window(width, height)?;
-        // SAFETY: host window and compositor are live on this thread with an active dispatcher queue.
-        let target = unsafe {
-            compositor.cast::<ICompositorDesktopInterop>()?.CreateDesktopWindowTarget(host, false)?
-        };
-        target.SetRoot(&root)?;
         Ok(Self {
             _dispatcher: dispatcher,
             compositor,
@@ -219,8 +147,6 @@ impl Stage {
             frame: (width, height),
             page,
             page_size: Rc::new(Cell::new((width, height))),
-            host,
-            _target: target,
         })
     }
 
@@ -258,15 +184,6 @@ impl Stage {
     }
 }
 
-impl Drop for Stage {
-    fn drop(&mut self) {
-        // SAFETY: destroys the stage's own offscreen host window when the stage is dropped.
-        unsafe {
-            let _ = DestroyWindow(self.host);
-        }
-    }
-}
-
 pub struct OffscreenWebView {
     /// The WebView2 environment it was made in: another WebView on its profile is made from it (a second
     /// environment on a profile in use is refused).
@@ -289,7 +206,36 @@ impl OffscreenWebView {
         let root = stage.compositor.CreateContainerVisual()?;
         root.SetSize(Vector2 { X: width as f32, Y: height as f32 })?;
 
-        let host = create_offscreen_host_window(width, height)?;
+        // WebView2 needs a parent HWND for focus and DPI; it is never shown. Far off the desktop: WebView2 puts a
+        // window of its own over the host's client area and shows it, drawing nothing but taking the clicks
+        // there; at (0, 0) it covered the top left of the player's main screen, where the desktop's icons are
+        // (players' reports, reproduced by the owner 2026-10-21). The page's size and scale don't follow the
+        // host's place (`SetRasterizationScale` below, its input sent by W0RPLAY), and its rendering isn't
+        // paused for a window out of sight (`create_environment`: no occlusion).
+        // SAFETY: a window of the system's own `STATIC` class, its strings static; no parent or menu.
+        let host = unsafe {
+            CreateWindowExW(
+                WINDOW_EX_STYLE(0),
+                w!("STATIC"),
+                w!("w0rplay-offscreen-host"),
+                WS_OVERLAPPEDWINDOW,
+                OFF_THE_DESKTOP,
+                OFF_THE_DESKTOP,
+                width as i32,
+                height as i32,
+                None,
+                None,
+                Some(GetModuleHandleW(None)?.into()),
+                None,
+            )?
+        };
+        // The page takes input only from W0RPLAY (`send_mouse`). Disabled, the window and the WebView's own
+        // windows inside it get none of the real mouse: otherwise, once a click makes the WebView capture the
+        // mouse, the player's real clicks and the real cursor (wherever the game parked it) reach the page too.
+        // SAFETY: `host` was just created on this thread.
+        unsafe {
+            let _ = EnableWindow(host, false);
+        }
 
         let environment = create_environment(user_data)?;
         // SAFETY: WebView2 writes a CoTaskMem string into `version`, read before it's dropped.
@@ -491,6 +437,10 @@ impl OffscreenWebView {
         self.root.SetIsVisible(shown)
     }
 
+    pub fn set_inactive(&self, inactive: bool) -> windows::core::Result<()> {
+        set_browser_inactive(&self.controller, inactive)
+    }
+
     /// Mutes the WebView's sound where it leaves for the PC's speakers (its page still makes it: what the
     /// page measures of it is as it was).
     #[cfg(test)]
@@ -538,6 +488,30 @@ impl OffscreenWebView {
             }),
             Box::new(|error| error),
         )?;
+        Ok(())
+    }
+
+    /// Diagnostic snapshot directly from the browser, independent of Windows Graphics Capture.
+    /// The callback is asynchronous: a stalled browser cannot block the host's message pump.
+    pub fn capture_png_async(&self, path: &Path, done: impl FnOnce(i32) + 'static) -> Result<(), Error> {
+        use webview2_com::CapturePreviewCompletedHandler;
+        use webview2_com::Microsoft::Web::WebView2::Win32::COREWEBVIEW2_CAPTURE_PREVIEW_IMAGE_FORMAT_PNG;
+        use windows::Win32::System::Com::{STGM_CREATE, STGM_WRITE};
+        use windows::Win32::UI::Shell::SHCreateStreamOnFileEx;
+        // SAFETY: the owned diagnostic path lives through stream creation.
+        let stream = unsafe {
+            SHCreateStreamOnFileEx(&HSTRING::from(path.as_os_str()), (STGM_CREATE | STGM_WRITE).0, 0, true, None)?
+        };
+        let kept = stream.clone();
+        let handler = CapturePreviewCompletedHandler::create(Box::new(move |error| {
+            done(error.map_or_else(|error| error.code().0, |_| 0));
+            drop(kept);
+            Ok(())
+        }));
+        // SAFETY: WebView2 retains its handler; the handler retains the writable PNG stream.
+        unsafe {
+            self.webview.CapturePreview(COREWEBVIEW2_CAPTURE_PREVIEW_IMAGE_FORMAT_PNG, &stream, &handler)?;
+        }
         Ok(())
     }
 
@@ -714,23 +688,32 @@ fn process_failure(kind: COREWEBVIEW2_PROCESS_FAILED_KIND) -> String {
     name.to_owned()
 }
 
-fn create_environment(user_data: &Path) -> Result<ICoreWebView2Environment, Error> {
-    let options = CoreWebView2EnvironmentOptions::default();
+pub fn browser_arguments(gpu: Option<&str>) -> String {
     // Chromium throttles or stops rendering for hidden or occluded windows; ours is never shown.
-    let mut arguments = "--disable-features=CalculateNativeWinOcclusion,IntensiveWakeUpThrottling \
-                         --disable-background-timer-throttling \
+    let mut arguments = "--disable-features=CalculateNativeWinOcclusion --disable-background-timer-throttling \
                          --disable-renderer-backgrounding --disable-backgrounding-occluded-windows \
-                         --disable-background-media-suspend \
-                         --autoplay-policy=no-user-gesture-required --js-flags=--max-old-space-size=128 \
-                         --disable-renderer-accessibility --enable-gpu-rasterization --enable-zero-copy \
-                         --disable-gpu-watchdog"
+                         --autoplay-policy=no-user-gesture-required"
         .to_string();
-    if let Some(gpu) = GPU_ARGUMENT.lock().unwrap_or_else(|e| e.into_inner()).as_deref() {
+    // The GPU it draws on (graphics.rs).
+    if let Some(gpu) = gpu {
         arguments = format!("{arguments} {gpu}");
     }
+    arguments
+}
+
+fn create_environment(user_data: &Path) -> Result<ICoreWebView2Environment, Error> {
+    use windows::Win32::Globalization::{
+        GetUserDefaultUILanguage, LCIDToLocaleName, LOCALE_ALLOW_NEUTRAL_NAMES, MAX_LOCALE_NAME,
+    };
+    let options = CoreWebView2EnvironmentOptions::default();
+    let arguments = browser_arguments(GPU_ARGUMENT.lock().unwrap_or_else(|e| e.into_inner()).as_deref());
     // SAFETY: the options object is ours and alive; the arguments are a plain string.
     unsafe {
         options.set_additional_browser_arguments(arguments);
+        // Match Wry's environment options so both UI threads join one browser process.
+        let mut language = [0; MAX_LOCALE_NAME as usize];
+        LCIDToLocaleName(GetUserDefaultUILanguage() as u32, Some(&mut language), LOCALE_ALLOW_NEUTRAL_NAMES);
+        options.set_language(String::from_utf16_lossy(&language));
     }
     let options: ICoreWebView2EnvironmentOptions = options.into();
     let user_data = HSTRING::from(user_data.as_os_str());
@@ -776,7 +759,574 @@ fn create_composition_controller(
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    #[ignore = "loads Netflix to check the installed WebView2 DRM APIs"]
+    fn netflix_drm_capabilities() {
+        use windows::Win32::System::Com::{COINIT_APARTMENTTHREADED, CoInitializeEx};
+        // SAFETY: this isolated native test owns its STA thread and pumps its messages.
+        unsafe { CoInitializeEx(None, COINIT_APARTMENTTHREADED).ok().unwrap() };
+        let gpu = crate::gpu::Gpu::new(None).unwrap();
+        super::draw_on(Some(crate::graphics::browser_argument(gpu.luid)));
+        let stage = super::Stage::new(1280, 720).unwrap();
+        let profile = std::path::PathBuf::from(std::env::var_os("LOCALAPPDATA").unwrap())
+            .join("app.w0rplay.rebased")
+            .join("webview2");
+        let view = super::OffscreenWebView::new(&stage, 1280, 720, &profile).unwrap();
+        stage.add(&view, true).unwrap();
+        view.add_startup_script(r#"(async () => {
+          if (location.hostname !== 'www.netflix.com') return;
+          const report = {type:'netflixDrmProbe', secure:isSecureContext, eme:typeof navigator.requestMediaKeySystemAccess==='function', systems:[]};
+          const config = [{initDataTypes:['cenc'],audioCapabilities:[{contentType:'audio/mp4; codecs="mp4a.40.2"'}],videoCapabilities:[{contentType:'video/mp4; codecs="avc1.640028"'}],sessionTypes:['temporary']}];
+          for (const keySystem of ['com.widevine.alpha','com.microsoft.playready.recommendation','com.microsoft.playready']) {
+            try { await navigator.requestMediaKeySystemAccess(keySystem,config); report.systems.push({keySystem,supported:true}); }
+            catch(error) { report.systems.push({keySystem,supported:false,error:error.name}); }
+          }
+          window.chrome.webview.postMessage(report);
+        })();"#).unwrap();
+        view.navigate("https://www.netflix.com/").unwrap();
+        let until = std::time::Instant::now() + std::time::Duration::from_secs(40);
+        while std::time::Instant::now() < until {
+            crate::pump_messages();
+            for message in view.take_page_messages() {
+                if let Ok(report) = serde_json::from_str::<serde_json::Value>(&message)
+                    && report["type"] == "netflixDrmProbe"
+                {
+                    println!("Netflix DRM capability report (no account data): {report}");
+                    return;
+                }
+            }
+            std::thread::sleep(std::time::Duration::from_millis(10));
+        }
+        panic!("Netflix DRM probe timed out; no capability conclusion can be made");
+    }
     use super::*;
+
+    /// A rendering-only benchmark misses the transition that caused the in-game freeze:
+    /// entering interaction sends MOVE even when the physical mouse has not moved.
+    #[test]
+    #[ignore = "requires a Windows desktop, WebView2 and Graphics Capture"]
+    fn capture_keeps_running_after_entering_mouse_interaction() {
+        use std::sync::{
+            Arc,
+            atomic::{AtomicU64, Ordering},
+        };
+        use webview2_com::Microsoft::Web::WebView2::Win32::*;
+        use windows::Foundation::TypedEventHandler;
+        use windows::Graphics::Capture::{Direct3D11CaptureFramePool, GraphicsCaptureItem};
+        use windows::Graphics::DirectX::DirectXPixelFormat;
+        use windows::Win32::System::Com::{COINIT_APARTMENTTHREADED, CoInitializeEx};
+        // SAFETY: initializes COM once on this test's thread before making the WebView.
+        unsafe { CoInitializeEx(None, COINIT_APARTMENTTHREADED).ok().unwrap() };
+        let stage = Stage::new(640, 360).unwrap();
+        let profile = std::env::temp_dir().join(format!("w0rplay-input-capture-{}", std::process::id()));
+        let view = OffscreenWebView::new(&stage, 640, 360, &profile).unwrap();
+        stage.add(&view, true).unwrap();
+        view.navigate_to_string("<!doctype html><style>body{background:#123}div{width:60px;height:60px;background:white;animation:move 1s linear infinite alternate}@keyframes move{to{transform:translateX(400px)}}</style><div></div><script>window.clicks=0;addEventListener('click',()=>window.clicks++)</script>").unwrap();
+        let gpu = crate::gpu::Gpu::new(None).unwrap();
+        let item = GraphicsCaptureItem::CreateFromVisual(&stage.visual().unwrap()).unwrap();
+        let pool = Direct3D11CaptureFramePool::CreateFreeThreaded(
+            &gpu.winrt_device,
+            DirectXPixelFormat::B8G8R8A8UIntNormalized,
+            3,
+            item.Size().unwrap(),
+        )
+        .unwrap();
+        let received = Arc::new(AtomicU64::new(0));
+        let counted = received.clone();
+        pool.FrameArrived(&TypedEventHandler::<Direct3D11CaptureFramePool, windows::core::IInspectable>::new(
+            move |pool, _| {
+                if let Some(pool) = pool.as_ref() {
+                    if let Ok(frame) = pool.TryGetNextFrame() {
+                        counted.fetch_add(1, Ordering::Relaxed);
+                        drop(frame);
+                    }
+                }
+                Ok(())
+            },
+        ))
+        .unwrap();
+        let session = pool.CreateCaptureSession(&item).unwrap();
+        let _ = session.SetIsCursorCaptureEnabled(false);
+        let _ = session.SetIsBorderRequired(false);
+        session.StartCapture().unwrap();
+        let pump = |duration: Duration| {
+            let until = Instant::now() + duration;
+            while Instant::now() < until {
+                crate::pump_messages();
+                std::thread::sleep(Duration::from_millis(1));
+            }
+        };
+        pump(Duration::from_secs(2));
+        println!(
+            "initial frames: {}; page: {}",
+            received.load(Ordering::Relaxed),
+            view.evaluate(
+                "JSON.stringify({ready:document.readyState, animations:document.getAnimations().map(a=>a.playState)})"
+            )
+            .unwrap()
+        );
+        let baseline_start = received.load(Ordering::Relaxed);
+        pump(Duration::from_secs(1));
+        println!("capture before interaction: {} frames in 1 s", received.load(Ordering::Relaxed) - baseline_start);
+        let before = received.load(Ordering::Relaxed);
+        let started = Instant::now();
+        for _ in 0..30 {
+            view.send_mouse(
+                COREWEBVIEW2_MOUSE_EVENT_KIND_MOVE,
+                COREWEBVIEW2_MOUSE_EVENT_VIRTUAL_KEYS_NONE,
+                0,
+                POINT { x: 320, y: 180 },
+            )
+            .unwrap();
+            pump(Duration::from_millis(50));
+            view.send_mouse(
+                COREWEBVIEW2_MOUSE_EVENT_KIND_LEFT_BUTTON_DOWN,
+                COREWEBVIEW2_MOUSE_EVENT_VIRTUAL_KEYS_LEFT_BUTTON,
+                0,
+                POINT { x: 320, y: 180 },
+            )
+            .unwrap();
+            view.send_mouse(
+                COREWEBVIEW2_MOUSE_EVENT_KIND_LEFT_BUTTON_UP,
+                COREWEBVIEW2_MOUSE_EVENT_VIRTUAL_KEYS_NONE,
+                0,
+                POINT { x: 320, y: 180 },
+            )
+            .unwrap();
+            pump(Duration::from_millis(10));
+            view.send_mouse(
+                COREWEBVIEW2_MOUSE_EVENT_KIND_LEAVE,
+                COREWEBVIEW2_MOUSE_EVENT_VIRTUAL_KEYS_NONE,
+                0,
+                POINT::default(),
+            )
+            .unwrap();
+            pump(Duration::from_millis(50));
+        }
+        let fps = (received.load(Ordering::Relaxed) - before) as f64 / started.elapsed().as_secs_f64();
+        println!("capture during 30 interaction entries/exits: {fps:.1} fps");
+        let clicks = view.evaluate("window.clicks").unwrap();
+        println!("clicks processed: {clicks}");
+        session.Close().unwrap();
+        pool.Close().unwrap();
+        assert!(fps >= 20.0, "capture stalled after mouse entry: {fps:.1} fps");
+        assert_eq!(clicks, "30", "native mouse clicks stopped reaching the page");
+    }
+
+    /// A rendering-only benchmark misses the transition that caused the in-game freeze:
+    /// entering interaction sends MOVE even when the physical mouse has not moved.
+    #[test]
+    #[ignore = "requires a Windows desktop, WebView2 and Graphics Capture"]
+    fn real_cabin_capture_during_mouse_interaction() {
+        use std::sync::{
+            Arc,
+            atomic::{AtomicU64, Ordering},
+        };
+        use webview2_com::Microsoft::Web::WebView2::Win32::*;
+        use windows::Foundation::TypedEventHandler;
+        use windows::Graphics::Capture::{Direct3D11CaptureFramePool, GraphicsCaptureItem};
+        use windows::Graphics::DirectX::DirectXPixelFormat;
+        use windows::Win32::System::Com::{COINIT_APARTMENTTHREADED, CoInitializeEx};
+        // SAFETY: initializes COM once on this test's thread before making the WebView.
+        unsafe { CoInitializeEx(None, COINIT_APARTMENTTHREADED).ok().unwrap() };
+        let stage = Stage::new(1280, 720).unwrap();
+        let profile = std::env::temp_dir().join(format!("w0rplay-input-capture-{}", std::process::id()));
+        let view = OffscreenWebView::new(&stage, 1280, 720, &profile).unwrap();
+        stage.add(&view, true).unwrap();
+        let ui = std::env::var_os("WESTPLAY_UI").expect("WESTPLAY_UI must point to ui/dist");
+        view.map_folder("w0rplay.cabin", Path::new(&ui)).unwrap();
+        view.add_startup_script(
+            r#"window.clicks=0;window.__raf=0;window.__ticks=0;
+            function frame(){window.__raf++;requestAnimationFrame(frame)}requestAnimationFrame(frame);
+            setInterval(()=>window.__ticks++,250);
+            addEventListener('click',e=>{window.clicks++;e.stopImmediatePropagation();e.preventDefault()},true);"#,
+        )
+        .unwrap();
+        view.navigate("https://w0rplay.cabin/cabin.html").unwrap();
+        let gpu = crate::gpu::Gpu::new(None).unwrap();
+        let item = GraphicsCaptureItem::CreateFromVisual(&stage.visual().unwrap()).unwrap();
+        let pool = Direct3D11CaptureFramePool::CreateFreeThreaded(
+            &gpu.winrt_device,
+            DirectXPixelFormat::B8G8R8A8UIntNormalized,
+            3,
+            item.Size().unwrap(),
+        )
+        .unwrap();
+        let received = Arc::new(AtomicU64::new(0));
+        let counted = received.clone();
+        pool.FrameArrived(&TypedEventHandler::<Direct3D11CaptureFramePool, windows::core::IInspectable>::new(
+            move |pool, _| {
+                if let Some(pool) = pool.as_ref() {
+                    if let Ok(frame) = pool.TryGetNextFrame() {
+                        counted.fetch_add(1, Ordering::Relaxed);
+                        drop(frame);
+                    }
+                }
+                Ok(())
+            },
+        ))
+        .unwrap();
+        let session = pool.CreateCaptureSession(&item).unwrap();
+        let _ = session.SetIsCursorCaptureEnabled(false);
+        let _ = session.SetIsBorderRequired(false);
+        session.StartCapture().unwrap();
+        let pump = |duration: Duration| {
+            let until = Instant::now() + duration;
+            while Instant::now() < until {
+                crate::pump_messages();
+                std::thread::sleep(Duration::from_millis(1));
+            }
+        };
+        pump(Duration::from_secs(3));
+        view.post_json(
+            r#"{"type":"truck","data":{"brandId":"daf","brand":"DAF","id":"vehicle.daf.2021","name":"XG+"}}"#,
+        )
+        .unwrap();
+        view.post_json(r#"{"type":"screen","layout":"daf-2021"}"#).unwrap();
+        let mut telemetry = w0rplay_shared::Telemetry::default();
+        telemetry.electric_enabled = true;
+        telemetry.engine_enabled = true;
+        view.post_json(&serde_json::json!({"type":"telemetry","data":telemetry}).to_string()).unwrap();
+        pump(Duration::from_secs(7));
+        println!(
+            "initial frames: {}; page: {}",
+            received.load(Ordering::Relaxed),
+            view.evaluate(
+                "JSON.stringify({ready:document.readyState, animations:document.getAnimations().map(a=>a.playState)})"
+            )
+            .unwrap()
+        );
+        let baseline_start = received.load(Ordering::Relaxed);
+        pump(Duration::from_secs(1));
+        println!("capture before interaction: {} frames in 1 s", received.load(Ordering::Relaxed) - baseline_start);
+        let before = received.load(Ordering::Relaxed);
+        let started = Instant::now();
+        for _ in 0..30 {
+            view.send_mouse(
+                COREWEBVIEW2_MOUSE_EVENT_KIND_MOVE,
+                COREWEBVIEW2_MOUSE_EVENT_VIRTUAL_KEYS_NONE,
+                0,
+                POINT { x: 320, y: 180 },
+            )
+            .unwrap();
+            pump(Duration::from_millis(50));
+            view.send_mouse(
+                COREWEBVIEW2_MOUSE_EVENT_KIND_LEFT_BUTTON_DOWN,
+                COREWEBVIEW2_MOUSE_EVENT_VIRTUAL_KEYS_LEFT_BUTTON,
+                0,
+                POINT { x: 320, y: 180 },
+            )
+            .unwrap();
+            view.send_mouse(
+                COREWEBVIEW2_MOUSE_EVENT_KIND_LEFT_BUTTON_UP,
+                COREWEBVIEW2_MOUSE_EVENT_VIRTUAL_KEYS_NONE,
+                0,
+                POINT { x: 320, y: 180 },
+            )
+            .unwrap();
+            pump(Duration::from_millis(10));
+            view.send_mouse(
+                COREWEBVIEW2_MOUSE_EVENT_KIND_LEAVE,
+                COREWEBVIEW2_MOUSE_EVENT_VIRTUAL_KEYS_NONE,
+                0,
+                POINT::default(),
+            )
+            .unwrap();
+            pump(Duration::from_millis(50));
+        }
+        let fps = (received.load(Ordering::Relaxed) - before) as f64 / started.elapsed().as_secs_f64();
+        println!("capture during 30 interaction entries/exits: {fps:.1} fps");
+        let clicks = view.evaluate("window.clicks").unwrap();
+        println!("clicks processed: {clicks}");
+        session.Close().unwrap();
+        pool.Close().unwrap();
+        println!("real cabin render state: {}", view.evaluate("({raf:window.__raf,ticks:window.__ticks,visibility:document.visibilityState,hidden:document.hidden,focused:document.hasFocus(),cursor:!!document.querySelector('.cursor'),shell:!!document.querySelector('.shell')})").unwrap());
+        assert!(fps >= 15.0, "capture stalled after mouse entry: {fps:.1} fps");
+        assert_eq!(clicks, "30", "native mouse clicks stopped reaching the page");
+    }
+
+    /// A rendering-only benchmark misses the transition that caused the in-game freeze:
+    /// entering interaction sends MOVE even when the physical mouse has not moved.
+    #[test]
+    #[ignore = "requires a Windows desktop, WebView2 and Graphics Capture"]
+    fn real_cabin_with_shared_texture_consumer() {
+        use std::sync::{
+            Arc,
+            atomic::{AtomicU64, Ordering},
+        };
+        use webview2_com::Microsoft::Web::WebView2::Win32::*;
+        use windows::Foundation::TypedEventHandler;
+        use windows::Graphics::Capture::{Direct3D11CaptureFramePool, GraphicsCaptureItem};
+        use windows::Graphics::DirectX::DirectXPixelFormat;
+        use windows::Win32::System::Com::{COINIT_APARTMENTTHREADED, CoInitializeEx};
+        // SAFETY: initializes COM once on this test's thread before making the WebView.
+        unsafe { CoInitializeEx(None, COINIT_APARTMENTTHREADED).ok().unwrap() };
+        let gpu = crate::gpu::Gpu::new(None).unwrap();
+        draw_on(Some(crate::graphics::browser_argument(gpu.luid)));
+        println!("capture adapter: {}", gpu.adapter_name);
+        let stage = Stage::new(1280, 720).unwrap();
+        let profile = std::env::temp_dir().join(format!("w0rplay-input-capture-{}", std::process::id()));
+        let view = OffscreenWebView::new(&stage, 1280, 720, &profile).unwrap();
+        stage.add(&view, true).unwrap();
+        let ui = std::env::var_os("WESTPLAY_UI").expect("WESTPLAY_UI must point to ui/dist");
+        view.map_folder("w0rplay.cabin", Path::new(&ui)).unwrap();
+        view.add_startup_script(
+            r#"window.clicks=0;window.__raf=0;window.__ticks=0;
+            function frame(){window.__raf++;requestAnimationFrame(frame)}requestAnimationFrame(frame);
+            setInterval(()=>window.__ticks++,250);
+            addEventListener('click',e=>{window.clicks++;e.stopImmediatePropagation();e.preventDefault()},true);"#,
+        )
+        .unwrap();
+        view.navigate("https://w0rplay.cabin/cabin.html").unwrap();
+
+        let item = GraphicsCaptureItem::CreateFromVisual(&stage.visual().unwrap()).unwrap();
+        let pool = Direct3D11CaptureFramePool::CreateFreeThreaded(
+            &gpu.winrt_device,
+            DirectXPixelFormat::B8G8R8A8UIntNormalized,
+            3,
+            item.Size().unwrap(),
+        )
+        .unwrap();
+        let generation = 0xe000_0000 | std::process::id();
+        let shared = crate::gpu::SharedFrame::new(&gpu, 1280, 720, generation).unwrap();
+        let consumer = crate::gpu::Gpu::new(Some(gpu.luid)).unwrap();
+        // SAFETY: independent test devices/resources, no real host bridge or game state is written.
+        let (read_texture, read_mutex, local) = unsafe {
+            use windows::Win32::Graphics::Direct3D11::*;
+            use windows::Win32::Graphics::Dxgi::*;
+            let device: ID3D11Device1 = consumer.device.cast().unwrap();
+            let read_texture: ID3D11Texture2D = device
+                .OpenSharedResourceByName(
+                    &HSTRING::from(w0rplay_shared::frame_texture_name(generation)),
+                    (DXGI_SHARED_RESOURCE_READ | DXGI_SHARED_RESOURCE_WRITE).0,
+                )
+                .unwrap();
+            let read_mutex: IDXGIKeyedMutex = read_texture.cast().unwrap();
+            let mut desc = D3D11_TEXTURE2D_DESC::default();
+            read_texture.GetDesc(&mut desc);
+            desc.MiscFlags = 0;
+            let mut local = None;
+            consumer.device.CreateTexture2D(&desc, None, Some(&mut local)).unwrap();
+            (read_texture, read_mutex, local.unwrap())
+        };
+        let published = std::cell::Cell::new(0u64);
+        let consumed = std::cell::Cell::new(0u64);
+        let mailbox = Arc::new(std::sync::Mutex::new(None));
+        let waiting = mailbox.clone();
+        let received = Arc::new(AtomicU64::new(0));
+        let counted = received.clone();
+        pool.FrameArrived(&TypedEventHandler::<Direct3D11CaptureFramePool, windows::core::IInspectable>::new(
+            move |pool, _| {
+                if let Some(pool) = pool.as_ref() {
+                    if let Ok(frame) = pool.TryGetNextFrame() {
+                        counted.fetch_add(1, Ordering::Relaxed);
+                        *waiting.lock().unwrap() = Some(frame);
+                    }
+                }
+                Ok(())
+            },
+        ))
+        .unwrap();
+        let session = pool.CreateCaptureSession(&item).unwrap();
+        let _ = session.SetIsCursorCaptureEnabled(false);
+        let _ = session.SetIsBorderRequired(false);
+        session.StartCapture().unwrap();
+        let pump = |duration: Duration| {
+            let until = Instant::now() + duration;
+            while Instant::now() < until {
+                crate::pump_messages();
+                let frame = mailbox.lock().unwrap().take();
+                if let Some(frame) = frame {
+                    // SAFETY: captured surface is retained for the duration of its publish.
+                    unsafe {
+                        use windows::Win32::System::WinRT::Direct3D11::IDirect3DDxgiInterfaceAccess;
+                        let texture: windows::Win32::Graphics::Direct3D11::ID3D11Texture2D = frame
+                            .Surface()
+                            .unwrap()
+                            .cast::<IDirect3DDxgiInterfaceAccess>()
+                            .unwrap()
+                            .GetInterface()
+                            .unwrap();
+                        if crate::capture::publish(&gpu.context, &texture, &shared) == crate::gpu::Lock::Held {
+                            published.set(published.get() + 1);
+                        }
+                    }
+                }
+                // SAFETY: one independent consumer on its own immediate context; zero-timeout lock.
+                unsafe {
+                    let hr = (windows::core::Interface::vtable(&read_mutex).AcquireSync)(
+                        read_mutex.as_raw(),
+                        w0rplay_shared::FRAME_KEY,
+                        0,
+                    );
+                    if hr.0 == 0 {
+                        consumer.context.CopyResource(&local, &read_texture);
+                        read_mutex.ReleaseSync(w0rplay_shared::FRAME_KEY).unwrap();
+                        consumed.set(consumed.get() + 1);
+                    }
+                }
+                std::thread::sleep(Duration::from_millis(1));
+            }
+        };
+        pump(Duration::from_secs(3));
+        view.post_json(
+            r#"{"type":"truck","data":{"brandId":"daf","brand":"DAF","id":"vehicle.daf.2021","name":"XG+"}}"#,
+        )
+        .unwrap();
+        view.post_json(r#"{"type":"screen","layout":"daf-2021"}"#).unwrap();
+        let mut telemetry = w0rplay_shared::Telemetry::default();
+        telemetry.electric_enabled = true;
+        telemetry.engine_enabled = true;
+        view.post_json(&serde_json::json!({"type":"telemetry","data":telemetry}).to_string()).unwrap();
+        pump(Duration::from_secs(7));
+        println!(
+            "initial frames: {}; page: {}",
+            received.load(Ordering::Relaxed),
+            view.evaluate(
+                "JSON.stringify({ready:document.readyState, animations:document.getAnimations().map(a=>a.playState)})"
+            )
+            .unwrap()
+        );
+        let baseline_start = received.load(Ordering::Relaxed);
+        pump(Duration::from_secs(1));
+        println!("capture before interaction: {} frames in 1 s", received.load(Ordering::Relaxed) - baseline_start);
+        let before = received.load(Ordering::Relaxed);
+        let started = Instant::now();
+        for _ in 0..30 {
+            view.send_mouse(
+                COREWEBVIEW2_MOUSE_EVENT_KIND_MOVE,
+                COREWEBVIEW2_MOUSE_EVENT_VIRTUAL_KEYS_NONE,
+                0,
+                POINT { x: 320, y: 180 },
+            )
+            .unwrap();
+            pump(Duration::from_millis(50));
+            view.send_mouse(
+                COREWEBVIEW2_MOUSE_EVENT_KIND_LEFT_BUTTON_DOWN,
+                COREWEBVIEW2_MOUSE_EVENT_VIRTUAL_KEYS_LEFT_BUTTON,
+                0,
+                POINT { x: 320, y: 180 },
+            )
+            .unwrap();
+            view.send_mouse(
+                COREWEBVIEW2_MOUSE_EVENT_KIND_LEFT_BUTTON_UP,
+                COREWEBVIEW2_MOUSE_EVENT_VIRTUAL_KEYS_NONE,
+                0,
+                POINT { x: 320, y: 180 },
+            )
+            .unwrap();
+            pump(Duration::from_millis(10));
+            view.send_mouse(
+                COREWEBVIEW2_MOUSE_EVENT_KIND_LEAVE,
+                COREWEBVIEW2_MOUSE_EVENT_VIRTUAL_KEYS_NONE,
+                0,
+                POINT::default(),
+            )
+            .unwrap();
+            pump(Duration::from_millis(50));
+        }
+        let fps = (received.load(Ordering::Relaxed) - before) as f64 / started.elapsed().as_secs_f64();
+        println!("capture during 30 interaction entries/exits: {fps:.1} fps");
+        println!("published {}, consumer copies {}", published.get(), consumed.get());
+        println!("browser adapter: {}",view.evaluate("(() => {const gl=document.createElement('canvas').getContext('webgl'); const x=gl.getExtension('WEBGL_debug_renderer_info'); return gl.getParameter(x.UNMASKED_RENDERER_WEBGL)})()").unwrap());
+        let clicks = view.evaluate("window.clicks").unwrap();
+        println!("clicks processed: {clicks}");
+        session.Close().unwrap();
+        pool.Close().unwrap();
+        println!("real cabin render state: {}", view.evaluate("({raf:window.__raf,ticks:window.__ticks,visibility:document.visibilityState,hidden:document.hidden,focused:document.hasFocus(),cursor:!!document.querySelector('.cursor'),shell:!!document.querySelector('.shell')})").unwrap());
+        assert!(fps >= 15.0, "capture stalled after mouse entry: {fps:.1} fps");
+        assert_eq!(clicks, "30", "native mouse clicks stopped reaching the page");
+    }
+
+    /// A rendering-only benchmark misses the transition that caused the in-game freeze:
+    /// entering interaction sends MOVE even when the physical mouse has not moved.
+    #[test]
+    #[ignore = "requires a Windows desktop, WebView2 and Graphics Capture"]
+    fn production_capture_keeps_publishing_after_entering_mouse_interaction() {
+        use std::sync::{Arc, atomic::Ordering};
+        use webview2_com::Microsoft::Web::WebView2::Win32::*;
+        use windows::Win32::System::Com::{COINIT_APARTMENTTHREADED, CoInitializeEx};
+        // SAFETY: initializes COM once on this test's thread before making the WebView.
+        unsafe { CoInitializeEx(None, COINIT_APARTMENTTHREADED).ok().unwrap() };
+        let stage = Stage::new(640, 360).unwrap();
+        let profile = std::env::temp_dir().join(format!("w0rplay-input-capture-{}", std::process::id()));
+        let view = OffscreenWebView::new(&stage, 640, 360, &profile).unwrap();
+        stage.add(&view, true).unwrap();
+        view.navigate_to_string("<!doctype html><style>body{background:#123}div{width:60px;height:60px;background:white;animation:move 1s linear infinite alternate}@keyframes move{to{transform:translateX(400px)}}</style><div></div><script>window.clicks=0;addEventListener('click',()=>window.clicks++)</script>").unwrap();
+        let gpu = crate::gpu::Gpu::new(None).unwrap();
+        let bridge = Arc::new(w0rplay_shared::BridgeMapping::open().unwrap());
+        let shared =
+            Arc::new(crate::gpu::SharedFrame::new(&gpu, 640, 360, std::process::id().wrapping_mul(31)).unwrap());
+        let capture = crate::capture::Capture::start(&gpu, &stage.visual().unwrap(), shared, bridge).unwrap();
+        let received = capture.frames.clone();
+        let pump = |duration: Duration| {
+            let until = Instant::now() + duration;
+            while Instant::now() < until {
+                crate::pump_messages();
+                capture.flush();
+                std::thread::sleep(Duration::from_millis(1));
+            }
+        };
+        pump(Duration::from_secs(2));
+        println!(
+            "initial frames: {}; page: {}",
+            received.load(Ordering::Relaxed),
+            view.evaluate(
+                "JSON.stringify({ready:document.readyState, animations:document.getAnimations().map(a=>a.playState)})"
+            )
+            .unwrap()
+        );
+        let baseline_start = received.load(Ordering::Relaxed);
+        pump(Duration::from_secs(1));
+        println!("capture before interaction: {} frames in 1 s", received.load(Ordering::Relaxed) - baseline_start);
+        let before = received.load(Ordering::Relaxed);
+        let started = Instant::now();
+        for _ in 0..30 {
+            view.send_mouse(
+                COREWEBVIEW2_MOUSE_EVENT_KIND_MOVE,
+                COREWEBVIEW2_MOUSE_EVENT_VIRTUAL_KEYS_NONE,
+                0,
+                POINT { x: 320, y: 180 },
+            )
+            .unwrap();
+            pump(Duration::from_millis(50));
+            view.send_mouse(
+                COREWEBVIEW2_MOUSE_EVENT_KIND_LEFT_BUTTON_DOWN,
+                COREWEBVIEW2_MOUSE_EVENT_VIRTUAL_KEYS_LEFT_BUTTON,
+                0,
+                POINT { x: 320, y: 180 },
+            )
+            .unwrap();
+            view.send_mouse(
+                COREWEBVIEW2_MOUSE_EVENT_KIND_LEFT_BUTTON_UP,
+                COREWEBVIEW2_MOUSE_EVENT_VIRTUAL_KEYS_NONE,
+                0,
+                POINT { x: 320, y: 180 },
+            )
+            .unwrap();
+            pump(Duration::from_millis(10));
+            view.send_mouse(
+                COREWEBVIEW2_MOUSE_EVENT_KIND_LEAVE,
+                COREWEBVIEW2_MOUSE_EVENT_VIRTUAL_KEYS_NONE,
+                0,
+                POINT::default(),
+            )
+            .unwrap();
+            pump(Duration::from_millis(50));
+        }
+        let fps = (received.load(Ordering::Relaxed) - before) as f64 / started.elapsed().as_secs_f64();
+        println!("capture during 30 interaction entries/exits: {fps:.1} fps");
+        let clicks = view.evaluate("window.clicks").unwrap();
+        println!("clicks processed: {clicks}");
+        println!(
+            "WGC received: {}, published: {}, retries: {}",
+            capture.received.load(Ordering::Relaxed),
+            capture.frames.load(Ordering::Relaxed),
+            capture.dropped.load(Ordering::Relaxed)
+        );
+        assert!(fps >= 20.0, "capture stalled after mouse entry: {fps:.1} fps");
+        assert_eq!(clicks, "30", "native mouse clicks stopped reaching the page");
+    }
 
     #[test]
     fn logs_only_a_pages_host() {
@@ -784,6 +1334,107 @@ mod tests {
         assert_eq!(host_of("https://open.spotify.com"), "open.spotify.com");
         assert_eq!(host_of("https://music.apple.com?x=1"), "music.apple.com");
         assert_eq!(host_of("about:blank"), "about:blank");
+    }
+
+    #[test]
+    #[ignore = "loads the player's existing map read-only in an isolated WebView2 profile"]
+    fn actual_map_follow_probe() {
+        use std::{
+            sync::{
+                Arc,
+                atomic::{AtomicBool, Ordering},
+            },
+            time::{Duration, Instant},
+        };
+        use windows::Win32::System::Com::{COINIT_APARTMENTTHREADED, CoInitializeEx};
+        // SAFETY: this test initializes COM on its own thread before creating WebView objects.
+        unsafe {
+            CoInitializeEx(None, COINIT_APARTMENTTHREADED).ok().unwrap();
+        }
+        let ui = std::env::var_os("WESTPLAY_UI").unwrap();
+        let maps = std::env::var_os("W0RPLAY_MAP_PROBE_ROOT").unwrap();
+        let folder = std::env::var("W0RPLAY_MAP_PROBE_FOLDER").unwrap();
+        let profile = std::env::temp_dir().join(format!("w0rplay-map-probe-{}", std::process::id()));
+        let gpu = crate::gpu::Gpu::new(None).unwrap();
+        draw_on(Some(crate::graphics::browser_argument(gpu.luid)));
+        let stage = Stage::new(1280, 720).unwrap();
+        let view = OffscreenWebView::new(&stage, 1280, 720, &profile).unwrap();
+        stage.add(&view, true).unwrap();
+        view.add_startup_script(r#"window.__mapProbe={draws:0,errors:[],fetches:[]};const of=window.fetch;window.fetch=async(...a)=>{try{const r=await of(...a);__mapProbe.fetches.push({url:String(a[0]),status:r.status});return r}catch(e){__mapProbe.fetches.push({url:String(a[0]),error:String(e)});throw e}};addEventListener('error',e=>__mapProbe.errors.push(String(e.message)),true);addEventListener('unhandledrejection',e=>__mapProbe.errors.push(String(e.reason)));const ce=console.error;console.error=(...a)=>{__mapProbe.errors.push(a.map(String).join(' '));ce(...a)};for(const p of [WebGLRenderingContext.prototype,WebGL2RenderingContext.prototype]){const d=p.drawElements;p.drawElements=function(...a){__mapProbe.draws++;return d.apply(this,a)}}"#).unwrap();
+        view.map_folder("w0rplay.cabin", Path::new(&ui)).unwrap();
+        let pump = |duration: Duration| {
+            let until = Instant::now() + duration;
+            while Instant::now() < until {
+                crate::pump_messages();
+                std::thread::sleep(Duration::from_millis(10));
+            }
+        };
+
+        // SAFETY: the test owns this live WebView on its COM thread; the host name string lives through the call.
+        let receiver =
+            unsafe { view.webview.GetDevToolsProtocolEventReceiver(&HSTRING::from("Network.loadingFailed")) }.unwrap();
+        let handler = webview2_com::DevToolsProtocolEventReceivedEventHandler::create(Box::new(|_, args| {
+            if let Some(args) = args {
+                let mut json = PWSTR::null();
+                // SAFETY: WebView2 supplies these live event args and writes a CoTaskMem string, freed below.
+                unsafe { args.ParameterObjectAsJson(&mut json)? };
+                println!("network failure: {}", CoTaskMemPWSTR::from(json).to_string());
+            }
+            Ok(())
+        }));
+        let mut token = 0;
+        // SAFETY: WebView2 retains the handler; token is valid for this call.
+        unsafe { receiver.add_DevToolsProtocolEventReceived(&handler, &mut token) }.unwrap();
+        let enabled = webview2_com::CallDevToolsProtocolMethodCompletedHandler::create(Box::new(|_, _| Ok(())));
+        // SAFETY: strings and handler remain valid for this call on the WebView's own thread.
+        unsafe {
+            view.webview.CallDevToolsProtocolMethod(&HSTRING::from("Network.enable"), &HSTRING::from("{}"), &enabled)
+        }
+        .unwrap();
+        view.map_folder_to_any_page("w0rplay.maps", Path::new(&maps)).unwrap();
+        view.navigate("https://w0rplay.cabin/cabin.html").unwrap();
+        pump(Duration::from_secs(2));
+        view.post_json(&serde_json::json!({"type":"map","folder":folder,"built":1}).to_string()).unwrap();
+        view.post_json(
+            r#"{"type":"truck","data":{"brandId":"scania","brand":"Scania","id":"vehicle.scania.s_2016","name":"S"}}"#,
+        )
+        .unwrap();
+        let telemetry = |x| w0rplay_shared::Telemetry {
+            x,
+            z: 20700.,
+            electric_enabled: true,
+            engine_enabled: true,
+            speed: 10.,
+            game_time: 12000,
+            ..Default::default()
+        };
+        view.post_json(&serde_json::json!({"type":"telemetry","data":telemetry(18143.)}).to_string()).unwrap();
+        pump(Duration::from_secs(10));
+        println!("initial map: {}",view.evaluate("({probe:__mapProbe,canvas:!!document.querySelector('.maplibregl-canvas'),puck:!!document.querySelector('.map-puck'),text:document.body.innerText.slice(0,300)})").unwrap());
+        let before = view.evaluate("__mapProbe.draws").unwrap().parse::<u64>().unwrap();
+        for step in 0..30 {
+            view.post_json(
+                &serde_json::json!({"type":"telemetry","data":telemetry(18143.+step as f64*15.)}).to_string(),
+            )
+            .unwrap();
+            pump(Duration::from_millis(50));
+        }
+        pump(Duration::from_secs(2));
+        let after = view.evaluate("__mapProbe.draws").unwrap().parse::<u64>().unwrap();
+        println!("moving map: {}",view.evaluate("({probe:__mapProbe,puck:document.querySelector('.map-puck')?.getAttribute('style'),text:document.body.innerText.slice(0,300)})").unwrap());
+        let captured = Arc::new(AtomicBool::new(false));
+        let done = captured.clone();
+        view.capture_png_async(&profile.join("map.png"), move |hr| {
+            println!("snapshot HRESULT {hr}");
+            done.store(true, Ordering::Release)
+        })
+        .unwrap();
+        pump(Duration::from_secs(1));
+        println!("map snapshot: {}", profile.join("map.png").display());
+        assert!(after > before, "map made no GPU draws while telemetry moved");
+        assert_eq!(view.evaluate("__mapProbe.errors").unwrap(), "[]", "map resources failed");
+        assert_eq!(view.evaluate("!!document.querySelector('.maplibregl-canvas')").unwrap(), "true");
+        assert_eq!(view.evaluate("!!document.querySelector('.map-puck')").unwrap(), "true");
     }
 
     /// A built cab page (`WESTPLAY_UI`: the folder with `cabin.html`, as installed) served and loaded as the
@@ -811,13 +1462,13 @@ mod tests {
         )
         .unwrap();
         view.map_folder("w0rplay.cabin", Path::new(&ui)).unwrap();
-        view.navigate("https://w0rplay.cabin/cabin.html").unwrap();
-        // As the host goes on (crate::run): the maps' and the player's own looks' folders, mapped as the page loads.
+        // As the host does: all resource origins are registered before the page starts loading.
         for (host, name) in [("w0rplay.maps", "maps"), ("w0rplay.customize", "customize")] {
             let dir = std::env::temp_dir().join(format!("w0rplay-built-cab-{name}-{}", std::process::id()));
             std::fs::create_dir_all(&dir).unwrap();
             view.map_folder_to_any_page(host, &dir).unwrap();
         }
+        view.navigate("https://w0rplay.cabin/cabin.html").unwrap();
         let until = std::time::Instant::now() + std::time::Duration::from_secs(8);
         while std::time::Instant::now() < until {
             crate::pump_messages();

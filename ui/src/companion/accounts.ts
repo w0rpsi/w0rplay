@@ -65,11 +65,12 @@ export function useSignedIn(status: HostStatus | null): SignedIn {
 }
 
 /** As the companion opens: each service never known yet is run, hidden, to say. */
-export function useAskOnce(): void {
+export function useAskOnce(enabled: boolean): void {
   useEffect(() => {
+    if (!enabled) return
     const known = kept()
     if (known.youtube === null) youtubeCheck().catch(() => {})
     if (known.spotify === null) spotifyCheck().catch(() => {})
     if (known.appleMusic === null) appleMusicCheck().catch(() => {})
-  }, [])
+  }, [enabled])
 }

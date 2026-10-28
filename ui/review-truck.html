@@ -1,0 +1,23 @@
+<!doctype html><html><head><meta charset="UTF-8"><title>W0RPLAY cabin apps review</title></head><body><div id="root"></div><script type="module">
+import React from 'react';import {createRoot} from 'react-dom/client';
+import '@fontsource-variable/instrument-sans';import '@fontsource-variable/inter';
+import './src/cabin/shell/shell.css';import './src/cabin/shell/apple.css';import './src/cabin/apps/apps.css';
+import {DispatchApp} from './src/cabin/apps/truck/DispatchApp';import {CabinControlApp} from './src/cabin/apps/truck/CabinControlApp';
+import {useCabinControl} from './src/cabin/apps/truck/cabinControl';
+import {Home} from './src/cabin/home/Home';
+import {Shell} from './src/cabin/shell/Shell';import {useCabin,useLive,connectHost} from './src/cabin/state/store';import {useDispatch} from './src/cabin/apps/truck/dispatch';
+const p=new URLSearchParams(location.search);
+if(p.has('native')) {
+ const listeners=new Set();const send=data=>listeners.forEach(fn=>fn({data}));
+ window.chrome={webview:{addEventListener:(_,fn)=>listeners.add(fn),removeEventListener:(_,fn)=>listeners.delete(fn),postMessage(m){
+  if(m.type==='curtain'){send({type:'curtain',available:true,progress:0.5});setTimeout(()=>send({type:'curtain',available:true,progress:m.closed?1:0}),80)}
+ }}};
+ connectHost();
+ useCabinControl.setState({bindings:{lightKey:79,curtainKey:null},curtain:{available:p.has('fitted'),progress:0}});
+}
+const job={active:true,cargoLoaded:true,special:false,cargo:'Cam paneller',cargoMass:18000,sourceCity:'Berlin',sourceCompany:'EuroGoodies',destinationCity:'Prag',destinationCompany:'Tradeaux',deliveryTime:12500,plannedDistanceKm:351,income:12480};
+useLive.setState({gameLanguage:p.get('lang')||'tr_tr',job:p.has('empty')?null:job,telemetry:{gameTime:12000,paused:false,beacon:true}});
+useCabin.setState({appearanceMode:p.get('look')||'dark'});
+if(p.has('history'))useDispatch.getState().receive('review', [{sequence:1,kind:1,gameTime:12400,job,amount:12480,damage:0,distanceKm:351,xp:480,autopark:false,provided:31}]);
+createRoot(document.getElementById('root')).render(React.createElement(Shell,null,p.has('home')?React.createElement(Home):React.createElement('div',{className:'screen app-window'},React.createElement(p.has('cabin')?CabinControlApp:DispatchApp))));
+</script></body></html>

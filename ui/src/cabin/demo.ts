@@ -18,6 +18,8 @@ import './demo.css'
  * state apart from the player's (state/store.ts).
  */
 export type DemoCommand =
+  /** The parent may have mounted after the initial ready report; acknowledge its handshake again. */
+  | { type: 'hello' }
   /** On: the W0RPLAY intro, then the screen. Off: black. */
   | { type: 'power'; on: boolean }
   | { type: 'go'; to: 'home' | 'dashboard' | AppId }
@@ -73,6 +75,9 @@ export function installDemo(): void {
     const data = event.data as { channel?: string } & DemoCommand
     if (data?.channel !== DEMO_CHANNEL) return
     switch (data.type) {
+      case 'hello':
+        report({ type: 'ready' })
+        break
       case 'power': {
         const now = performance.now()
         // On: straight to the W0RPLAY intro (the phone connecting), as when W0RPLAY starts mid-drive.
@@ -115,7 +120,7 @@ export function installDemo(): void {
         showMapAt(data.base, data.built)
         break
       case 'language':
-        useLive.setState({ gameLanguage: data.code })
+        useLive.setState({ gameLanguage: data.code, uiLanguage: data.code.startsWith('tr') ? 'tr' : 'en' })
         break
       case 'looks':
         useLooks.setState({ custom: data.custom, base: data.base })

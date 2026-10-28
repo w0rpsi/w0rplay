@@ -457,6 +457,8 @@ export interface Strings {
     mid: string
     high: string
     resetEqualizer: string
+    wolliTvMirror: string
+    wolliTvMirrorFooter: string
     back: string
   }
   /** Apps. */
@@ -948,6 +950,8 @@ export const STRINGS: Record<Language, Strings> = {
       mid: 'Mid',
       high: 'High',
       resetEqualizer: 'Reset',
+      wolliTvMirror: 'Mirror screen to Wolli TV',
+      wolliTvMirrorFooter: 'Show the same CarPlay image on the sleeper TV. Turn off to leave the TV black.',
       back: 'Back',
     },
     apps: {
@@ -957,6 +961,8 @@ export const STRINGS: Record<Language, Strings> = {
       youtube: 'YouTube',
       youtubeMusic: 'YouTube Music',
       tv: 'Live TV',
+      dispatch: 'Dispatch',
+      cabin: 'Cabin',
       podcasts: 'Podcasts',
       phone: 'Phone',
       messages: 'Messages',
@@ -1450,6 +1456,8 @@ export const STRINGS: Record<Language, Strings> = {
       mid: 'Orta',
       high: 'Yüksek',
       resetEqualizer: 'Sıfırla',
+      wolliTvMirror: 'Wolli TV’ye ekranı yansıt',
+      wolliTvMirrorFooter: 'CarPlay görüntüsünün aynısını yataktaki TV’de gösterir. Kapatıldığında TV ekranı kararır.',
       back: 'Geri',
     },
     apps: {
@@ -1459,6 +1467,8 @@ export const STRINGS: Record<Language, Strings> = {
       youtube: 'YouTube',
       youtubeMusic: 'YouTube Music',
       tv: 'Canlı TV',
+      dispatch: 'Sevkiyat',
+      cabin: 'Kabin',
       podcasts: 'Podcast’ler',
       phone: 'Telefon',
       messages: 'Mesajlar',

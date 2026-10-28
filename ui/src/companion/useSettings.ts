@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react'
 
 /** The player's settings. Mirrors `w0rplay_host::settings::Settings`; the app owns and saves them. */
 export interface Settings {
+  language?: 'en' | 'tr'
   interaction: {
     /** The key that uses the screen. */
     key: KeyCode
@@ -16,6 +17,7 @@ export interface Settings {
   keybinds: Record<KeybindId, Binding>
   screen: {
     truckStrip: TruckStrip
+    wolliTvMirror: boolean
   }
   /** How the screen looks (Customize): a wallpaper's id and one of the player's icon sets, by name; `null`:
    * none chosen (the cab's default wallpaper, W0RPLAY's own icons). */

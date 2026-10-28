@@ -38,6 +38,9 @@ export function useDemo(): {
       }
     }
     window.addEventListener('message', receive)
+    // Embedded production assets may load the child before this effect subscribes. Ask again after
+    // installing the listener; if the child is still loading, its normal ready report will reach us.
+    frame.current?.contentWindow?.postMessage({ channel: DEMO_CHANNEL, type: 'hello' }, location.origin)
     return () => window.removeEventListener('message', receive)
   }, [])
 

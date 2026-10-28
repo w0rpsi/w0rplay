@@ -1194,3 +1194,18 @@ button.ob-row:active {
     transition-duration: 1ms !important;
   }
 }
+
+.language-select {
+  color: inherit;
+  background: #1e2522;
+  border: 1px solid #59665e;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font: inherit;
+  min-width: 130px;
+  color-scheme: dark;
+}
+.language-select:focus-visible {
+  outline: 2px solid #9aefb8;
+  outline-offset: 3px;
+}

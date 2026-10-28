@@ -1,3 +1,4 @@
+import { LanguageSelector } from '../LanguageSelector'
 import { useContext, useEffect, useRef, useState } from 'react'
 import { hvtMapMessage } from '../../cabin/maps/blockedMap'
 import {
@@ -65,7 +66,7 @@ import {
   useTour,
 } from '../room/screen'
 import { useDemo } from '../room/useDemo'
-import { count, languageOf, list, percent, wordsFor } from './words'
+import { count, list, percent, wordsFor } from './words'
 
 const STEPS = [
   'welcome',
@@ -146,7 +147,7 @@ export function Onboarding({
   const index = STEPS.indexOf(step)
   // The game's language, as W0RPLAY speaks in the cab (and the map's place names are in); Windows' for a
   // game never started.
-  const [code] = useState(() => initial.language ?? languageOf(navigator.languages))
+  const code = settings.settings?.language === 'tr' ? 'tr_tr' : 'en_us'
   const words = wordsFor(code)
 
   // When the screen's move to its next place ends. Its content changes after that, not during it: the
@@ -256,7 +257,7 @@ export function Onboarding({
       <WordsContext.Provider value={{ words, code }}>
         <RoomText.Provider value={{ locale: words.locale, back: words.back }}>
           <ScreenContext.Provider value={screen}>
-            {step === 'welcome' && <Welcome next={next} />}
+            {step === 'welcome' && <Welcome next={next} settings={settings} />}
             {step === 'game' && (
               <ChooseGame
                 found={initial.found}
@@ -294,7 +295,7 @@ export function Onboarding({
   )
 }
 
-function Welcome({ next }: { next(): void }) {
+function Welcome({ next, settings }: { next(): void; settings: SettingsState }) {
   const screen = useScreen()
   // The words come once W0RPLAY has booted on the screen.
   const [booted, setBooted] = useState(false)
@@ -320,8 +321,14 @@ function Welcome({ next }: { next(): void }) {
       place="below"
       title={words.welcome.title}
       sub={words.welcome.sub}
-      action={<Button onClick={next}>{words.welcome.start}</Button>}
-    />
+      action={
+        <Button onClick={next} disabled={!settings.settings}>
+          {words.welcome.start}
+        </Button>
+      }
+    >
+      <LanguageSelector state={settings} />
+    </Panel>
   )
 }
 

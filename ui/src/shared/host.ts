@@ -40,6 +40,7 @@ export interface Telemetry {
   parkingBrake: boolean
   lowBeam: boolean
   highBeam: boolean
+  beacon?: boolean
   leftBlinker: boolean
   rightBlinker: boolean
   paused: boolean
@@ -89,7 +90,28 @@ export interface JobInfo {
 /** What a keybind does: the music's volume a step up or down, or it paused or played on. */
 export type KeybindAction = 'volumeUp' | 'volumeDown' | 'playPause'
 
+export interface GameplayEvent {
+  sequence: number
+  kind: number
+  gameTime: number
+  job: JobInfo
+  amount: number
+  damage: number
+  distanceKm: number
+  xp: number
+  autopark: boolean
+  provided: number
+}
+export interface CabinBindings {
+  lightKey: number | null
+  curtainKey: number | null
+}
+export type CabinActionState = 'waiting' | 'sent' | 'cancelled' | 'failed' | 'busy' | 'unassigned'
+
 export type HostMessage =
+  | { type: 'curtain'; available: boolean; progress: number }
+  | { type: 'gameplay'; session: string; events: GameplayEvent[] }
+  | { type: 'cabinAction'; id: number; state: CabinActionState }
   | { type: 'telemetry'; data: Telemetry }
   | { type: 'truck'; data: TruckInfo }
   | { type: 'job'; data: JobInfo }
@@ -100,6 +122,7 @@ export type HostMessage =
    * (`null`: W0RPLAY's own). Sent as the page loads and whenever they change. */
   | {
       type: 'settings'
+      language?: 'en' | 'tr'
       truckStrip: string
       wallpaper?: string | null
       iconSet?: string | null
@@ -108,12 +131,15 @@ export type HostMessage =
       /** The player's own tone curve (Settings › Equalizer), and whether it plays (Custom) or not (Recommended). */
       equalizer?: Equalizer
       equalizerCustom?: boolean
+      wolliTvMirror?: boolean
+      cabinBindings?: CabinBindings
     }
   /** The player's own wallpapers and icon sets (shared/customize.ts), their files at `CABIN_FILES`. */
   | { type: 'customize'; wallpapers: CustomWallpaper[]; iconSets: IconSet[] }
   /** The music's spectrum as it plays, while the page asks for it (`spectrum`): bars from the lows to the
    * highs, spaced by octaves, each 0 (silent) to 255; all 0 when it stops. */
   | { type: 'spectrum'; bars: number[] }
+  | { type: 'wolliTv'; available: boolean }
   /** The cities whose garages the player owns, and their headquarters', from their latest save. */
   | { type: 'garages'; owned: string[]; headquarters: string | null }
   /** The game's answer to the page's `route` request `id`. */
@@ -261,6 +287,10 @@ export function toEqualizer(value: unknown): Equalizer {
 }
 
 export type PageMessage =
+  | { type: 'curtain'; closed: boolean }
+  | { type: 'cabinBinding'; control: 'light' | 'curtain'; key: number | null }
+  | { type: 'cabinAction'; id: number; control: 'light' | 'curtain' }
+  | { type: 'mediaView'; app: 'youtube' | 'spotify' | 'appleMusic' | 'youtubeMusic' | null }
   | { type: 'ready' }
   /** A startup stage reached (the boot screens shown), for the host's startup log. */
   | { type: 'startup'; stage: string }
@@ -269,6 +299,8 @@ export type PageMessage =
   | { type: 'w0rplay'; open: boolean }
   /** The wallpaper chosen in Settings (wallpapers.ts), kept with W0RPLAY's settings (the companion's too). */
   | { type: 'wallpaper'; id: string }
+  | { type: 'language'; language: 'en' | 'tr' }
+  | { type: 'wolliTvMirror'; enabled: boolean }
   /** The Vehicle Bar (the truck's strip) kept or not, chosen in Settings › Appearance, kept the same way. */
   | { type: 'truckStrip'; strip: 'auto' | 'off' }
   /** The players' tone, set in Settings › Equalizer: the player's curve, and whether it plays (Custom) or the
